@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { Card } from '../../components/ui/Card';
 import { TopBrewerConnection } from '../../bluetooth';
 import { logger } from '../../utils/logger';
 import { DrinkMenuScreen } from '../menu/DrinkMenuScreen';

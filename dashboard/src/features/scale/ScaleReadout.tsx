@@ -11,7 +11,15 @@ interface ScaleReadoutProps {
 
 export const ScaleReadout: React.FC<ScaleReadoutProps> = ({ scaleManager, siloManager }) => {
     const [booKooWeight, setBooKooWeight] = useState<number>(0);
-    const [siloWeight, setSiloWeight] = useState<number>(0);
+    // Initialize safely with lazy initializer to capture current weight immediately but safely
+    const [siloWeight, setSiloWeight] = useState<number>(() => {
+        try {
+            return siloManager.getWeight() || 0;
+        } catch (e) {
+            return 0;
+        }
+    });
+
     const [connState, setConnState] = useState<ScaleConnectionState>(scaleManager.getState());
     const [isSiloConnected, setIsSiloConnected] = useState(siloManager.isBridgeConnected());
     const [isPulsing, setIsPulsing] = useState(false);
