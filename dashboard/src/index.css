@@ -1,0 +1,173 @@
+/* Silo Industrial Design System */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+:root {
+  /* Palette: Zinc (Neutral) */
+  --zinc-950: #09090b;
+  --zinc-900: #18181b;
+  --zinc-800: #27272a;
+  --zinc-700: #3f3f46;
+  --zinc-600: #52525b;
+  --zinc-500: #71717a;
+  --zinc-400: #a1a1aa;
+  --zinc-300: #d4d4d8;
+  --zinc-50:  #fafafa;
+
+  /* Palette: Amber (Primary) */
+  --amber-500: #f59e0b;
+  --amber-600: #d97706;
+  --amber-400: #fbbf24; /* Active/Focus */
+  
+  /* Palette: Semantic */
+  --success: #22c55e;
+  --error:   #ef4444;
+  --warning: #f59e0b;
+
+  /* Typography */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Spacing Scale (4px grid) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  
+  /* Radius */
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--zinc-950);
+  color: var(--zinc-50);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
+  height: 100vh;
+  overflow: hidden; /* Prevent body scroll, handle in app-container */
+}
+
+/* Typography Utilities */
+h1, h2, h3 { font-weight: 600; letter-spacing: -0.025em; }
+h1 { font-size: 1.5rem; }
+h2 { font-size: 1.25rem; }
+.text-mono { font-family: var(--font-mono); }
+.text-zinc-400 { color: var(--zinc-400); }
+.text-amber-500 { color: var(--amber-500); }
+.text-sm { font-size: 0.875rem; }
+.text-xs { font-size: 0.75rem; }
+.font-bold { font-weight: 700; }
+
+/* Layout Utilities */
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.justify-center { justify-content: center; }
+.gap-2 { gap: var(--space-2); }
+.gap-4 { gap: var(--space-4); }
+.p-4 { padding: var(--space-4); }
+.w-full { width: 100%; }
+.h-full { height: 100%; }
+
+/* Component: Button */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3) var(--space-4); /* Larger touch target */
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 0.9375rem;
+  min-height: 44px; /* Touch target min */
+  border: 1px solid transparent;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background-color: var(--amber-500);
+  color: var(--zinc-950); /* High contrast on amber */
+}
+.btn-primary:hover:not(:disabled) { background-color: var(--amber-400); }
+.btn-primary:active:not(:disabled) { transform: translateY(1px); }
+
+.btn-secondary {
+  background-color: transparent;
+  border: 1px solid var(--zinc-700);
+  color: var(--zinc-50);
+}
+.btn-secondary:hover:not(:disabled) { background-color: var(--zinc-800); border-color: var(--zinc-600); }
+
+.btn-ghost {
+  background-color: transparent;
+  color: var(--zinc-400);
+}
+.btn-ghost:hover { color: var(--zinc-50); background-color: var(--zinc-900); }
+
+/* Component: Card */
+.card {
+  background-color: var(--zinc-900);
+  border: 1px solid var(--zinc-800);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Component: Industrial Input/Select */
+input[type="text"], input[type="number"], select {
+  width: 100%;
+  background-color: var(--zinc-950);
+  border: 1px solid var(--zinc-700);
+  color: var(--zinc-50);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+}
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--amber-500);
+  box-shadow: 0 0 0 1px var(--amber-500);
+}
+
+/* App Container */
+#root { display: flex; flex-direction: column; }
+.app-container { 
+  display: flex; 
+  flex-direction: column; 
+  height: 100vh; 
+  background-color: var(--zinc-950);
+}
+
+.screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+/* Header */
+.header {
+  height: 64px;
+  padding: 0 var(--space-4);
+  background-color: var(--zinc-900);
+  border-bottom: 1px solid var(--zinc-800);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}

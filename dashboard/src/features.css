@@ -1,0 +1,165 @@
+/* Silo Industrial Features */
+
+/* Screen container override */
+/* Base .screen is defined in index.css */
+
+/* Discovery Screen */
+.discovery-screen {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: var(--space-6);
+    height: 100%;
+}
+
+.logo-container h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--zinc-50);
+    margin-bottom: var(--space-2);
+    letter-spacing: -0.05em;
+}
+
+.subtitle {
+    font-family: var(--font-mono);
+    color: var(--amber-500);
+    font-size: 0.875rem;
+    margin-bottom: var(--space-8);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.scan-controls {
+    width: 100%;
+    max-width: 320px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.btn-large {
+    width: 100%;
+    padding: var(--space-4);
+    font-size: 1rem;
+    background-color: transparent;
+    color: var(--amber-500);
+    border: 2px solid var(--amber-500);
+    /* Thicker border for industrial feel */
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    transition: all 0.2s ease;
+}
+
+.btn-large:hover {
+    background-color: var(--amber-500);
+    color: var(--zinc-950);
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+}
+
+.btn-large.scanning {
+    border-color: var(--zinc-700);
+    color: var(--zinc-500);
+    background-color: var(--zinc-900);
+    cursor: wait;
+}
+
+.hint-text {
+    margin-top: var(--space-4);
+    color: var(--zinc-500);
+    font-size: 0.875rem;
+}
+
+.error-message {
+    color: var(--error);
+    margin-top: var(--space-4);
+    background-color: rgba(239, 68, 68, 0.1);
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--error);
+}
+
+/* Dashboard */
+.dashboard-screen {
+    padding: 0;
+    /* Header handles padding */
+}
+
+.dashboard-content {
+    padding: var(--space-4);
+    height: 100%;
+    overflow-y: auto;
+}
+
+.dashboard-screen .header h1 {
+    font-size: 1.25rem;
+    margin: 0;
+    color: var(--zinc-50);
+}
+
+.status-card {
+    margin: var(--space-4);
+    background: var(--zinc-900);
+    border: 1px solid var(--zinc-800);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+}
+
+.status-card h2 {
+    font-size: 0.875rem;
+    color: var(--zinc-400);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--space-2);
+}
+
+/* Drink Menu - GRID VIEW */
+.drink-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: var(--space-4);
+    padding: var(--space-4);
+}
+
+.drink-card {
+    background: var(--zinc-900);
+    border: 1px solid var(--zinc-800);
+    border-radius: var(--radius-lg);
+    /* Industrial look */
+    padding: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* Center for grid */
+    justify-content: center;
+    text-align: center;
+    height: 120px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.drink-card:hover {
+    border-color: var(--amber-500);
+    background-color: var(--zinc-800);
+    transform: translateY(-2px);
+}
+
+.drink-card:active {
+    transform: translateY(0);
+}
+
+.drink-name {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--zinc-50);
+}
+
+.menu-loading,
+.menu-empty {
+    padding: var(--space-6);
+    color: var(--zinc-500);
+    text-align: center;
+    font-style: italic;
+}

@@ -1,0 +1,243 @@
+/* Silo Industrial BrewMonitor */
+
+.brew-monitor-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(9, 9, 11, 0.98);
+    /* Zinc-950 almost opaque */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--zinc-50);
+    padding: var(--space-6);
+    animation: monitorFadeIn 0.3s ease-out;
+}
+
+@keyframes monitorFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* --- Status Label --- */
+.brew-monitor-status {
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--zinc-500);
+    margin-bottom: var(--space-8);
+    background: var(--zinc-900);
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--zinc-800);
+}
+
+.brew-monitor-status.dosing {
+    color: var(--amber-500);
+    border-color: var(--amber-500);
+}
+
+.brew-monitor-status.stopping {
+    color: var(--warning);
+    border-color: var(--warning);
+}
+
+.brew-monitor-status.done {
+    color: var(--success);
+    border-color: var(--success);
+}
+
+.brew-monitor-status.aborted {
+    color: var(--error);
+    border-color: var(--error);
+}
+
+/* --- Circular Progress --- */
+.brew-progress-ring {
+    position: relative;
+    width: 260px;
+    /* Larger for transparency */
+    height: 260px;
+    margin-bottom: var(--space-6);
+}
+
+.brew-progress-ring svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.brew-progress-ring .ring-bg {
+    fill: none;
+    stroke: var(--zinc-800);
+    stroke-width: 12;
+    /* Thicker industrial look */
+}
+
+.brew-progress-ring .ring-fill {
+    fill: none;
+    stroke: var(--amber-500);
+    stroke-width: 12;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.1s linear, stroke 0.2s;
+    /* Linear for smoothness */
+}
+
+.brew-progress-ring .ring-fill.near-target {
+    stroke: var(--amber-400);
+}
+
+.brew-progress-ring .ring-fill.complete {
+    stroke: var(--success);
+}
+
+.brew-progress-ring .ring-fill.over {
+    stroke: var(--error);
+}
+
+.brew-progress-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.brew-weight-value {
+    font-family: var(--font-mono);
+    font-size: 3.5rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    color: var(--zinc-50);
+}
+
+.brew-weight-target {
+    font-family: var(--font-mono);
+    font-size: 1.125rem;
+    color: var(--zinc-500);
+    margin-top: var(--space-2);
+}
+
+/* --- Flow Rate --- */
+.brew-flow-rate {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    color: var(--zinc-500);
+    margin-bottom: var(--space-8);
+    background: var(--zinc-900);
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--zinc-800);
+}
+
+.brew-flow-rate .flow-value {
+    color: var(--zinc-50);
+    font-weight: 600;
+}
+
+/* --- Result Summary --- */
+.brew-result {
+    text-align: center;
+    margin-bottom: var(--space-6);
+    animation: resultSlideIn 0.4s ease-out;
+    background: var(--zinc-900);
+    padding: var(--space-4);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--zinc-800);
+    width: 100%;
+    max-width: 400px;
+}
+
+@keyframes resultSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.brew-result-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+}
+
+.brew-result-item {
+    text-align: center;
+}
+
+.brew-result-item .label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--zinc-500);
+    margin-bottom: var(--space-1);
+}
+
+.brew-result-item .value {
+    font-family: var(--font-mono);
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--zinc-50);
+}
+
+.brew-result-item .value.good {
+    color: var(--success);
+}
+
+.brew-result-item .value.warn {
+    color: var(--warning);
+}
+
+.brew-result-item .value.bad {
+    color: var(--error);
+}
+
+/* --- Actions --- */
+.brew-monitor-actions {
+    display: flex;
+    gap: var(--space-4);
+    width: 100%;
+    max-width: 400px;
+}
+
+.brew-monitor-actions button {
+    flex: 1;
+    height: 56px;
+    font-size: 1.125rem;
+}
+
+/* Pulse Animation */
+.brew-weight-value.pulse {
+    animation: weightPulse 0.15s ease-out;
+    color: var(--amber-400);
+}
+
+@keyframes weightPulse {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.02);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}

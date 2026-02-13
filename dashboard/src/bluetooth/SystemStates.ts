@@ -1,0 +1,8 @@
+export const SystemStates = {
+    STATE_SYSTEM_STANDBY: 0,
+    STATE_SYSTEM_IDLE: 1,
+    STATE_SYSTEM_BREWING: 2,
+    STATE_SYSTEM_ERROR: 3,
+    STATE_SYSTEM_WARMING_UP: 4,
+    STATE_SYSTEM_POSTBREW: 5
+} as const;

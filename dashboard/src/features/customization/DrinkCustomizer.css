@@ -1,0 +1,181 @@
+/* Drink Customizer Styles */
+
+.customizer-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(9, 9, 11, 0.95);
+    /* Zinc-950/95 */
+    backdrop-filter: blur(4px);
+    /* Minor blur is okay for static overlay */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 50;
+    padding: var(--space-4);
+}
+
+.customizer-card {
+    /* Base styles from Card component + semantic overrides */
+    width: 100%;
+    max-width: 800px;
+    /* Reduced max-width for better focus */
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.customizer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--zinc-800);
+    padding-bottom: var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+.drink-title {
+    font-size: 1.5rem;
+    color: var(--zinc-50);
+}
+
+.drink-meta {
+    font-family: var(--font-mono);
+    color: var(--zinc-400);
+    text-align: right;
+}
+
+.total-volume {
+    display: block;
+    font-size: 1.25rem;
+    color: var(--amber-500);
+    font-weight: 700;
+}
+
+/* Scrollable Content Area */
+.customizer-content {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: var(--space-2);
+}
+
+/* Specific Section Styles */
+.scale-section {
+    margin-bottom: var(--space-6);
+    padding: var(--space-4);
+    background-color: var(--zinc-950);
+    border-radius: var(--radius-lg);
+    border: 1px dashed var(--zinc-800);
+}
+
+.gravimetric-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+    padding: var(--space-4);
+    background-color: var(--zinc-800);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+}
+
+.gravimetric-toggle input[type="checkbox"] {
+    width: 24px;
+    height: 24px;
+    accent-color: var(--amber-500);
+    cursor: pointer;
+}
+
+.gravimetric-toggle span {
+    font-weight: 500;
+    color: var(--zinc-50);
+}
+
+/* Ingredient Grid */
+.ingredient-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--space-6);
+}
+
+.ingredient-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding: var(--space-4);
+    background-color: var(--zinc-950);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--zinc-800);
+}
+
+.ingredient-title {
+    font-size: 0.875rem;
+    color: var(--zinc-400);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--zinc-800);
+    padding-bottom: var(--space-2);
+    margin-bottom: var(--space-2);
+}
+
+.variant-row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+/* Footer Actions */
+.customizer-actions {
+    margin-top: var(--space-6);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--zinc-800);
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-4);
+}
+
+.brew-btn {
+    min-width: 140px;
+    font-size: 1.125rem;
+    height: 56px;
+    /* Extra large touch target */
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Loading State */
+.customizer-card.loading {
+    justify-content: center;
+    align-items: center;
+    gap: var(--space-4);
+    min-height: 300px;
+}
+
+.spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid var(--zinc-800);
+    border-top-color: var(--amber-500);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
