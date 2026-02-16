@@ -50,7 +50,7 @@ export class BrewStatusParser {
                 }
             }
         } catch (e) {
-            logger.error('SFWU', 'Failed to parse brew status', e);
+            logger.error('SFWU', 'Failed to parse brew status', e instanceof Error ? e.message : String(e));
         }
 
         return {
@@ -73,6 +73,7 @@ export class BrewStatusParser {
             case 2: return 'Cleaning';
             case 3: return 'Finished';
             case 4: return 'Ready';
+            case 7: return 'Processing'; // Mapped from observation
             default: return `Unknown (${state})`;
         }
     }

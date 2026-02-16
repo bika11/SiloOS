@@ -1,0 +1,1198 @@
+[2026-02-16T09:24:39.575Z] [INFO] [TopBrewer] Got drink details: 29 bytes
+[2026-02-16T09:24:39.578Z] [INFO] [SFWU] MenuDetails RAW (29 bytes): 14 01 01 00 00 00 63 00 00 03 e7 00 00 07 ce 01 00 0b 32 20 4e 69 63 61 72 61 67 75 61
+[2026-02-16T09:24:39.581Z] [INFO] [SFWU]   Header: status=20 id=1 gid=1
+[2026-02-16T09:24:39.583Z] [INFO] [SFWU]   Bytes 3-14 LE: min=1660944384 nom=-419233792 max=-838402048
+[2026-02-16T09:24:39.588Z] [INFO] [SFWU]   Bytes 3-14 BE: min=99 nom=999 max=1998
+[2026-02-16T09:24:39.590Z] [INFO] [SFWU] Parsed: ID=1 Name='2 Nicaragua' Min=99 Nom=999 Max=1998 Carafe=1 Ingredients=0
+[2026-02-16T09:24:39.593Z] [INFO] [Customizer] Recipe loaded: "2 Nicaragua" min=0.99 nom=9.99 max=19.98 ingredients=0
+[2026-02-16T09:24:43.671Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 58 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 9E 71 5C D5
+[2026-02-16T09:24:43.675Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:24:43.676Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:24:43.751Z] [INFO] [Customizer] Order: menuId=1 gravimetric=true customVolume=19.49 globalNom=9.99
+[2026-02-16T09:24:43.754Z] [INFO] [Customizer] Gravimetric target: 19.49 ml → 0.019 kg
+[2026-02-16T09:24:43.760Z] [INFO] [DoseCtrl] Silo "2 Nicaragua" profile: flow=0.050 kg/s, valveDelay=0.50s, doses=0
+[2026-02-16T09:24:43.761Z] [INFO] [DoseCtrl] Tared at 76400 g
+[2026-02-16T09:24:43.768Z] [INFO] [TopBrewer] Starting Session...
+[2026-02-16T09:24:43.980Z] [INFO] [SFWU] SEND  (18 bytes)
+    HEX: AA 01 01 02 00 C4 00 00 00 00 00 02 01 01 DB 77 9F B0
+[2026-02-16T09:24:43.981Z] [INFO] [TopBrewer] SEND CustomOrder(ID=1, Ings=0) (18 bytes)
+    HEX: AA 01 01 02 00 C4 00 00 00 00 00 02 01 01 DB 77 9F B0
+[2026-02-16T09:24:44.109Z] [DEBUG] [TopBrewer] Received Brew Status data but failed to parse
+    DATA: {"0":7,"1":20,"2":1,"3":2,"4":0,"5":0,"6":0,"7":115,"8":65,"9":0,"10":0,"11":33}
+[2026-02-16T09:24:44.111Z] [INFO] [DoseCtrl] Dosing started → target=19g effectiveTarget=5g stopIn=100ms (flow=0.050kg/s, delay=0.50s)
+[2026-02-16T09:24:44.163Z] [DEBUG] [TopBrewer] Received Brew Status data but failed to parse
+    DATA: {"0":6,"1":20,"2":1,"3":2,"4":0,"5":0,"6":0,"7":115,"8":65,"9":0,"10":0,"11":33}
+[2026-02-16T09:24:44.206Z] [DEBUG] [TopBrewer] Received Brew Status data but failed to parse
+    DATA: {"0":6,"1":20,"2":1,"3":2,"4":0,"5":0,"6":0,"7":115,"8":65,"9":0,"10":0,"11":33}
+[2026-02-16T09:24:44.215Z] [INFO] [DoseCtrl] Preemptive stop fired at 0g
+[2026-02-16T09:24:44.217Z] [INFO] [DoseCtrl] Stop command sent at dispensed=0g
+[2026-02-16T09:24:44.221Z] [INFO] [TopBrewer] Stopping Session...
+[2026-02-16T09:24:44.226Z] [INFO] [SFWU] SEND  (16 bytes)
+    HEX: AA 01 01 02 00 C0 00 00 00 00 00 00 25 B3 99 E5
+[2026-02-16T09:24:44.228Z] [INFO] [TopBrewer] SEND Reset/Cancel (16 bytes)
+    HEX: AA 01 01 02 00 C0 00 00 00 00 00 00 25 B3 99 E5
+[2026-02-16T09:24:44.251Z] [INFO] [SFWU] RECV  (106 bytes)
+    HEX: AA 01 04 01 00 06 20 59 00 00 00 5A 7B 22 6F 72 64 65 72 22 3A 7B 22 4F 72 69 67 69 6E 22 3A 7B 22 49 64 22 3A 22 31 30 33 30 22 2C 22 46 57 22 3A 31 34 30 38 30 2C 22 53 4E 22 3A 35 37 30 31 30 37 33 7D 2C 22 70 72 6F 64 75 63 74 22 3A 22 32 20 4E 69 63 61 72 61 67 75 61 22 2C 22 67 69 64 22 3A 31 7D 7D 43 11 12 18
+[2026-02-16T09:24:44.254Z] [INFO] [TopBrewer] RX Pkt: CMD=0x6 LEN=90
+[2026-02-16T09:24:44.401Z] [DEBUG] [TopBrewer] Received Brew Status data but failed to parse
+    DATA: {"0":0,"1":20,"2":1,"3":1,"4":0,"5":0,"6":0,"7":0,"8":0,"9":0,"10":0,"11":33}
+[2026-02-16T09:24:44.447Z] [DEBUG] [TopBrewer] Received Brew Status data but failed to parse
+    DATA: {"0":0,"1":20,"2":1,"3":1,"4":0,"5":0,"6":0,"7":0,"8":0,"9":0,"10":0,"11":33}
+[2026-02-16T09:24:46.872Z] [WARN] [DoseCtrl] Aborted: User pressed abort
+[2026-02-16T09:24:46.877Z] [INFO] [TopBrewer] Stopping Session...
+[2026-02-16T09:24:46.883Z] [INFO] [SFWU] SEND  (16 bytes)
+    HEX: AA 01 01 02 00 C0 00 00 00 00 00 00 25 B3 99 E5
+[2026-02-16T09:24:46.884Z] [INFO] [TopBrewer] SEND Reset/Cancel (16 bytes)
+    HEX: AA 01 01 02 00 C0 00 00 00 00 00 00 25 B3 99 E5
+[2026-02-16T09:24:51.885Z] [WARN] [TopBrewer] ACK Timeout reached
+[2026-02-16T09:25:13.799Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 5A 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 7A B5 5D A8
+[2026-02-16T09:25:13.802Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:25:13.804Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:25:43.780Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 5B 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 E5 6F DE 36
+[2026-02-16T09:25:43.783Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:25:43.785Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:26:13.760Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 5C 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 8C 88 58 6E
+[2026-02-16T09:26:13.764Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:26:13.765Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:26:43.796Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 5D 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 13 52 DB F0
+[2026-02-16T09:26:43.798Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:26:43.800Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:27:13.776Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 5E 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 68 4C 59 13
+[2026-02-16T09:27:13.779Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:27:13.781Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:27:43.805Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 5F 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 F7 96 DA 8D
+[2026-02-16T09:27:43.807Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:27:43.808Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:28:13.787Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 60 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 67 AF 62 97
+[2026-02-16T09:28:13.790Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:28:13.791Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:28:43.764Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 61 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 F8 75 E1 09
+[2026-02-16T09:28:43.767Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:28:43.769Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:29:13.797Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 62 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 83 6B 63 EA
+[2026-02-16T09:29:13.802Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:29:13.805Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:29:43.797Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 63 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 1C B1 E0 74
+[2026-02-16T09:29:43.800Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:29:43.804Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:30:13.812Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 64 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 75 56 66 2C
+[2026-02-16T09:30:13.815Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:30:13.817Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:30:43.789Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 65 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 EA 8C E5 B2
+[2026-02-16T09:30:43.792Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:30:43.794Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:31:13.771Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 66 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 91 92 67 51
+[2026-02-16T09:31:13.775Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:31:13.777Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:31:43.755Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 67 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 0E 48 E4 CF
+[2026-02-16T09:31:43.759Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:31:43.761Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:32:13.784Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 68 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 42 5D 6B E1
+[2026-02-16T09:32:13.789Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:32:13.793Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:32:43.763Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 69 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 DD 87 E8 7F
+[2026-02-16T09:32:43.766Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:32:43.772Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:33:13.794Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 6A 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 A6 99 6A 9C
+[2026-02-16T09:33:13.798Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:33:13.801Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:33:43.779Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 6B 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 39 43 E9 02
+[2026-02-16T09:33:43.784Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:33:43.788Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:34:13.761Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 6C 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 50 A4 6F 5A
+[2026-02-16T09:34:13.764Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:34:13.767Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:34:43.843Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 6D 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 CF 7E EC C4
+[2026-02-16T09:34:43.846Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:34:43.849Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:35:13.781Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 6E 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 B4 60 6E 27
+[2026-02-16T09:35:13.785Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:35:13.787Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:35:43.761Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 6F 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 2B BA ED B9
+[2026-02-16T09:35:43.765Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:35:43.767Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:36:13.788Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 70 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 2C 4B 70 7B
+[2026-02-16T09:36:13.792Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:36:13.795Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:36:43.768Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 71 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 B3 91 F3 E5
+[2026-02-16T09:36:43.773Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:36:43.777Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:37:13.795Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 72 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 C8 8F 71 06
+[2026-02-16T09:37:13.798Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:37:13.801Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:37:43.780Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 73 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 57 55 F2 98
+[2026-02-16T09:37:43.784Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:37:43.788Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:38:13.762Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 74 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 3E B2 74 C0
+[2026-02-16T09:38:13.765Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:38:13.767Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:38:20.002Z] [INFO] [Dashboard] Selected: 1 Ethiopia - Opening Customizer
+[2026-02-16T09:38:20.018Z] [INFO] [Customizer] Requesting details for 1 Ethiopia
+[2026-02-16T09:38:20.021Z] [INFO] [Customizer] Requesting details for 1 Ethiopia
+[2026-02-16T09:38:20.025Z] [INFO] [TopBrewer] Reading drink details characteristic: c0ffee00-2624-46ff-9311-4d7083160100
+[2026-02-16T09:38:20.247Z] [INFO] [TopBrewer] Got drink details: 28 bytes
+[2026-02-16T09:38:20.250Z] [INFO] [SFWU] MenuDetails RAW (28 bytes): 14 00 01 00 00 00 63 00 00 03 e7 00 00 07 ce 01 00 0a 31 20 45 74 68 69 6f 70 69 61
+[2026-02-16T09:38:20.253Z] [INFO] [SFWU]   Header: status=20 id=0 gid=1
+[2026-02-16T09:38:20.257Z] [INFO] [SFWU]   Bytes 3-14 LE: min=1660944384 nom=-419233792 max=-838402048
+[2026-02-16T09:38:20.260Z] [INFO] [SFWU]   Bytes 3-14 BE: min=99 nom=999 max=1998
+[2026-02-16T09:38:20.261Z] [INFO] [SFWU] Parsed: ID=0 Name='1 Ethiopia' Min=99 Nom=999 Max=1998 Carafe=1 Ingredients=0
+[2026-02-16T09:38:20.266Z] [INFO] [Customizer] Recipe loaded: "1 Ethiopia" min=0.99 nom=9.99 max=19.98 ingredients=0
+[2026-02-16T09:38:20.270Z] [INFO] [TopBrewer] Reading drink details characteristic: c0ffee00-2624-46ff-9311-4d7083160100
+[2026-02-16T09:38:20.440Z] [INFO] [TopBrewer] Got drink details: 28 bytes
+[2026-02-16T09:38:20.442Z] [INFO] [SFWU] MenuDetails RAW (28 bytes): 14 00 01 00 00 00 63 00 00 03 e7 00 00 07 ce 01 00 0a 31 20 45 74 68 69 6f 70 69 61
+[2026-02-16T09:38:20.444Z] [INFO] [SFWU]   Header: status=20 id=0 gid=1
+[2026-02-16T09:38:20.446Z] [INFO] [SFWU]   Bytes 3-14 LE: min=1660944384 nom=-419233792 max=-838402048
+[2026-02-16T09:38:20.448Z] [INFO] [SFWU]   Bytes 3-14 BE: min=99 nom=999 max=1998
+[2026-02-16T09:38:20.450Z] [INFO] [SFWU] Parsed: ID=0 Name='1 Ethiopia' Min=99 Nom=999 Max=1998 Carafe=1 Ingredients=0
+[2026-02-16T09:38:20.456Z] [INFO] [Customizer] Recipe loaded: "1 Ethiopia" min=0.99 nom=9.99 max=19.98 ingredients=0
+[2026-02-16T09:38:25.993Z] [INFO] [Customizer] Order: menuId=0 gravimetric=true customVolume=19.49 globalNom=9.99
+[2026-02-16T09:38:25.996Z] [INFO] [Customizer] Gravimetric target: 19.49 ml → 0.019 kg
+[2026-02-16T09:38:26.000Z] [INFO] [DoseCtrl] Silo "1 Ethiopia" profile: flow=0.251 kg/s, valveDelay=14.15s, doses=11
+[2026-02-16T09:38:26.003Z] [INFO] [DoseCtrl] Tared at 0 g
+[2026-02-16T09:38:26.013Z] [INFO] [TopBrewer] Starting Session...
+[2026-02-16T09:38:26.225Z] [INFO] [SFWU] SEND  (18 bytes)
+    HEX: AA 01 01 02 00 C4 00 00 00 00 00 02 01 00 AC 70 AF 26
+[2026-02-16T09:38:26.227Z] [INFO] [TopBrewer] SEND CustomOrder(ID=0, Ings=0) (18 bytes)
+    HEX: AA 01 01 02 00 C4 00 00 00 00 00 02 01 00 AC 70 AF 26
+[2026-02-16T09:38:26.385Z] [DEBUG] [TopBrewer] Received Brew Status data but failed to parse
+    DATA: {"0":7,"1":20,"2":1,"3":2,"4":0,"5":0,"6":0,"7":115,"8":66,"9":0,"10":0,"11":33}
+[2026-02-16T09:38:26.389Z] [INFO] [DoseCtrl] Dosing started → target=19g effectiveTarget=5g stopIn=100ms (flow=0.251kg/s, delay=14.15s)
+[2026-02-16T09:38:26.480Z] [DEBUG] [TopBrewer] Received Brew Status data but failed to parse
+    DATA: {"0":6,"1":20,"2":1,"3":2,"4":0,"5":0,"6":0,"7":115,"8":66,"9":0,"10":0,"11":33}
+[2026-02-16T09:38:26.492Z] [DEBUG] [TopBrewer] Received Brew Status data but failed to parse
+    DATA: {"0":6,"1":20,"2":1,"3":2,"4":0,"5":0,"6":0,"7":115,"8":66,"9":0,"10":0,"11":33}
+[2026-02-16T09:38:26.495Z] [INFO] [DoseCtrl] Preemptive stop fired at 0g
+[2026-02-16T09:38:26.497Z] [INFO] [DoseCtrl] Stop command sent at dispensed=0g
+[2026-02-16T09:38:26.502Z] [INFO] [TopBrewer] Stopping Session...
+[2026-02-16T09:38:26.504Z] [INFO] [SFWU] SEND  (16 bytes)
+    HEX: AA 01 01 02 00 C0 00 00 00 00 00 00 25 B3 99 E5
+[2026-02-16T09:38:26.507Z] [INFO] [TopBrewer] SEND Reset/Cancel (16 bytes)
+    HEX: AA 01 01 02 00 C0 00 00 00 00 00 00 25 B3 99 E5
+[2026-02-16T09:38:26.532Z] [INFO] [SFWU] RECV  (105 bytes)
+    HEX: AA 01 04 01 00 06 20 75 00 00 00 59 7B 22 6F 72 64 65 72 22 3A 7B 22 4F 72 69 67 69 6E 22 3A 7B 22 49 64 22 3A 22 31 30 33 30 22 2C 22 46 57 22 3A 31 34 30 38 30 2C 22 53 4E 22 3A 35 37 30 31 30 37 33 7D 2C 22 70 72 6F 64 75 63 74 22 3A 22 31 20 45 74 68 69 6F 70 69 61 22 2C 22 67 69 64 22 3A 31 7D 7D 11 D6 8F 92
+[2026-02-16T09:38:26.535Z] [INFO] [TopBrewer] RX Pkt: CMD=0x6 LEN=89
+[2026-02-16T09:38:26.681Z] [DEBUG] [TopBrewer] Received Brew Status data but failed to parse
+    DATA: {"0":0,"1":20,"2":1,"3":1,"4":0,"5":0,"6":0,"7":0,"8":0,"9":0,"10":0,"11":33}
+[2026-02-16T09:38:26.723Z] [DEBUG] [TopBrewer] Received Brew Status data but failed to parse
+    DATA: {"0":0,"1":20,"2":1,"3":1,"4":0,"5":0,"6":0,"7":0,"8":0,"9":0,"10":0,"11":33}
+[2026-02-16T09:38:34.254Z] [WARN] [DoseCtrl] Aborted: User pressed abort
+[2026-02-16T09:38:34.258Z] [INFO] [TopBrewer] Stopping Session...
+[2026-02-16T09:38:34.263Z] [INFO] [SFWU] SEND  (16 bytes)
+    HEX: AA 01 01 02 00 C0 00 00 00 00 00 00 25 B3 99 E5
+[2026-02-16T09:38:34.264Z] [INFO] [TopBrewer] SEND Reset/Cancel (16 bytes)
+    HEX: AA 01 01 02 00 C0 00 00 00 00 00 00 25 B3 99 E5
+[2026-02-16T09:38:35.732Z] [INFO] [Dashboard] Selected: 1 Ethiopia - Opening Customizer
+[2026-02-16T09:38:35.741Z] [INFO] [Customizer] Requesting details for 1 Ethiopia
+[2026-02-16T09:38:35.743Z] [INFO] [Customizer] Requesting details for 1 Ethiopia
+[2026-02-16T09:38:39.265Z] [WARN] [TopBrewer] ACK Timeout reached
+[2026-02-16T09:38:39.268Z] [INFO] [TopBrewer] Reading drink details characteristic: c0ffee00-2624-46ff-9311-4d7083160100
+[2026-02-16T09:38:39.503Z] [INFO] [TopBrewer] Got drink details: 28 bytes
+[2026-02-16T09:38:39.505Z] [INFO] [SFWU] MenuDetails RAW (28 bytes): 14 00 01 00 00 00 63 00 00 03 e7 00 00 07 ce 01 00 0a 31 20 45 74 68 69 6f 70 69 61
+[2026-02-16T09:38:39.508Z] [INFO] [SFWU]   Header: status=20 id=0 gid=1
+[2026-02-16T09:38:39.509Z] [INFO] [SFWU]   Bytes 3-14 LE: min=1660944384 nom=-419233792 max=-838402048
+[2026-02-16T09:38:39.510Z] [INFO] [SFWU]   Bytes 3-14 BE: min=99 nom=999 max=1998
+[2026-02-16T09:38:39.511Z] [INFO] [SFWU] Parsed: ID=0 Name='1 Ethiopia' Min=99 Nom=999 Max=1998 Carafe=1 Ingredients=0
+[2026-02-16T09:38:39.513Z] [INFO] [Customizer] Recipe loaded: "1 Ethiopia" min=0.99 nom=9.99 max=19.98 ingredients=0
+[2026-02-16T09:38:39.515Z] [INFO] [TopBrewer] Reading drink details characteristic: c0ffee00-2624-46ff-9311-4d7083160100
+[2026-02-16T09:38:39.696Z] [INFO] [TopBrewer] Got drink details: 28 bytes
+[2026-02-16T09:38:39.699Z] [INFO] [SFWU] MenuDetails RAW (28 bytes): 14 00 01 00 00 00 63 00 00 03 e7 00 00 07 ce 01 00 0a 31 20 45 74 68 69 6f 70 69 61
+[2026-02-16T09:38:39.700Z] [INFO] [SFWU]   Header: status=20 id=0 gid=1
+[2026-02-16T09:38:39.702Z] [INFO] [SFWU]   Bytes 3-14 LE: min=1660944384 nom=-419233792 max=-838402048
+[2026-02-16T09:38:39.704Z] [INFO] [SFWU]   Bytes 3-14 BE: min=99 nom=999 max=1998
+[2026-02-16T09:38:39.705Z] [INFO] [SFWU] Parsed: ID=0 Name='1 Ethiopia' Min=99 Nom=999 Max=1998 Carafe=1 Ingredients=0
+[2026-02-16T09:38:39.707Z] [INFO] [Customizer] Recipe loaded: "1 Ethiopia" min=0.99 nom=9.99 max=19.98 ingredients=0
+[2026-02-16T09:38:43.887Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 76 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 DA 76 75 BD
+[2026-02-16T09:38:43.889Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:38:43.890Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:38:44.478Z] [INFO] [Customizer] Order: menuId=0 gravimetric=false customVolume=19.49 globalNom=9.99
+[2026-02-16T09:38:44.481Z] [INFO] [TopBrewer] Starting Session...
+[2026-02-16T09:38:44.698Z] [INFO] [SFWU] SEND  (22 bytes)
+    HEX: AA 01 01 02 00 C4 00 00 00 00 00 06 05 00 00 00 07 9D 28 47 BC AD
+[2026-02-16T09:38:44.700Z] [INFO] [TopBrewer] SEND CustomOrder(ID=0, Ings=0) (22 bytes)
+    HEX: AA 01 01 02 00 C4 00 00 00 00 00 06 05 00 00 00 07 9D 28 47 BC AD
+[2026-02-16T09:38:45.054Z] [DEBUG] [TopBrewer] Received Brew Status data but failed to parse
+    DATA: {"0":7,"1":20,"2":1,"3":2,"4":0,"5":0,"6":0,"7":115,"8":67,"9":0,"10":0,"11":33}
+[2026-02-16T09:38:45.153Z] [DEBUG] [TopBrewer] Received Brew Status data but failed to parse
+    DATA: {"0":6,"1":20,"2":1,"3":2,"4":0,"5":0,"6":0,"7":115,"8":67,"9":0,"10":0,"11":33}
+[2026-02-16T09:38:45.203Z] [INFO] [SFWU] RECV  (105 bytes)
+    HEX: AA 01 04 01 00 06 20 77 00 00 00 59 7B 22 6F 72 64 65 72 22 3A 7B 22 4F 72 69 67 69 6E 22 3A 7B 22 49 64 22 3A 22 31 30 33 30 22 2C 22 46 57 22 3A 31 34 30 38 30 2C 22 53 4E 22 3A 35 37 30 31 30 37 33 7D 2C 22 70 72 6F 64 75 63 74 22 3A 22 31 20 45 74 68 69 6F 70 69 61 22 2C 22 67 69 64 22 3A 31 7D 7D D9 A2 42 26
+[2026-02-16T09:38:45.205Z] [INFO] [TopBrewer] RX Pkt: CMD=0x6 LEN=89
+[2026-02-16T09:38:45.309Z] [DEBUG] [TopBrewer] Received Brew Status data but failed to parse
+    DATA: {"0":0,"1":20,"2":1,"3":1,"4":0,"5":0,"6":0,"7":0,"8":0,"9":0,"10":0,"11":33}
+[2026-02-16T09:38:45.346Z] [DEBUG] [TopBrewer] Received Brew Status data but failed to parse
+    DATA: {"0":0,"1":20,"2":1,"3":1,"4":0,"5":0,"6":0,"7":0,"8":0,"9":0,"10":0,"11":33}
+[2026-02-16T09:38:48.892Z] [INFO] [Dashboard] Selected: 1 Ethiopia - Opening Customizer
+[2026-02-16T09:38:48.899Z] [INFO] [Customizer] Requesting details for 1 Ethiopia
+[2026-02-16T09:38:48.901Z] [INFO] [Customizer] Requesting details for 1 Ethiopia
+[2026-02-16T09:38:48.903Z] [INFO] [TopBrewer] Reading drink details characteristic: c0ffee00-2624-46ff-9311-4d7083160100
+[2026-02-16T09:38:49.104Z] [INFO] [TopBrewer] Got drink details: 28 bytes
+[2026-02-16T09:38:49.106Z] [INFO] [SFWU] MenuDetails RAW (28 bytes): 14 00 01 00 00 00 63 00 00 03 e7 00 00 07 ce 01 00 0a 31 20 45 74 68 69 6f 70 69 61
+[2026-02-16T09:38:49.107Z] [INFO] [SFWU]   Header: status=20 id=0 gid=1
+[2026-02-16T09:38:49.109Z] [INFO] [SFWU]   Bytes 3-14 LE: min=1660944384 nom=-419233792 max=-838402048
+[2026-02-16T09:38:49.110Z] [INFO] [SFWU]   Bytes 3-14 BE: min=99 nom=999 max=1998
+[2026-02-16T09:38:49.111Z] [INFO] [SFWU] Parsed: ID=0 Name='1 Ethiopia' Min=99 Nom=999 Max=1998 Carafe=1 Ingredients=0
+[2026-02-16T09:38:49.112Z] [INFO] [Customizer] Recipe loaded: "1 Ethiopia" min=0.99 nom=9.99 max=19.98 ingredients=0
+[2026-02-16T09:38:49.114Z] [INFO] [TopBrewer] Reading drink details characteristic: c0ffee00-2624-46ff-9311-4d7083160100
+[2026-02-16T09:38:49.299Z] [INFO] [TopBrewer] Got drink details: 28 bytes
+[2026-02-16T09:38:49.302Z] [INFO] [SFWU] MenuDetails RAW (28 bytes): 14 00 01 00 00 00 63 00 00 03 e7 00 00 07 ce 01 00 0a 31 20 45 74 68 69 6f 70 69 61
+[2026-02-16T09:38:49.303Z] [INFO] [SFWU]   Header: status=20 id=0 gid=1
+[2026-02-16T09:38:49.306Z] [INFO] [SFWU]   Bytes 3-14 LE: min=1660944384 nom=-419233792 max=-838402048
+[2026-02-16T09:38:49.308Z] [INFO] [SFWU]   Bytes 3-14 BE: min=99 nom=999 max=1998
+[2026-02-16T09:38:49.309Z] [INFO] [SFWU] Parsed: ID=0 Name='1 Ethiopia' Min=99 Nom=999 Max=1998 Carafe=1 Ingredients=0
+[2026-02-16T09:38:49.311Z] [INFO] [Customizer] Recipe loaded: "1 Ethiopia" min=0.99 nom=9.99 max=19.98 ingredients=0
+[2026-02-16T09:38:51.552Z] [INFO] [Customizer] Order: menuId=0 gravimetric=false customVolume=9.99 globalNom=9.99
+[2026-02-16T09:38:51.560Z] [INFO] [TopBrewer] Starting Session...
+[2026-02-16T09:38:51.767Z] [INFO] [SFWU] SEND  (18 bytes)
+    HEX: AA 01 01 02 00 C4 00 00 00 00 00 02 01 00 AC 70 AF 26
+[2026-02-16T09:38:51.770Z] [INFO] [TopBrewer] SEND CustomOrder(ID=0, Ings=0) (18 bytes)
+    HEX: AA 01 01 02 00 C4 00 00 00 00 00 02 01 00 AC 70 AF 26
+[2026-02-16T09:38:51.948Z] [DEBUG] [TopBrewer] Received Brew Status data but failed to parse
+    DATA: {"0":7,"1":20,"2":1,"3":2,"4":0,"5":0,"6":0,"7":115,"8":68,"9":0,"10":0,"11":33}
+[2026-02-16T09:38:51.977Z] [DEBUG] [TopBrewer] Received Brew Status data but failed to parse
+    DATA: {"0":6,"1":20,"2":1,"3":2,"4":0,"5":0,"6":0,"7":115,"8":68,"9":0,"10":0,"11":33}
+[2026-02-16T09:38:52.025Z] [DEBUG] [TopBrewer] Received Brew Status data but failed to parse
+    DATA: {"0":6,"1":20,"2":1,"3":2,"4":0,"5":0,"6":0,"7":115,"8":68,"9":0,"10":0,"11":33}
+[2026-02-16T09:38:52.046Z] [INFO] [SFWU] RECV  (105 bytes)
+    HEX: AA 01 04 01 00 06 20 78 00 00 00 59 7B 22 6F 72 64 65 72 22 3A 7B 22 4F 72 69 67 69 6E 22 3A 7B 22 49 64 22 3A 22 31 30 33 30 22 2C 22 46 57 22 3A 31 34 30 38 30 2C 22 53 4E 22 3A 35 37 30 31 30 37 33 7D 2C 22 70 72 6F 64 75 63 74 22 3A 22 31 20 45 74 68 69 6F 70 69 61 22 2C 22 67 69 64 22 3A 31 7D 7D A9 45 4E 33
+[2026-02-16T09:38:52.047Z] [INFO] [TopBrewer] RX Pkt: CMD=0x6 LEN=89
+[2026-02-16T09:39:07.676Z] [DEBUG] [TopBrewer] Received Brew Status data but failed to parse
+    DATA: {"0":0,"1":20,"2":1,"3":1,"4":0,"5":0,"6":0,"7":0,"8":0,"9":0,"10":0,"11":33}
+[2026-02-16T09:39:14.064Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 79 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 96 63 FA 93
+[2026-02-16T09:39:14.067Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:39:14.070Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:39:20.001Z] [INFO] [Dashboard] Selected: 1 Ethiopia - Opening Customizer
+[2026-02-16T09:39:20.011Z] [INFO] [Customizer] Requesting details for 1 Ethiopia
+[2026-02-16T09:39:20.013Z] [INFO] [Customizer] Requesting details for 1 Ethiopia
+[2026-02-16T09:39:20.016Z] [INFO] [TopBrewer] Reading drink details characteristic: c0ffee00-2624-46ff-9311-4d7083160100
+[2026-02-16T09:39:20.360Z] [INFO] [TopBrewer] Got drink details: 28 bytes
+[2026-02-16T09:39:20.364Z] [INFO] [SFWU] MenuDetails RAW (28 bytes): 14 00 01 00 00 00 63 00 00 03 e7 00 00 07 ce 01 00 0a 31 20 45 74 68 69 6f 70 69 61
+[2026-02-16T09:39:20.366Z] [INFO] [SFWU]   Header: status=20 id=0 gid=1
+[2026-02-16T09:39:20.371Z] [INFO] [SFWU]   Bytes 3-14 LE: min=1660944384 nom=-419233792 max=-838402048
+[2026-02-16T09:39:20.373Z] [INFO] [SFWU]   Bytes 3-14 BE: min=99 nom=999 max=1998
+[2026-02-16T09:39:20.375Z] [INFO] [SFWU] Parsed: ID=0 Name='1 Ethiopia' Min=99 Nom=999 Max=1998 Carafe=1 Ingredients=0
+[2026-02-16T09:39:20.378Z] [INFO] [Customizer] Recipe loaded: "1 Ethiopia" min=0.99 nom=9.99 max=19.98 ingredients=0
+[2026-02-16T09:39:20.381Z] [INFO] [TopBrewer] Reading drink details characteristic: c0ffee00-2624-46ff-9311-4d7083160100
+[2026-02-16T09:39:20.598Z] [INFO] [TopBrewer] Got drink details: 28 bytes
+[2026-02-16T09:39:20.600Z] [INFO] [SFWU] MenuDetails RAW (28 bytes): 14 00 01 00 00 00 63 00 00 03 e7 00 00 07 ce 01 00 0a 31 20 45 74 68 69 6f 70 69 61
+[2026-02-16T09:39:20.601Z] [INFO] [SFWU]   Header: status=20 id=0 gid=1
+[2026-02-16T09:39:20.603Z] [INFO] [SFWU]   Bytes 3-14 LE: min=1660944384 nom=-419233792 max=-838402048
+[2026-02-16T09:39:20.605Z] [INFO] [SFWU]   Bytes 3-14 BE: min=99 nom=999 max=1998
+[2026-02-16T09:39:20.606Z] [INFO] [SFWU] Parsed: ID=0 Name='1 Ethiopia' Min=99 Nom=999 Max=1998 Carafe=1 Ingredients=0
+[2026-02-16T09:39:20.607Z] [INFO] [Customizer] Recipe loaded: "1 Ethiopia" min=0.99 nom=9.99 max=19.98 ingredients=0
+[2026-02-16T09:39:21.272Z] [INFO] [Customizer] Order: menuId=0 gravimetric=false customVolume=9.99 globalNom=9.99
+[2026-02-16T09:39:21.274Z] [INFO] [TopBrewer] Starting Session...
+[2026-02-16T09:39:21.486Z] [INFO] [SFWU] SEND  (18 bytes)
+    HEX: AA 01 01 02 00 C4 00 00 00 00 00 02 01 00 AC 70 AF 26
+[2026-02-16T09:39:21.487Z] [INFO] [TopBrewer] SEND CustomOrder(ID=0, Ings=0) (18 bytes)
+    HEX: AA 01 01 02 00 C4 00 00 00 00 00 02 01 00 AC 70 AF 26
+[2026-02-16T09:39:21.618Z] [DEBUG] [TopBrewer] Received Brew Status data but failed to parse
+    DATA: {"0":7,"1":20,"2":1,"3":2,"4":0,"5":0,"6":0,"7":115,"8":69,"9":0,"10":0,"11":33}
+[2026-02-16T09:39:21.672Z] [DEBUG] [TopBrewer] Received Brew Status data but failed to parse
+    DATA: {"0":6,"1":20,"2":1,"3":2,"4":0,"5":0,"6":0,"7":115,"8":69,"9":0,"10":0,"11":33}
+[2026-02-16T09:39:21.715Z] [DEBUG] [TopBrewer] Received Brew Status data but failed to parse
+    DATA: {"0":6,"1":20,"2":1,"3":2,"4":0,"5":0,"6":0,"7":115,"8":69,"9":0,"10":0,"11":33}
+[2026-02-16T09:39:21.767Z] [INFO] [SFWU] RECV  (105 bytes)
+    HEX: AA 01 04 01 00 06 20 7A 00 00 00 59 7B 22 6F 72 64 65 72 22 3A 7B 22 4F 72 69 67 69 6E 22 3A 7B 22 49 64 22 3A 22 31 30 33 30 22 2C 22 46 57 22 3A 31 34 30 38 30 2C 22 53 4E 22 3A 35 37 30 31 30 37 33 7D 2C 22 70 72 6F 64 75 63 74 22 3A 22 31 20 45 74 68 69 6F 70 69 61 22 2C 22 67 69 64 22 3A 31 7D 7D 61 31 83 87
+[2026-02-16T09:39:21.768Z] [INFO] [TopBrewer] RX Pkt: CMD=0x6 LEN=89
+[2026-02-16T09:39:37.363Z] [DEBUG] [TopBrewer] Received Brew Status data but failed to parse
+    DATA: {"0":0,"1":20,"2":1,"3":1,"4":0,"5":0,"6":0,"7":0,"8":0,"9":0,"10":0,"11":33}
+[2026-02-16T09:39:43.658Z] [DEBUG] [TopBrewer] Received Brew Status data but failed to parse
+    DATA: {"0":7,"1":20,"2":1,"3":2,"4":0,"5":0,"6":0,"7":115,"8":70,"9":0,"10":0,"11":33}
+[2026-02-16T09:39:43.705Z] [DEBUG] [TopBrewer] Received Brew Status data but failed to parse
+    DATA: {"0":6,"1":20,"2":1,"3":2,"4":0,"5":0,"6":0,"7":115,"8":70,"9":0,"10":0,"11":33}
+[2026-02-16T09:39:43.754Z] [DEBUG] [TopBrewer] Received Brew Status data but failed to parse
+    DATA: {"0":6,"1":20,"2":1,"3":2,"4":0,"5":0,"6":0,"7":115,"8":70,"9":0,"10":0,"11":33}
+[2026-02-16T09:39:43.811Z] [INFO] [SFWU] RECV  (102 bytes)
+    HEX: AA 01 04 01 00 06 20 7B 00 00 00 56 7B 22 6F 72 64 65 72 22 3A 7B 22 4F 72 69 67 69 6E 22 3A 7B 22 49 64 22 3A 22 31 30 33 30 22 2C 22 46 57 22 3A 31 34 30 38 30 2C 22 53 4E 22 3A 35 37 30 31 30 37 33 7D 2C 22 70 72 6F 64 75 63 74 22 3A 22 31 32 30 20 41 4D 43 22 2C 22 67 69 64 22 3A 35 7D 7D 80 D0 9D D2
+[2026-02-16T09:39:43.815Z] [INFO] [TopBrewer] RX Pkt: CMD=0x6 LEN=86
+[2026-02-16T09:39:44.239Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 7C 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 1B 40 7D B6
+[2026-02-16T09:39:44.241Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:39:44.243Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:40:14.232Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 7D 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 84 9A FE 28
+[2026-02-16T09:40:14.235Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:40:14.237Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:40:44.252Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 7E 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 FF 84 7C CB
+[2026-02-16T09:40:44.254Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:40:44.256Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:41:14.242Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 7F 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 60 5E FF 55
+[2026-02-16T09:41:14.247Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:41:14.250Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:41:30.903Z] [DEBUG] [TopBrewer] Received Brew Status data but failed to parse
+    DATA: {"0":0,"1":20,"2":1,"3":1,"4":0,"5":0,"6":0,"7":0,"8":0,"9":0,"10":0,"11":33}
+[2026-02-16T09:41:31.122Z] [INFO] [TopBrewer] Reading Menu from Drinks Characteristic...
+[2026-02-16T09:41:31.931Z] [DEBUG] [TopBrewer] Received Drinks Data: 155 bytes. Hex: 14 08 0b 54 4a 44 4b 52 59 30 32 00 01 00 00 0a 31 20 45 74 68 69 6f 70 69 61 01 01 00 00 0b 32 20 4e 69 63 61 72 61 67 75 61 02 01 00 00 08 33 20 42 72 61 7a 69 6c 03 01 00 00 09 34 20 52 6f 62 75 73 74 61 04 04 00 00 02 20 20 05 15 00 00 02 20 20 06 05 00 00 02 20 20 07 08 00 00 0b 31 32 30 20 47 6f 72 67 6f 6e 61 08 05 00 00 07 31 32 30 20 41 4d 43 09 11 00 00 0d 31 32 30 20 50 6f 72 74 6f 66 69 6e 6f 0a 06 00 00 0e 31 32 30 20 43 69 74 79 20 52 6f 61 73 74
+[2026-02-16T09:41:31.933Z] [DEBUG] [SFWU] Binary Menu: Count=11, Status=20
+[2026-02-16T09:41:31.935Z] [INFO] [TopBrewer] Parsed 11 items from Binary Characteristic
+[2026-02-16T09:41:31.938Z] [DEBUG] [TopBrewer]   - ID=0 GID=1 Name='1 Ethiopia'
+[2026-02-16T09:41:31.941Z] [DEBUG] [TopBrewer]   - ID=1 GID=1 Name='2 Nicaragua'
+[2026-02-16T09:41:31.944Z] [DEBUG] [TopBrewer]   - ID=2 GID=1 Name='3 Brazil'
+[2026-02-16T09:41:31.947Z] [DEBUG] [TopBrewer]   - ID=3 GID=1 Name='4 Robusta'
+[2026-02-16T09:41:31.950Z] [DEBUG] [TopBrewer]   - ID=4 GID=4 Name='  '
+[2026-02-16T09:41:31.953Z] [DEBUG] [TopBrewer]   - ID=5 GID=21 Name='  '
+[2026-02-16T09:41:31.955Z] [DEBUG] [TopBrewer]   - ID=6 GID=5 Name='  '
+[2026-02-16T09:41:31.958Z] [DEBUG] [TopBrewer]   - ID=7 GID=8 Name='120 Gorgona'
+[2026-02-16T09:41:31.961Z] [DEBUG] [TopBrewer]   - ID=8 GID=5 Name='120 AMC'
+[2026-02-16T09:41:31.963Z] [DEBUG] [TopBrewer]   - ID=9 GID=17 Name='120 Portofino'
+[2026-02-16T09:41:31.966Z] [DEBUG] [TopBrewer]   - ID=10 GID=6 Name='120 City Roast'
+[2026-02-16T09:41:31.970Z] [INFO] [TopBrewer] Reading Menu from Drinks Characteristic...
+[2026-02-16T09:41:32.857Z] [DEBUG] [TopBrewer] Received Drinks Data: 155 bytes. Hex: 14 08 0b 54 4a 44 4b 52 59 30 32 00 01 00 00 0a 31 20 45 74 68 69 6f 70 69 61 01 01 00 00 0b 32 20 4e 69 63 61 72 61 67 75 61 02 01 00 00 08 33 20 42 72 61 7a 69 6c 03 01 00 00 09 34 20 52 6f 62 75 73 74 61 04 04 00 00 02 20 20 05 15 00 00 02 20 20 06 05 00 00 02 20 20 07 08 00 00 0b 31 32 30 20 47 6f 72 67 6f 6e 61 08 05 00 00 07 31 32 30 20 41 4d 43 09 11 00 00 0d 31 32 30 20 50 6f 72 74 6f 66 69 6e 6f 0a 06 00 00 0e 31 32 30 20 43 69 74 79 20 52 6f 61 73 74
+[2026-02-16T09:41:32.859Z] [DEBUG] [SFWU] Binary Menu: Count=11, Status=20
+[2026-02-16T09:41:32.861Z] [INFO] [TopBrewer] Parsed 11 items from Binary Characteristic
+[2026-02-16T09:41:32.863Z] [DEBUG] [TopBrewer]   - ID=0 GID=1 Name='1 Ethiopia'
+[2026-02-16T09:41:32.865Z] [DEBUG] [TopBrewer]   - ID=1 GID=1 Name='2 Nicaragua'
+[2026-02-16T09:41:32.867Z] [DEBUG] [TopBrewer]   - ID=2 GID=1 Name='3 Brazil'
+[2026-02-16T09:41:32.868Z] [DEBUG] [TopBrewer]   - ID=3 GID=1 Name='4 Robusta'
+[2026-02-16T09:41:32.870Z] [DEBUG] [TopBrewer]   - ID=4 GID=4 Name='  '
+[2026-02-16T09:41:32.872Z] [DEBUG] [TopBrewer]   - ID=5 GID=21 Name='  '
+[2026-02-16T09:41:32.874Z] [DEBUG] [TopBrewer]   - ID=6 GID=5 Name='  '
+[2026-02-16T09:41:32.876Z] [DEBUG] [TopBrewer]   - ID=7 GID=8 Name='120 Gorgona'
+[2026-02-16T09:41:32.878Z] [DEBUG] [TopBrewer]   - ID=8 GID=5 Name='120 AMC'
+[2026-02-16T09:41:32.880Z] [DEBUG] [TopBrewer]   - ID=9 GID=17 Name='120 Portofino'
+[2026-02-16T09:41:32.881Z] [DEBUG] [TopBrewer]   - ID=10 GID=6 Name='120 City Roast'
+[2026-02-16T09:41:43.279Z] [INFO] [SiloManager] Connecting to ws://10.0.124.90:8765/?auth=silo-secret...
+[2026-02-16T09:41:43.284Z] [INFO] [SiloManager] Connecting to ws://10.0.124.90:8765/?auth=silo-secret...
+[2026-02-16T09:41:43.354Z] [INFO] [TopBrewer] Initialized with Remote BLE Adapter (Pi Relay)
+[2026-02-16T09:41:43.362Z] [INFO] [TopBrewer] Initialized with Remote BLE Adapter (Pi Relay)
+[2026-02-16T09:41:43.370Z] [INFO] [SiloManager] Connected to SiloOS Bridge
+[2026-02-16T09:41:43.384Z] [INFO] [SiloManager] Connected to SiloOS Bridge
+[2026-02-16T09:41:43.566Z] [INFO] [RemoteBLE] Connected to Remote Relay
+[2026-02-16T09:41:43.568Z] [INFO] [TopBrewer] Connection state: connected
+[2026-02-16T09:41:43.571Z] [INFO] [TopBrewer] Notifications set up
+[2026-02-16T09:41:43.573Z] [INFO] [RemoteBLE] Connected to Remote Relay
+[2026-02-16T09:41:43.577Z] [INFO] [TopBrewer] Connection state: connected
+[2026-02-16T09:41:43.580Z] [INFO] [Dashboard] Machine connected. Requesting menu...
+[2026-02-16T09:41:43.586Z] [INFO] [TopBrewer] Notifications set up
+[2026-02-16T09:41:43.595Z] [INFO] [TopBrewer] Connection state: connected
+[2026-02-16T09:41:44.215Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 80 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 36 35 97 1D
+[2026-02-16T09:41:44.216Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:41:44.218Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:42:14.247Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 81 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 A9 EF 14 83
+[2026-02-16T09:42:14.249Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:42:14.250Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:42:44.226Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 82 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 D2 F1 96 60
+[2026-02-16T09:42:44.229Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:42:44.230Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:43:14.255Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 83 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 4D 2B 15 FE
+[2026-02-16T09:43:14.258Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:43:14.259Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:43:44.240Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 84 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 24 CC 93 A6
+[2026-02-16T09:43:44.243Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:43:44.244Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:44:14.223Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 85 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 BB 16 10 38
+[2026-02-16T09:44:14.225Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:44:14.226Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:44:44.251Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 86 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 C0 08 92 DB
+[2026-02-16T09:44:44.253Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:44:44.255Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:45:14.245Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 87 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 5F D2 11 45
+[2026-02-16T09:45:14.248Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:45:14.252Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:45:44.214Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 88 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 13 C7 9E 6B
+[2026-02-16T09:45:44.219Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:45:44.221Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:46:14.252Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 89 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 8C 1D 1D F5
+[2026-02-16T09:46:14.254Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:46:14.257Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:46:32.236Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T09:46:32.333Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T09:46:32.382Z] [INFO] [SFWU] RECV  (105 bytes)
+    HEX: AA 01 04 01 00 06 20 8A 00 00 00 59 7B 22 6F 72 64 65 72 22 3A 7B 22 4F 72 69 67 69 6E 22 3A 7B 22 49 64 22 3A 22 31 30 33 30 22 2C 22 46 57 22 3A 31 34 30 38 30 2C 22 53 4E 22 3A 35 37 30 31 30 37 33 7D 2C 22 70 72 6F 64 75 63 74 22 3A 22 31 20 45 74 68 69 6F 70 69 61 22 2C 22 67 69 64 22 3A 31 7D 7D 02 85 5B D3
+[2026-02-16T09:46:32.384Z] [INFO] [TopBrewer] RX Pkt: CMD=0x6 LEN=89
+[2026-02-16T09:46:44.328Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 8B 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 68 D9 1C 88
+[2026-02-16T09:46:44.331Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:46:44.334Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:46:47.979Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T09:46:58.075Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T09:46:58.122Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T09:46:58.170Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T09:46:58.178Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T09:46:58.217Z] [INFO] [SFWU] RECV  (105 bytes)
+    HEX: AA 01 04 01 00 06 20 8C 00 00 00 59 7B 22 6F 72 64 65 72 22 3A 7B 22 4F 72 69 67 69 6E 22 3A 7B 22 49 64 22 3A 22 31 30 33 30 22 2C 22 46 57 22 3A 31 34 30 38 30 2C 22 53 4E 22 3A 35 37 30 31 30 37 33 7D 2C 22 70 72 6F 64 75 63 74 22 3A 22 31 20 45 74 68 69 6F 70 69 61 22 2C 22 67 69 64 22 3A 31 7D 7D 81 69 0B 4E
+[2026-02-16T09:46:58.219Z] [INFO] [TopBrewer] RX Pkt: CMD=0x6 LEN=89
+[2026-02-16T09:46:58.221Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T09:47:03.291Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T09:47:03.338Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T09:47:03.388Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T09:47:03.433Z] [INFO] [SFWU] RECV  (105 bytes)
+    HEX: AA 01 04 01 00 06 20 8D 00 00 00 59 7B 22 6F 72 64 65 72 22 3A 7B 22 4F 72 69 67 69 6E 22 3A 7B 22 49 64 22 3A 22 31 30 33 30 22 2C 22 46 57 22 3A 31 34 30 38 30 2C 22 53 4E 22 3A 35 37 30 31 30 37 33 7D 2C 22 70 72 6F 64 75 63 74 22 3A 22 31 20 45 74 68 69 6F 70 69 61 22 2C 22 67 69 64 22 3A 31 7D 7D E5 53 6D 94
+[2026-02-16T09:47:03.435Z] [INFO] [TopBrewer] RX Pkt: CMD=0x6 LEN=89
+[2026-02-16T09:47:14.501Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 8E 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 E5 FA 9B AD
+[2026-02-16T09:47:14.503Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:47:14.505Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:47:19.037Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T09:47:26.497Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T09:47:26.593Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T09:47:26.601Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T09:47:26.640Z] [INFO] [SFWU] RECV  (102 bytes)
+    HEX: AA 01 04 01 00 06 20 8F 00 00 00 56 7B 22 6F 72 64 65 72 22 3A 7B 22 4F 72 69 67 69 6E 22 3A 7B 22 49 64 22 3A 22 31 30 33 30 22 2C 22 46 57 22 3A 31 34 30 38 30 2C 22 53 4E 22 3A 35 37 30 31 30 37 33 7D 2C 22 70 72 6F 64 75 63 74 22 3A 22 31 32 30 20 41 4D 43 22 2C 22 67 69 64 22 3A 35 7D 7D 07 2E AD 34
+[2026-02-16T09:47:26.643Z] [INFO] [TopBrewer] RX Pkt: CMD=0x6 LEN=86
+[2026-02-16T09:47:44.631Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 90 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 7D D1 85 F1
+[2026-02-16T09:47:44.634Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:47:44.636Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:48:14.610Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 91 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 E2 0B 06 6F
+[2026-02-16T09:48:14.613Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:48:14.615Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:48:44.593Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 92 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 99 15 84 8C
+[2026-02-16T09:48:44.597Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:48:44.599Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:49:13.794Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T09:49:14.623Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 93 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 06 CF 07 12
+[2026-02-16T09:49:14.626Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:49:14.629Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:49:44.607Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 94 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 6F 28 81 4A
+[2026-02-16T09:49:44.610Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:49:44.613Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:49:54.307Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T09:49:54.405Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T09:49:54.413Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T09:49:54.455Z] [INFO] [SFWU] RECV  (106 bytes)
+    HEX: AA 01 04 01 00 06 20 95 00 00 00 5A 7B 22 6F 72 64 65 72 22 3A 7B 22 4F 72 69 67 69 6E 22 3A 7B 22 49 64 22 3A 22 31 30 33 30 22 2C 22 46 57 22 3A 31 34 30 38 30 2C 22 53 4E 22 3A 35 37 30 31 30 37 33 7D 2C 22 70 72 6F 64 75 63 74 22 3A 22 32 20 4E 69 63 61 72 61 67 75 61 22 2C 22 67 69 64 22 3A 31 7D 7D 42 B1 3A F0
+[2026-02-16T09:49:54.456Z] [INFO] [TopBrewer] RX Pkt: CMD=0x6 LEN=90
+[2026-02-16T09:50:14.688Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 96 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 8B EC 80 37
+[2026-02-16T09:50:14.692Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:50:14.694Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:50:18.245Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T09:50:44.715Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 97 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 14 36 03 A9
+[2026-02-16T09:50:44.720Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:50:44.723Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:51:14.802Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 98 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 58 23 8C 87
+[2026-02-16T09:51:14.806Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:51:14.809Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:51:44.726Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 99 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 C7 F9 0F 19
+[2026-02-16T09:51:44.729Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:51:44.732Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:52:01.417Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T09:52:01.497Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T09:52:01.504Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T09:52:01.551Z] [INFO] [SFWU] RECV  (103 bytes)
+    HEX: AA 01 04 01 00 06 20 9A 00 00 00 57 7B 22 6F 72 64 65 72 22 3A 7B 22 4F 72 69 67 69 6E 22 3A 7B 22 49 64 22 3A 22 31 30 33 30 22 2C 22 46 57 22 3A 31 34 30 38 30 2C 22 53 4E 22 3A 35 37 30 31 30 37 33 7D 2C 22 70 72 6F 64 75 63 74 22 3A 22 33 20 42 72 61 7A 69 6C 22 2C 22 67 69 64 22 3A 31 7D 7D 60 E9 61 E5
+[2026-02-16T09:52:01.553Z] [INFO] [TopBrewer] RX Pkt: CMD=0x6 LEN=87
+[2026-02-16T09:52:14.809Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 9B 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 23 3D 0E 64
+[2026-02-16T09:52:14.812Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:52:14.815Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:52:17.145Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T09:52:44.790Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 9C 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 4A DA 88 3C
+[2026-02-16T09:52:44.793Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:52:44.794Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:53:14.819Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 9D 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 D5 00 0B A2
+[2026-02-16T09:53:14.823Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:53:14.827Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:53:44.807Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 9E 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 AE 1E 89 41
+[2026-02-16T09:53:44.811Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:53:44.812Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:54:14.791Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 9F 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 31 C4 0A DF
+[2026-02-16T09:54:14.795Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:54:14.798Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:54:44.825Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 A0 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 A1 FD B2 C5
+[2026-02-16T09:54:44.829Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:54:44.834Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:55:14.799Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 A1 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 3E 27 31 5B
+[2026-02-16T09:55:14.803Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:55:14.805Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:55:44.784Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 A2 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 45 39 B3 B8
+[2026-02-16T09:55:44.787Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:55:44.789Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:56:14.804Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 A3 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 DA E3 30 26
+[2026-02-16T09:56:14.806Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:56:14.809Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:56:16.101Z] [INFO] [TopBrewer] Reading Menu from Drinks Characteristic...
+[2026-02-16T09:56:16.467Z] [DEBUG] [TopBrewer] Received Drinks Data: 155 bytes. Hex: 14 08 0b 54 4a 44 4b 52 59 30 32 00 01 00 00 0a 31 20 45 74 68 69 6f 70 69 61 01 01 00 00 0b 32 20 4e 69 63 61 72 61 67 75 61 02 01 00 00 08 33 20 42 72 61 7a 69 6c 03 01 00 00 09 34 20 52 6f 62 75 73 74 61 04 04 00 00 02 20 20 05 15 00 00 02 20 20 06 05 00 00 02 20 20 07 08 00 00 0b 31 32 30 20 47 6f 72 67 6f 6e 61 08 05 00 00 07 31 32 30 20 41 4d 43 09 11 00 00 0d 31 32 30 20 50 6f 72 74 6f 66 69 6e 6f 0a 06 00 00 0e 31 32 30 20 43 69 74 79 20 52 6f 61 73 74
+[2026-02-16T09:56:16.470Z] [DEBUG] [SFWU] Binary Menu: Count=11, Status=20
+[2026-02-16T09:56:16.472Z] [INFO] [TopBrewer] Parsed 11 items from Binary Characteristic
+[2026-02-16T09:56:16.476Z] [DEBUG] [TopBrewer]   - ID=0 GID=1 Name='1 Ethiopia'
+[2026-02-16T09:56:16.478Z] [DEBUG] [TopBrewer]   - ID=1 GID=1 Name='2 Nicaragua'
+[2026-02-16T09:56:16.480Z] [DEBUG] [TopBrewer]   - ID=2 GID=1 Name='3 Brazil'
+[2026-02-16T09:56:16.483Z] [DEBUG] [TopBrewer]   - ID=3 GID=1 Name='4 Robusta'
+[2026-02-16T09:56:16.485Z] [DEBUG] [TopBrewer]   - ID=4 GID=4 Name='  '
+[2026-02-16T09:56:16.487Z] [DEBUG] [TopBrewer]   - ID=5 GID=21 Name='  '
+[2026-02-16T09:56:16.490Z] [DEBUG] [TopBrewer]   - ID=6 GID=5 Name='  '
+[2026-02-16T09:56:16.492Z] [DEBUG] [TopBrewer]   - ID=7 GID=8 Name='120 Gorgona'
+[2026-02-16T09:56:16.494Z] [DEBUG] [TopBrewer]   - ID=8 GID=5 Name='120 AMC'
+[2026-02-16T09:56:16.497Z] [DEBUG] [TopBrewer]   - ID=9 GID=17 Name='120 Portofino'
+[2026-02-16T09:56:16.499Z] [DEBUG] [TopBrewer]   - ID=10 GID=6 Name='120 City Roast'
+[2026-02-16T09:56:16.503Z] [INFO] [TopBrewer] Reading Menu from Drinks Characteristic...
+[2026-02-16T09:56:17.249Z] [DEBUG] [TopBrewer] Received Drinks Data: 155 bytes. Hex: 14 08 0b 54 4a 44 4b 52 59 30 32 00 01 00 00 0a 31 20 45 74 68 69 6f 70 69 61 01 01 00 00 0b 32 20 4e 69 63 61 72 61 67 75 61 02 01 00 00 08 33 20 42 72 61 7a 69 6c 03 01 00 00 09 34 20 52 6f 62 75 73 74 61 04 04 00 00 02 20 20 05 15 00 00 02 20 20 06 05 00 00 02 20 20 07 08 00 00 0b 31 32 30 20 47 6f 72 67 6f 6e 61 08 05 00 00 07 31 32 30 20 41 4d 43 09 11 00 00 0d 31 32 30 20 50 6f 72 74 6f 66 69 6e 6f 0a 06 00 00 0e 31 32 30 20 43 69 74 79 20 52 6f 61 73 74
+[2026-02-16T09:56:17.252Z] [DEBUG] [SFWU] Binary Menu: Count=11, Status=20
+[2026-02-16T09:56:17.255Z] [INFO] [TopBrewer] Parsed 11 items from Binary Characteristic
+[2026-02-16T09:56:17.259Z] [DEBUG] [TopBrewer]   - ID=0 GID=1 Name='1 Ethiopia'
+[2026-02-16T09:56:17.261Z] [DEBUG] [TopBrewer]   - ID=1 GID=1 Name='2 Nicaragua'
+[2026-02-16T09:56:17.262Z] [DEBUG] [TopBrewer]   - ID=2 GID=1 Name='3 Brazil'
+[2026-02-16T09:56:17.265Z] [DEBUG] [TopBrewer]   - ID=3 GID=1 Name='4 Robusta'
+[2026-02-16T09:56:17.268Z] [DEBUG] [TopBrewer]   - ID=4 GID=4 Name='  '
+[2026-02-16T09:56:17.269Z] [DEBUG] [TopBrewer]   - ID=5 GID=21 Name='  '
+[2026-02-16T09:56:17.271Z] [DEBUG] [TopBrewer]   - ID=6 GID=5 Name='  '
+[2026-02-16T09:56:17.273Z] [DEBUG] [TopBrewer]   - ID=7 GID=8 Name='120 Gorgona'
+[2026-02-16T09:56:17.275Z] [DEBUG] [TopBrewer]   - ID=8 GID=5 Name='120 AMC'
+[2026-02-16T09:56:17.276Z] [DEBUG] [TopBrewer]   - ID=9 GID=17 Name='120 Portofino'
+[2026-02-16T09:56:17.278Z] [DEBUG] [TopBrewer]   - ID=10 GID=6 Name='120 City Roast'
+[2026-02-16T09:56:26.749Z] [INFO] [SiloManager] Connecting to ws://10.0.124.90:8765/?auth=silo-secret...
+[2026-02-16T09:56:26.757Z] [INFO] [SiloManager] Connecting to ws://10.0.124.90:8765/?auth=silo-secret...
+[2026-02-16T09:56:26.830Z] [INFO] [TopBrewer] Initialized with Remote BLE Adapter (Pi Relay)
+[2026-02-16T09:56:26.836Z] [INFO] [TopBrewer] Initialized with Remote BLE Adapter (Pi Relay)
+[2026-02-16T09:56:26.845Z] [INFO] [SiloManager] Connected to SiloOS Bridge
+[2026-02-16T09:56:26.857Z] [INFO] [SiloManager] Connected to SiloOS Bridge
+[2026-02-16T09:56:27.024Z] [INFO] [RemoteBLE] Connected to Remote Relay
+[2026-02-16T09:56:27.026Z] [INFO] [TopBrewer] Connection state: connected
+[2026-02-16T09:56:27.031Z] [INFO] [TopBrewer] Notifications set up
+[2026-02-16T09:56:27.032Z] [INFO] [RemoteBLE] Connected to Remote Relay
+[2026-02-16T09:56:27.034Z] [INFO] [TopBrewer] Connection state: connected
+[2026-02-16T09:56:27.036Z] [INFO] [Dashboard] Machine connected. Requesting menu...
+[2026-02-16T09:56:27.038Z] [INFO] [TopBrewer] Reading Menu from Drinks Characteristic...
+[2026-02-16T09:56:27.043Z] [INFO] [TopBrewer] Notifications set up
+[2026-02-16T09:56:27.052Z] [INFO] [TopBrewer] Connection state: connected
+[2026-02-16T09:56:27.823Z] [DEBUG] [TopBrewer] Received Drinks Data: 155 bytes. Hex: 14 08 0b 54 4a 44 4b 52 59 30 32 00 01 00 00 0a 31 20 45 74 68 69 6f 70 69 61 01 01 00 00 0b 32 20 4e 69 63 61 72 61 67 75 61 02 01 00 00 08 33 20 42 72 61 7a 69 6c 03 01 00 00 09 34 20 52 6f 62 75 73 74 61 04 04 00 00 02 20 20 05 15 00 00 02 20 20 06 05 00 00 02 20 20 07 08 00 00 0b 31 32 30 20 47 6f 72 67 6f 6e 61 08 05 00 00 07 31 32 30 20 41 4d 43 09 11 00 00 0d 31 32 30 20 50 6f 72 74 6f 66 69 6e 6f 0a 06 00 00 0e 31 32 30 20 43 69 74 79 20 52 6f 61 73 74
+[2026-02-16T09:56:27.826Z] [DEBUG] [SFWU] Binary Menu: Count=11, Status=20
+[2026-02-16T09:56:27.827Z] [INFO] [TopBrewer] Parsed 11 items from Binary Characteristic
+[2026-02-16T09:56:27.828Z] [DEBUG] [TopBrewer]   - ID=0 GID=1 Name='1 Ethiopia'
+[2026-02-16T09:56:27.829Z] [DEBUG] [TopBrewer]   - ID=1 GID=1 Name='2 Nicaragua'
+[2026-02-16T09:56:27.831Z] [DEBUG] [TopBrewer]   - ID=2 GID=1 Name='3 Brazil'
+[2026-02-16T09:56:27.832Z] [DEBUG] [TopBrewer]   - ID=3 GID=1 Name='4 Robusta'
+[2026-02-16T09:56:27.835Z] [DEBUG] [TopBrewer]   - ID=4 GID=4 Name='  '
+[2026-02-16T09:56:27.836Z] [DEBUG] [TopBrewer]   - ID=5 GID=21 Name='  '
+[2026-02-16T09:56:27.837Z] [DEBUG] [TopBrewer]   - ID=6 GID=5 Name='  '
+[2026-02-16T09:56:27.839Z] [DEBUG] [TopBrewer]   - ID=7 GID=8 Name='120 Gorgona'
+[2026-02-16T09:56:27.841Z] [DEBUG] [TopBrewer]   - ID=8 GID=5 Name='120 AMC'
+[2026-02-16T09:56:27.843Z] [DEBUG] [TopBrewer]   - ID=9 GID=17 Name='120 Portofino'
+[2026-02-16T09:56:27.846Z] [DEBUG] [TopBrewer]   - ID=10 GID=6 Name='120 City Roast'
+[2026-02-16T09:56:44.797Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 A4 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 B3 04 B6 7E
+[2026-02-16T09:56:44.800Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:56:44.802Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:57:14.768Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 A5 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 2C DE 35 E0
+[2026-02-16T09:57:14.770Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:57:14.773Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:57:44.827Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 A6 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 57 C0 B7 03
+[2026-02-16T09:57:44.830Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:57:44.832Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:58:10.978Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T09:58:11.030Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T09:58:11.076Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T09:58:11.133Z] [INFO] [SFWU] RECV  (105 bytes)
+    HEX: AA 01 04 01 00 06 20 A7 00 00 00 59 7B 22 6F 72 64 65 72 22 3A 7B 22 4F 72 69 67 69 6E 22 3A 7B 22 49 64 22 3A 22 31 30 33 30 22 2C 22 46 57 22 3A 31 34 30 38 30 2C 22 53 4E 22 3A 35 37 30 31 30 37 33 7D 2C 22 70 72 6F 64 75 63 74 22 3A 22 31 20 45 74 68 69 6F 70 69 61 22 2C 22 67 69 64 22 3A 31 7D 7D 8B 41 79 F9
+[2026-02-16T09:58:11.135Z] [INFO] [TopBrewer] RX Pkt: CMD=0x6 LEN=89
+[2026-02-16T09:58:14.882Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 A8 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 84 0F BB B3
+[2026-02-16T09:58:14.884Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:58:14.885Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:58:26.724Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T09:58:41.667Z] [INFO] [Dashboard] Selected: 120 AMC - Opening Customizer
+[2026-02-16T09:58:41.686Z] [INFO] [Customizer] Requesting details for 120 AMC
+[2026-02-16T09:58:41.689Z] [INFO] [Customizer] Requesting details for 120 AMC
+[2026-02-16T09:58:41.694Z] [INFO] [TopBrewer] Reading drink details characteristic: c0ffee00-2624-46ff-9311-4d7083160108
+[2026-02-16T09:58:41.888Z] [INFO] [TopBrewer] Got drink details: 25 bytes
+[2026-02-16T09:58:41.891Z] [INFO] [SFWU] MenuDetails RAW (25 bytes): 14 08 05 00 00 03 e7 00 00 27 0f 00 00 4e 1e 01 00 07 31 32 30 20 41 4d 43
+[2026-02-16T09:58:41.893Z] [INFO] [SFWU]   Header: status=20 id=8 gid=5
+[2026-02-16T09:58:41.901Z] [INFO] [SFWU]   Bytes 3-14 LE: min=-419233792 nom=254214144 max=508428288
+[2026-02-16T09:58:41.906Z] [INFO] [SFWU]   Bytes 3-14 BE: min=999 nom=9999 max=19998
+[2026-02-16T09:58:41.911Z] [INFO] [SFWU] Parsed: ID=8 Name='120 AMC' Min=999 Nom=9999 Max=19998 Carafe=1 Ingredients=0
+[2026-02-16T09:58:41.919Z] [INFO] [Customizer] Recipe loaded: "120 AMC" min=9.99 nom=99.99 max=199.98 ingredients=0
+[2026-02-16T09:58:41.922Z] [INFO] [TopBrewer] Reading drink details characteristic: c0ffee00-2624-46ff-9311-4d7083160108
+[2026-02-16T09:58:42.129Z] [INFO] [TopBrewer] Got drink details: 25 bytes
+[2026-02-16T09:58:42.132Z] [INFO] [SFWU] MenuDetails RAW (25 bytes): 14 08 05 00 00 03 e7 00 00 27 0f 00 00 4e 1e 01 00 07 31 32 30 20 41 4d 43
+[2026-02-16T09:58:42.133Z] [INFO] [SFWU]   Header: status=20 id=8 gid=5
+[2026-02-16T09:58:42.134Z] [INFO] [SFWU]   Bytes 3-14 LE: min=-419233792 nom=254214144 max=508428288
+[2026-02-16T09:58:42.136Z] [INFO] [SFWU]   Bytes 3-14 BE: min=999 nom=9999 max=19998
+[2026-02-16T09:58:42.138Z] [INFO] [SFWU] Parsed: ID=8 Name='120 AMC' Min=999 Nom=9999 Max=19998 Carafe=1 Ingredients=0
+[2026-02-16T09:58:42.139Z] [INFO] [Customizer] Recipe loaded: "120 AMC" min=9.99 nom=99.99 max=199.98 ingredients=0
+[2026-02-16T09:58:43.342Z] [INFO] [Customizer] Order: menuId=8 gravimetric=false customVolume=99.99 globalNom=99.99
+[2026-02-16T09:58:43.349Z] [INFO] [TopBrewer] Starting Session...
+[2026-02-16T09:58:43.557Z] [INFO] [SFWU] SEND  (18 bytes)
+    HEX: AA 01 01 02 00 C4 00 00 00 00 00 02 01 08 A2 AB 27 14
+[2026-02-16T09:58:43.559Z] [INFO] [TopBrewer] SEND CustomOrder(ID=8, Ings=0) (18 bytes)
+    HEX: AA 01 01 02 00 C4 00 00 00 00 00 02 01 08 A2 AB 27 14
+[2026-02-16T09:58:43.693Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T09:58:43.788Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T09:58:43.846Z] [INFO] [SFWU] RECV  (102 bytes)
+    HEX: AA 01 04 01 00 06 20 A9 00 00 00 56 7B 22 6F 72 64 65 72 22 3A 7B 22 4F 72 69 67 69 6E 22 3A 7B 22 49 64 22 3A 22 31 30 33 30 22 2C 22 46 57 22 3A 31 34 30 38 30 2C 22 53 4E 22 3A 35 37 30 31 30 37 33 7D 2C 22 70 72 6F 64 75 63 74 22 3A 22 31 32 30 20 41 4D 43 22 2C 22 67 69 64 22 3A 35 7D 7D 57 00 DA 3C
+[2026-02-16T09:58:43.847Z] [INFO] [TopBrewer] RX Pkt: CMD=0x6 LEN=86
+[2026-02-16T09:58:44.959Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 AA 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 60 CB BA CE
+[2026-02-16T09:58:44.963Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:58:44.964Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:59:14.988Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 AB 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 FF 11 39 50
+[2026-02-16T09:59:14.991Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:59:14.992Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T09:59:44.977Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 AC 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 96 F6 BF 08
+[2026-02-16T09:59:44.979Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T09:59:44.980Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T10:00:14.999Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 AD 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 09 2C 3C 96
+[2026-02-16T10:00:15.002Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:00:15.003Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T10:00:27.920Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:00:44.988Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 AE 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 72 32 BE 75
+[2026-02-16T10:00:44.990Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:00:44.992Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T10:01:07.393Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:01:07.405Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:01:07.407Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:01:07.426Z] [INFO] [SFWU] RECV  (105 bytes)
+    HEX: AA 01 04 01 00 06 20 AF 00 00 00 59 7B 22 6F 72 64 65 72 22 3A 7B 22 4F 72 69 67 69 6E 22 3A 7B 22 49 64 22 3A 22 31 30 33 30 22 2C 22 46 57 22 3A 31 34 30 38 30 2C 22 53 4E 22 3A 35 37 30 31 30 37 33 7D 2C 22 70 72 6F 64 75 63 74 22 3A 22 31 20 45 74 68 69 6F 70 69 61 22 2C 22 67 69 64 22 3A 31 7D 7D 1C 70 43 AB
+[2026-02-16T10:01:07.431Z] [INFO] [TopBrewer] RX Pkt: CMD=0x6 LEN=89
+[2026-02-16T10:01:07.688Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:01:07.699Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:01:15.063Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 B0 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 EA 19 A0 29
+[2026-02-16T10:01:15.065Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:01:15.066Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T10:01:16.577Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:01:16.672Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:01:16.727Z] [INFO] [SFWU] RECV  (105 bytes)
+    HEX: AA 01 04 01 00 06 20 B1 00 00 00 59 7B 22 6F 72 64 65 72 22 3A 7B 22 4F 72 69 67 69 6E 22 3A 7B 22 49 64 22 3A 22 31 30 33 30 22 2C 22 46 57 22 3A 31 34 30 38 30 2C 22 53 4E 22 3A 35 37 30 31 30 37 33 7D 2C 22 70 72 6F 64 75 63 74 22 3A 22 31 20 45 74 68 69 6F 70 69 61 22 2C 22 67 69 64 22 3A 31 7D 7D FD BE 5B 81
+[2026-02-16T10:01:16.729Z] [INFO] [TopBrewer] RX Pkt: CMD=0x6 LEN=89
+[2026-02-16T10:01:16.815Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:01:16.817Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:01:21.349Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:01:21.400Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:01:21.458Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:01:21.543Z] [INFO] [SFWU] RECV  (105 bytes)
+    HEX: AA 01 04 01 00 06 20 B2 00 00 00 59 7B 22 6F 72 64 65 72 22 3A 7B 22 4F 72 69 67 69 6E 22 3A 7B 22 49 64 22 3A 22 31 30 33 30 22 2C 22 46 57 22 3A 31 34 30 38 30 2C 22 53 4E 22 3A 35 37 30 31 30 37 33 7D 2C 22 70 72 6F 64 75 63 74 22 3A 22 31 20 45 74 68 69 6F 70 69 61 22 2C 22 67 69 64 22 3A 31 7D 7D 51 F0 F0 EF
+[2026-02-16T10:01:21.545Z] [INFO] [TopBrewer] RX Pkt: CMD=0x6 LEN=89
+[2026-02-16T10:01:37.094Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:01:45.240Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 B3 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 91 07 22 CA
+[2026-02-16T10:01:45.242Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:01:45.244Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T10:01:49.481Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:01:49.492Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:01:49.542Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:01:49.576Z] [INFO] [SFWU] RECV  (106 bytes)
+    HEX: AA 01 04 01 00 06 20 B4 00 00 00 5A 7B 22 6F 72 64 65 72 22 3A 7B 22 4F 72 69 67 69 6E 22 3A 7B 22 49 64 22 3A 22 31 30 33 30 22 2C 22 46 57 22 3A 31 34 30 38 30 2C 22 53 4E 22 3A 35 37 30 31 30 37 33 7D 2C 22 70 72 6F 64 75 63 74 22 3A 22 32 20 4E 69 63 61 72 61 67 75 61 22 2C 22 67 69 64 22 3A 31 7D 7D 5E 88 36 17
+[2026-02-16T10:01:49.578Z] [INFO] [TopBrewer] RX Pkt: CMD=0x6 LEN=90
+[2026-02-16T10:02:13.367Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:02:15.368Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 B5 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 67 3A 27 0C
+[2026-02-16T10:02:15.371Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:02:15.372Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T10:02:22.972Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:02:23.069Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:02:23.078Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:02:23.123Z] [INFO] [SFWU] RECV  (106 bytes)
+    HEX: AA 01 04 01 00 06 20 B6 00 00 00 5A 7B 22 6F 72 64 65 72 22 3A 7B 22 4F 72 69 67 69 6E 22 3A 7B 22 49 64 22 3A 22 31 30 33 30 22 2C 22 46 57 22 3A 31 34 30 38 30 2C 22 53 4E 22 3A 35 37 30 31 30 37 33 7D 2C 22 70 72 6F 64 75 63 74 22 3A 22 32 20 4E 69 63 61 72 61 67 75 61 22 2C 22 67 69 64 22 3A 31 7D 7D 92 4C 35 4F
+[2026-02-16T10:02:23.126Z] [INFO] [TopBrewer] RX Pkt: CMD=0x6 LEN=90
+[2026-02-16T10:02:23.361Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:02:23.363Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:02:36.574Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:02:36.622Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:02:36.669Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:02:36.716Z] [INFO] [SFWU] RECV  (106 bytes)
+    HEX: AA 01 04 01 00 06 20 B7 00 00 00 5A 7B 22 6F 72 64 65 72 22 3A 7B 22 4F 72 69 67 69 6E 22 3A 7B 22 49 64 22 3A 22 31 30 33 30 22 2C 22 46 57 22 3A 31 34 30 38 30 2C 22 53 4E 22 3A 35 37 30 31 30 37 33 7D 2C 22 70 72 6F 64 75 63 74 22 3A 22 32 20 4E 69 63 61 72 61 67 75 61 22 2C 22 67 69 64 22 3A 31 7D 7D F4 2E 34 E3
+[2026-02-16T10:02:36.717Z] [INFO] [TopBrewer] RX Pkt: CMD=0x6 LEN=90
+[2026-02-16T10:02:36.962Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:02:37.012Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:02:45.556Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 B8 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 CF EB A9 5F
+[2026-02-16T10:02:45.557Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:02:45.558Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T10:03:15.523Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 B9 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 50 31 2A C1
+[2026-02-16T10:03:15.525Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:03:15.527Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T10:03:45.559Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 BA 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 2B 2F A8 22
+[2026-02-16T10:03:45.561Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:03:45.563Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T10:04:15.537Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 BB 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 B4 F5 2B BC
+[2026-02-16T10:04:15.538Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:04:15.540Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T10:04:45.535Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 BC 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 DD 12 AD E4
+[2026-02-16T10:04:45.537Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:04:45.539Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T10:05:15.547Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 BD 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 42 C8 2E 7A
+[2026-02-16T10:05:15.549Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:05:15.552Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T10:05:45.540Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 BE 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 39 D6 AC 99
+[2026-02-16T10:05:45.544Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:05:45.546Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T10:06:15.637Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 BF 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 A6 0C 2F 07
+[2026-02-16T10:06:15.640Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:06:15.642Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T10:06:45.544Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 C0 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 C2 D4 DA EC
+[2026-02-16T10:06:45.546Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:06:45.547Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T10:07:15.523Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 C1 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 5D 0E 59 72
+[2026-02-16T10:07:15.526Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:07:15.528Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T10:07:45.567Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 C2 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 26 10 DB 91
+[2026-02-16T10:07:45.571Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:07:45.574Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T10:08:15.538Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 C3 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 B9 CA 58 0F
+[2026-02-16T10:08:15.541Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:08:15.544Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T10:08:45.567Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 C4 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 D0 2D DE 57
+[2026-02-16T10:08:45.570Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:08:45.574Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T10:09:15.557Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 C5 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 4F F7 5D C9
+[2026-02-16T10:09:15.560Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:09:15.564Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T10:09:45.532Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 C6 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 34 E9 DF 2A
+[2026-02-16T10:09:45.535Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:09:45.537Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T10:10:15.517Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 C7 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 AB 33 5C B4
+[2026-02-16T10:10:15.520Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:10:15.523Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T10:10:45.560Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 C8 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 E7 26 D3 9A
+[2026-02-16T10:10:45.563Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:10:45.566Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T10:11:02.217Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:11:02.265Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:11:02.314Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:11:02.363Z] [INFO] [SFWU] RECV  (102 bytes)
+    HEX: AA 01 04 01 00 06 20 C9 00 00 00 56 7B 22 6F 72 64 65 72 22 3A 7B 22 4F 72 69 67 69 6E 22 3A 7B 22 49 64 22 3A 22 31 30 33 30 22 2C 22 46 57 22 3A 31 34 30 38 30 2C 22 53 4E 22 3A 35 37 30 31 30 37 33 7D 2C 22 70 72 6F 64 75 63 74 22 3A 22 31 32 30 20 41 4D 43 22 2C 22 67 69 64 22 3A 35 7D 7D 48 CF D1 C4
+[2026-02-16T10:11:02.367Z] [INFO] [TopBrewer] RX Pkt: CMD=0x6 LEN=86
+[2026-02-16T10:11:15.630Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 CA 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 03 E2 D2 E7
+[2026-02-16T10:11:15.632Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:11:15.634Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T10:11:45.654Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 CB 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 9C 38 51 79
+[2026-02-16T10:11:45.658Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:11:45.662Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T10:12:15.641Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 CC 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 F5 DF D7 21
+[2026-02-16T10:12:15.645Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:12:15.646Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T10:12:45.622Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 CD 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 6A 05 54 BF
+[2026-02-16T10:12:45.624Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:12:45.627Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T10:12:49.516Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:13:15.649Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 CE 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 11 1B D6 5C
+[2026-02-16T10:13:15.651Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:13:15.653Z] [DEBUG] [TopBrewer] Unhandled Command: 0x2
+[2026-02-16T10:13:23.154Z] [INFO] [TopBrewer] Reading Menu from Drinks Characteristic...
+[2026-02-16T10:13:23.691Z] [DEBUG] [TopBrewer] Received Drinks Data: 155 bytes. Hex: 14 08 0b 54 4a 44 4b 52 59 30 32 00 01 00 00 0a 31 20 45 74 68 69 6f 70 69 61 01 01 00 00 0b 32 20 4e 69 63 61 72 61 67 75 61 02 01 00 00 08 33 20 42 72 61 7a 69 6c 03 01 00 00 09 34 20 52 6f 62 75 73 74 61 04 04 00 00 02 20 20 05 15 00 00 02 20 20 06 05 00 00 02 20 20 07 08 00 00 0b 31 32 30 20 47 6f 72 67 6f 6e 61 08 05 00 00 07 31 32 30 20 41 4d 43 09 11 00 00 0d 31 32 30 20 50 6f 72 74 6f 66 69 6e 6f 0a 06 00 00 0e 31 32 30 20 43 69 74 79 20 52 6f 61 73 74
+[2026-02-16T10:13:23.699Z] [DEBUG] [SFWU] Binary Menu: Count=11, Status=20
+[2026-02-16T10:13:23.703Z] [INFO] [TopBrewer] Parsed 11 items from Binary Characteristic
+[2026-02-16T10:13:23.706Z] [DEBUG] [TopBrewer]   - ID=0 GID=1 Name='1 Ethiopia'
+[2026-02-16T10:13:23.712Z] [DEBUG] [TopBrewer]   - ID=1 GID=1 Name='2 Nicaragua'
+[2026-02-16T10:13:23.714Z] [DEBUG] [TopBrewer]   - ID=2 GID=1 Name='3 Brazil'
+[2026-02-16T10:13:23.716Z] [DEBUG] [TopBrewer]   - ID=3 GID=1 Name='4 Robusta'
+[2026-02-16T10:13:23.719Z] [DEBUG] [TopBrewer]   - ID=4 GID=4 Name='  '
+[2026-02-16T10:13:23.721Z] [DEBUG] [TopBrewer]   - ID=5 GID=21 Name='  '
+[2026-02-16T10:13:23.723Z] [DEBUG] [TopBrewer]   - ID=6 GID=5 Name='  '
+[2026-02-16T10:13:23.726Z] [DEBUG] [TopBrewer]   - ID=7 GID=8 Name='120 Gorgona'
+[2026-02-16T10:13:23.729Z] [DEBUG] [TopBrewer]   - ID=8 GID=5 Name='120 AMC'
+[2026-02-16T10:13:23.731Z] [DEBUG] [TopBrewer]   - ID=9 GID=17 Name='120 Portofino'
+[2026-02-16T10:13:23.735Z] [DEBUG] [TopBrewer]   - ID=10 GID=6 Name='120 City Roast'
+[2026-02-16T10:13:23.739Z] [INFO] [TopBrewer] Reading Menu from Drinks Characteristic...
+[2026-02-16T10:13:24.482Z] [DEBUG] [TopBrewer] Received Drinks Data: 155 bytes. Hex: 14 08 0b 54 4a 44 4b 52 59 30 32 00 01 00 00 0a 31 20 45 74 68 69 6f 70 69 61 01 01 00 00 0b 32 20 4e 69 63 61 72 61 67 75 61 02 01 00 00 08 33 20 42 72 61 7a 69 6c 03 01 00 00 09 34 20 52 6f 62 75 73 74 61 04 04 00 00 02 20 20 05 15 00 00 02 20 20 06 05 00 00 02 20 20 07 08 00 00 0b 31 32 30 20 47 6f 72 67 6f 6e 61 08 05 00 00 07 31 32 30 20 41 4d 43 09 11 00 00 0d 31 32 30 20 50 6f 72 74 6f 66 69 6e 6f 0a 06 00 00 0e 31 32 30 20 43 69 74 79 20 52 6f 61 73 74
+[2026-02-16T10:13:24.492Z] [DEBUG] [SFWU] Binary Menu: Count=11, Status=20
+[2026-02-16T10:13:24.520Z] [INFO] [TopBrewer] Parsed 11 items from Binary Characteristic
+[2026-02-16T10:13:24.524Z] [DEBUG] [TopBrewer]   - ID=0 GID=1 Name='1 Ethiopia'
+[2026-02-16T10:13:24.530Z] [DEBUG] [TopBrewer]   - ID=1 GID=1 Name='2 Nicaragua'
+[2026-02-16T10:13:24.532Z] [DEBUG] [TopBrewer]   - ID=2 GID=1 Name='3 Brazil'
+[2026-02-16T10:13:24.536Z] [DEBUG] [TopBrewer]   - ID=3 GID=1 Name='4 Robusta'
+[2026-02-16T10:13:24.538Z] [DEBUG] [TopBrewer]   - ID=4 GID=4 Name='  '
+[2026-02-16T10:13:24.540Z] [DEBUG] [TopBrewer]   - ID=5 GID=21 Name='  '
+[2026-02-16T10:13:24.544Z] [DEBUG] [TopBrewer]   - ID=6 GID=5 Name='  '
+[2026-02-16T10:13:24.547Z] [DEBUG] [TopBrewer]   - ID=7 GID=8 Name='120 Gorgona'
+[2026-02-16T10:13:24.549Z] [DEBUG] [TopBrewer]   - ID=8 GID=5 Name='120 AMC'
+[2026-02-16T10:13:24.581Z] [DEBUG] [TopBrewer]   - ID=9 GID=17 Name='120 Portofino'
+[2026-02-16T10:13:24.625Z] [DEBUG] [TopBrewer]   - ID=10 GID=6 Name='120 City Roast'
+[2026-02-16T10:13:24.669Z] [INFO] [TopBrewer] Reading Menu from Drinks Characteristic...
+[2026-02-16T10:13:25.303Z] [DEBUG] [TopBrewer] Received Drinks Data: 155 bytes. Hex: 14 08 0b 54 4a 44 4b 52 59 30 32 00 01 00 00 0a 31 20 45 74 68 69 6f 70 69 61 01 01 00 00 0b 32 20 4e 69 63 61 72 61 67 75 61 02 01 00 00 08 33 20 42 72 61 7a 69 6c 03 01 00 00 09 34 20 52 6f 62 75 73 74 61 04 04 00 00 02 20 20 05 15 00 00 02 20 20 06 05 00 00 02 20 20 07 08 00 00 0b 31 32 30 20 47 6f 72 67 6f 6e 61 08 05 00 00 07 31 32 30 20 41 4d 43 09 11 00 00 0d 31 32 30 20 50 6f 72 74 6f 66 69 6e 6f 0a 06 00 00 0e 31 32 30 20 43 69 74 79 20 52 6f 61 73 74
+[2026-02-16T10:13:25.313Z] [DEBUG] [SFWU] Binary Menu: Count=11, Status=20
+[2026-02-16T10:13:25.317Z] [INFO] [TopBrewer] Parsed 11 items from Binary Characteristic
+[2026-02-16T10:13:25.324Z] [DEBUG] [TopBrewer]   - ID=0 GID=1 Name='1 Ethiopia'
+[2026-02-16T10:13:25.336Z] [DEBUG] [TopBrewer]   - ID=1 GID=1 Name='2 Nicaragua'
+[2026-02-16T10:13:25.350Z] [DEBUG] [TopBrewer]   - ID=2 GID=1 Name='3 Brazil'
+[2026-02-16T10:13:25.353Z] [DEBUG] [TopBrewer]   - ID=3 GID=1 Name='4 Robusta'
+[2026-02-16T10:13:25.358Z] [DEBUG] [TopBrewer]   - ID=4 GID=4 Name='  '
+[2026-02-16T10:13:25.363Z] [DEBUG] [TopBrewer]   - ID=5 GID=21 Name='  '
+[2026-02-16T10:13:25.367Z] [DEBUG] [TopBrewer]   - ID=6 GID=5 Name='  '
+[2026-02-16T10:13:25.370Z] [DEBUG] [TopBrewer]   - ID=7 GID=8 Name='120 Gorgona'
+[2026-02-16T10:13:25.373Z] [DEBUG] [TopBrewer]   - ID=8 GID=5 Name='120 AMC'
+[2026-02-16T10:13:25.380Z] [DEBUG] [TopBrewer]   - ID=9 GID=17 Name='120 Portofino'
+[2026-02-16T10:13:25.388Z] [DEBUG] [TopBrewer]   - ID=10 GID=6 Name='120 City Roast'
+[2026-02-16T10:13:25.397Z] [INFO] [TopBrewer] Reading Menu from Drinks Characteristic...
+[2026-02-16T10:13:26.196Z] [DEBUG] [TopBrewer] Received Drinks Data: 155 bytes. Hex: 14 08 0b 54 4a 44 4b 52 59 30 32 00 01 00 00 0a 31 20 45 74 68 69 6f 70 69 61 01 01 00 00 0b 32 20 4e 69 63 61 72 61 67 75 61 02 01 00 00 08 33 20 42 72 61 7a 69 6c 03 01 00 00 09 34 20 52 6f 62 75 73 74 61 04 04 00 00 02 20 20 05 15 00 00 02 20 20 06 05 00 00 02 20 20 07 08 00 00 0b 31 32 30 20 47 6f 72 67 6f 6e 61 08 05 00 00 07 31 32 30 20 41 4d 43 09 11 00 00 0d 31 32 30 20 50 6f 72 74 6f 66 69 6e 6f 0a 06 00 00 0e 31 32 30 20 43 69 74 79 20 52 6f 61 73 74
+[2026-02-16T10:13:26.201Z] [DEBUG] [SFWU] Binary Menu: Count=11, Status=20
+[2026-02-16T10:13:26.207Z] [INFO] [TopBrewer] Parsed 11 items from Binary Characteristic
+[2026-02-16T10:13:26.209Z] [DEBUG] [TopBrewer]   - ID=0 GID=1 Name='1 Ethiopia'
+[2026-02-16T10:13:26.220Z] [DEBUG] [TopBrewer]   - ID=1 GID=1 Name='2 Nicaragua'
+[2026-02-16T10:13:26.223Z] [DEBUG] [TopBrewer]   - ID=2 GID=1 Name='3 Brazil'
+[2026-02-16T10:13:26.225Z] [DEBUG] [TopBrewer]   - ID=3 GID=1 Name='4 Robusta'
+[2026-02-16T10:13:26.233Z] [DEBUG] [TopBrewer]   - ID=4 GID=4 Name='  '
+[2026-02-16T10:13:26.239Z] [DEBUG] [TopBrewer]   - ID=5 GID=21 Name='  '
+[2026-02-16T10:13:26.245Z] [DEBUG] [TopBrewer]   - ID=6 GID=5 Name='  '
+[2026-02-16T10:13:26.253Z] [DEBUG] [TopBrewer]   - ID=7 GID=8 Name='120 Gorgona'
+[2026-02-16T10:13:26.257Z] [DEBUG] [TopBrewer]   - ID=8 GID=5 Name='120 AMC'
+[2026-02-16T10:13:26.265Z] [DEBUG] [TopBrewer]   - ID=9 GID=17 Name='120 Portofino'
+[2026-02-16T10:13:26.267Z] [DEBUG] [TopBrewer]   - ID=10 GID=6 Name='120 City Roast'
+[2026-02-16T10:13:26.270Z] [INFO] [TopBrewer] Reading Menu from Drinks Characteristic...
+[2026-02-16T10:13:27.025Z] [DEBUG] [TopBrewer] Received Drinks Data: 155 bytes. Hex: 14 08 0b 54 4a 44 4b 52 59 30 32 00 01 00 00 0a 31 20 45 74 68 69 6f 70 69 61 01 01 00 00 0b 32 20 4e 69 63 61 72 61 67 75 61 02 01 00 00 08 33 20 42 72 61 7a 69 6c 03 01 00 00 09 34 20 52 6f 62 75 73 74 61 04 04 00 00 02 20 20 05 15 00 00 02 20 20 06 05 00 00 02 20 20 07 08 00 00 0b 31 32 30 20 47 6f 72 67 6f 6e 61 08 05 00 00 07 31 32 30 20 41 4d 43 09 11 00 00 0d 31 32 30 20 50 6f 72 74 6f 66 69 6e 6f 0a 06 00 00 0e 31 32 30 20 43 69 74 79 20 52 6f 61 73 74
+[2026-02-16T10:13:27.030Z] [DEBUG] [SFWU] Binary Menu: Count=11, Status=20
+[2026-02-16T10:13:27.033Z] [INFO] [TopBrewer] Parsed 11 items from Binary Characteristic
+[2026-02-16T10:13:27.034Z] [DEBUG] [TopBrewer]   - ID=0 GID=1 Name='1 Ethiopia'
+[2026-02-16T10:13:27.037Z] [DEBUG] [TopBrewer]   - ID=1 GID=1 Name='2 Nicaragua'
+[2026-02-16T10:13:27.038Z] [DEBUG] [TopBrewer]   - ID=2 GID=1 Name='3 Brazil'
+[2026-02-16T10:13:27.040Z] [DEBUG] [TopBrewer]   - ID=3 GID=1 Name='4 Robusta'
+[2026-02-16T10:13:27.043Z] [DEBUG] [TopBrewer]   - ID=4 GID=4 Name='  '
+[2026-02-16T10:13:27.046Z] [DEBUG] [TopBrewer]   - ID=5 GID=21 Name='  '
+[2026-02-16T10:13:27.047Z] [DEBUG] [TopBrewer]   - ID=6 GID=5 Name='  '
+[2026-02-16T10:13:27.049Z] [DEBUG] [TopBrewer]   - ID=7 GID=8 Name='120 Gorgona'
+[2026-02-16T10:13:27.051Z] [DEBUG] [TopBrewer]   - ID=8 GID=5 Name='120 AMC'
+[2026-02-16T10:13:27.053Z] [DEBUG] [TopBrewer]   - ID=9 GID=17 Name='120 Portofino'
+[2026-02-16T10:13:27.055Z] [DEBUG] [TopBrewer]   - ID=10 GID=6 Name='120 City Roast'
+[2026-02-16T10:13:27.057Z] [INFO] [TopBrewer] Reading Menu from Drinks Characteristic...
+[2026-02-16T10:13:27.749Z] [INFO] [SiloManager] Connecting to ws://10.0.124.90:8765/?auth=silo-secret...
+[2026-02-16T10:13:27.754Z] [INFO] [SiloManager] Connecting to ws://10.0.124.90:8765/?auth=silo-secret...
+[2026-02-16T10:13:27.817Z] [INFO] [TopBrewer] Initialized with Remote BLE Adapter (Pi Relay)
+[2026-02-16T10:13:27.821Z] [INFO] [TopBrewer] Initialized with Remote BLE Adapter (Pi Relay)
+[2026-02-16T10:13:27.828Z] [INFO] [SiloManager] Connected to SiloOS Bridge
+[2026-02-16T10:13:28.028Z] [INFO] [SiloManager] Connected to SiloOS Bridge
+[2026-02-16T10:13:28.073Z] [INFO] [TopBrewer] Connection state: connected
+[2026-02-16T10:13:28.075Z] [INFO] [Dashboard] Machine connected. Requesting menu...
+[2026-02-16T10:13:28.078Z] [INFO] [TopBrewer] Reading Menu from Drinks Characteristic...
+[2026-02-16T10:13:28.087Z] [INFO] [RemoteBLE] Connected to Remote Relay
+[2026-02-16T10:13:28.089Z] [INFO] [TopBrewer] Connection state: connected
+[2026-02-16T10:13:28.091Z] [INFO] [TopBrewer] Notifications set up
+[2026-02-16T10:13:28.092Z] [INFO] [RemoteBLE] Connected to Remote Relay
+[2026-02-16T10:13:28.096Z] [INFO] [TopBrewer] Connection state: connected
+[2026-02-16T10:13:28.097Z] [INFO] [TopBrewer] Notifications set up
+[2026-02-16T10:13:29.460Z] [INFO] [SiloManager] Connecting to ws://10.0.124.90:8765/?auth=silo-secret...
+[2026-02-16T10:13:29.464Z] [INFO] [SiloManager] Connecting to ws://10.0.124.90:8765/?auth=silo-secret...
+[2026-02-16T10:13:29.486Z] [INFO] [TopBrewer] Initialized with Remote BLE Adapter (Pi Relay)
+[2026-02-16T10:13:29.488Z] [INFO] [TopBrewer] Initialized with Remote BLE Adapter (Pi Relay)
+[2026-02-16T10:13:29.538Z] [INFO] [SiloManager] Connected to SiloOS Bridge
+[2026-02-16T10:13:29.556Z] [INFO] [SiloManager] Connected to SiloOS Bridge
+[2026-02-16T10:13:29.560Z] [INFO] [TopBrewer] Connection state: connected
+[2026-02-16T10:13:29.563Z] [INFO] [Dashboard] Machine connected. Requesting menu...
+[2026-02-16T10:13:29.566Z] [INFO] [TopBrewer] Reading Menu from Drinks Characteristic...
+[2026-02-16T10:13:30.090Z] [INFO] [RemoteBLE] Connected to Remote Relay
+[2026-02-16T10:13:30.095Z] [INFO] [TopBrewer] Connection state: connected
+[2026-02-16T10:13:30.098Z] [INFO] [TopBrewer] Notifications set up
+[2026-02-16T10:13:30.103Z] [INFO] [RemoteBLE] Connected to Remote Relay
+[2026-02-16T10:13:30.106Z] [INFO] [TopBrewer] Connection state: connected
+[2026-02-16T10:13:30.108Z] [INFO] [TopBrewer] Notifications set up
+[2026-02-16T10:13:30.320Z] [DEBUG] [TopBrewer] Received Drinks Data: 155 bytes. Hex: 14 08 0b 54 4a 44 4b 52 59 30 32 00 01 00 00 0a 31 20 45 74 68 69 6f 70 69 61 01 01 00 00 0b 32 20 4e 69 63 61 72 61 67 75 61 02 01 00 00 08 33 20 42 72 61 7a 69 6c 03 01 00 00 09 34 20 52 6f 62 75 73 74 61 04 04 00 00 02 20 20 05 15 00 00 02 20 20 06 05 00 00 02 20 20 07 08 00 00 0b 31 32 30 20 47 6f 72 67 6f 6e 61 08 05 00 00 07 31 32 30 20 41 4d 43 09 11 00 00 0d 31 32 30 20 50 6f 72 74 6f 66 69 6e 6f 0a 06 00 00 0e 31 32 30 20 43 69 74 79 20 52 6f 61 73 74
+[2026-02-16T10:13:30.324Z] [DEBUG] [SFWU] Binary Menu: Count=11, Status=20
+[2026-02-16T10:13:30.333Z] [INFO] [TopBrewer] Parsed 11 items from Binary Characteristic
+[2026-02-16T10:13:30.335Z] [DEBUG] [TopBrewer]   - ID=0 GID=1 Name='1 Ethiopia'
+[2026-02-16T10:13:30.337Z] [DEBUG] [TopBrewer]   - ID=1 GID=1 Name='2 Nicaragua'
+[2026-02-16T10:13:30.339Z] [DEBUG] [TopBrewer]   - ID=2 GID=1 Name='3 Brazil'
+[2026-02-16T10:13:30.342Z] [DEBUG] [TopBrewer]   - ID=3 GID=1 Name='4 Robusta'
+[2026-02-16T10:13:30.346Z] [DEBUG] [TopBrewer]   - ID=4 GID=4 Name='  '
+[2026-02-16T10:13:30.349Z] [DEBUG] [TopBrewer]   - ID=5 GID=21 Name='  '
+[2026-02-16T10:13:30.352Z] [DEBUG] [TopBrewer]   - ID=6 GID=5 Name='  '
+[2026-02-16T10:13:30.355Z] [DEBUG] [TopBrewer]   - ID=7 GID=8 Name='120 Gorgona'
+[2026-02-16T10:13:30.358Z] [DEBUG] [TopBrewer]   - ID=8 GID=5 Name='120 AMC'
+[2026-02-16T10:13:30.362Z] [DEBUG] [TopBrewer]   - ID=9 GID=17 Name='120 Portofino'
+[2026-02-16T10:13:30.367Z] [DEBUG] [TopBrewer]   - ID=10 GID=6 Name='120 City Roast'
+[2026-02-16T10:13:45.630Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 CF 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 8E C1 55 C2
+[2026-02-16T10:13:45.633Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:13:59.409Z] [INFO] [SiloManager] Connecting to ws://10.0.124.90:8765/?auth=silo-secret...
+[2026-02-16T10:13:59.411Z] [INFO] [SiloManager] Connecting to ws://10.0.124.90:8765/?auth=silo-secret...
+[2026-02-16T10:13:59.423Z] [INFO] [TopBrewer] Initialized with Remote BLE Adapter (Pi Relay)
+[2026-02-16T10:13:59.425Z] [INFO] [TopBrewer] Initialized with Remote BLE Adapter (Pi Relay)
+[2026-02-16T10:13:59.458Z] [INFO] [SiloManager] Connected to SiloOS Bridge
+[2026-02-16T10:13:59.468Z] [INFO] [SiloManager] Connected to SiloOS Bridge
+[2026-02-16T10:13:59.469Z] [INFO] [TopBrewer] Connection state: connected
+[2026-02-16T10:13:59.472Z] [INFO] [Dashboard] Machine connected. Requesting menu...
+[2026-02-16T10:13:59.473Z] [INFO] [TopBrewer] Reading Menu from Drinks Characteristic...
+[2026-02-16T10:13:59.536Z] [INFO] [RemoteBLE] Connected to Remote Relay
+[2026-02-16T10:13:59.537Z] [INFO] [TopBrewer] Connection state: connected
+[2026-02-16T10:13:59.539Z] [INFO] [TopBrewer] Notifications set up
+[2026-02-16T10:13:59.541Z] [INFO] [RemoteBLE] Connected to Remote Relay
+[2026-02-16T10:13:59.543Z] [INFO] [TopBrewer] Connection state: connected
+[2026-02-16T10:13:59.544Z] [INFO] [TopBrewer] Notifications set up
+[2026-02-16T10:14:00.410Z] [DEBUG] [TopBrewer] Received Drinks Data: 155 bytes. Hex: 14 08 0b 54 4a 44 4b 52 59 30 32 00 01 00 00 0a 31 20 45 74 68 69 6f 70 69 61 01 01 00 00 0b 32 20 4e 69 63 61 72 61 67 75 61 02 01 00 00 08 33 20 42 72 61 7a 69 6c 03 01 00 00 09 34 20 52 6f 62 75 73 74 61 04 04 00 00 02 20 20 05 15 00 00 02 20 20 06 05 00 00 02 20 20 07 08 00 00 0b 31 32 30 20 47 6f 72 67 6f 6e 61 08 05 00 00 07 31 32 30 20 41 4d 43 09 11 00 00 0d 31 32 30 20 50 6f 72 74 6f 66 69 6e 6f 0a 06 00 00 0e 31 32 30 20 43 69 74 79 20 52 6f 61 73 74
+[2026-02-16T10:14:00.412Z] [DEBUG] [SFWU] Binary Menu: Count=11, Status=20
+[2026-02-16T10:14:00.413Z] [INFO] [TopBrewer] Parsed 11 items from Binary Characteristic
+[2026-02-16T10:14:00.415Z] [DEBUG] [TopBrewer]   - ID=0 GID=1 Name='1 Ethiopia'
+[2026-02-16T10:14:00.416Z] [DEBUG] [TopBrewer]   - ID=1 GID=1 Name='2 Nicaragua'
+[2026-02-16T10:14:00.417Z] [DEBUG] [TopBrewer]   - ID=2 GID=1 Name='3 Brazil'
+[2026-02-16T10:14:00.418Z] [DEBUG] [TopBrewer]   - ID=3 GID=1 Name='4 Robusta'
+[2026-02-16T10:14:00.419Z] [DEBUG] [TopBrewer]   - ID=4 GID=4 Name='  '
+[2026-02-16T10:14:00.421Z] [DEBUG] [TopBrewer]   - ID=5 GID=21 Name='  '
+[2026-02-16T10:14:00.422Z] [DEBUG] [TopBrewer]   - ID=6 GID=5 Name='  '
+[2026-02-16T10:14:00.423Z] [DEBUG] [TopBrewer]   - ID=7 GID=8 Name='120 Gorgona'
+[2026-02-16T10:14:00.425Z] [DEBUG] [TopBrewer]   - ID=8 GID=5 Name='120 AMC'
+[2026-02-16T10:14:00.427Z] [DEBUG] [TopBrewer]   - ID=9 GID=17 Name='120 Portofino'
+[2026-02-16T10:14:00.430Z] [DEBUG] [TopBrewer]   - ID=10 GID=6 Name='120 City Roast'
+[2026-02-16T10:14:01.830Z] [INFO] [Dashboard] Selected: 1 Ethiopia - Opening Customizer
+[2026-02-16T10:14:01.844Z] [INFO] [Customizer] Requesting details for 1 Ethiopia
+[2026-02-16T10:14:01.846Z] [INFO] [Customizer] Requesting details for 1 Ethiopia
+[2026-02-16T10:14:01.850Z] [INFO] [TopBrewer] Reading drink details characteristic: c0ffee00-2624-46ff-9311-4d7083160100
+[2026-02-16T10:14:02.055Z] [INFO] [TopBrewer] Got drink details: 28 bytes
+[2026-02-16T10:14:02.057Z] [INFO] [SFWU] MenuDetails RAW (28 bytes): 14 00 01 00 00 00 63 00 00 03 e7 00 00 07 ce 01 00 0a 31 20 45 74 68 69 6f 70 69 61
+[2026-02-16T10:14:02.060Z] [INFO] [SFWU]   Header: status=20 id=0 gid=1
+[2026-02-16T10:14:02.063Z] [INFO] [SFWU]   Bytes 3-14 LE: min=1660944384 nom=-419233792 max=-838402048
+[2026-02-16T10:14:02.065Z] [INFO] [SFWU]   Bytes 3-14 BE: min=99 nom=999 max=1998
+[2026-02-16T10:14:02.069Z] [INFO] [SFWU] Parsed: ID=0 Name='1 Ethiopia' Min=99 Nom=999 Max=1998 Carafe=1 Ingredients=0
+[2026-02-16T10:14:02.072Z] [INFO] [Customizer] Recipe loaded: "1 Ethiopia" min=0.99 nom=9.99 max=19.98 ingredients=0
+[2026-02-16T10:14:02.078Z] [INFO] [TopBrewer] Reading drink details characteristic: c0ffee00-2624-46ff-9311-4d7083160100
+[2026-02-16T10:14:02.252Z] [INFO] [TopBrewer] Got drink details: 28 bytes
+[2026-02-16T10:14:02.255Z] [INFO] [SFWU] MenuDetails RAW (28 bytes): 14 00 01 00 00 00 63 00 00 03 e7 00 00 07 ce 01 00 0a 31 20 45 74 68 69 6f 70 69 61
+[2026-02-16T10:14:02.256Z] [INFO] [SFWU]   Header: status=20 id=0 gid=1
+[2026-02-16T10:14:02.259Z] [INFO] [SFWU]   Bytes 3-14 LE: min=1660944384 nom=-419233792 max=-838402048
+[2026-02-16T10:14:02.260Z] [INFO] [SFWU]   Bytes 3-14 BE: min=99 nom=999 max=1998
+[2026-02-16T10:14:02.264Z] [INFO] [SFWU] Parsed: ID=0 Name='1 Ethiopia' Min=99 Nom=999 Max=1998 Carafe=1 Ingredients=0
+[2026-02-16T10:14:02.266Z] [INFO] [Customizer] Recipe loaded: "1 Ethiopia" min=0.99 nom=9.99 max=19.98 ingredients=0
+[2026-02-16T10:14:03.067Z] [INFO] [Customizer] Order: menuId=0 gravimetric=false customVolume=9.99 globalNom=9.99
+[2026-02-16T10:14:03.080Z] [INFO] [TopBrewer] Starting Session...
+[2026-02-16T10:14:03.299Z] [INFO] [SFWU] SEND  (18 bytes)
+    HEX: AA 01 01 02 00 C4 00 00 00 00 00 02 01 00 AC 70 AF 26
+[2026-02-16T10:14:03.301Z] [INFO] [TopBrewer] SEND CustomOrder(ID=0, Ings=0) (18 bytes)
+    HEX: AA 01 01 02 00 C4 00 00 00 00 00 02 01 00 AC 70 AF 26
+[2026-02-16T10:14:03.419Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:14:03.516Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:14:03.526Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:14:03.568Z] [INFO] [SFWU] RECV  (105 bytes)
+    HEX: AA 01 04 01 00 06 20 D0 00 00 00 59 7B 22 6F 72 64 65 72 22 3A 7B 22 4F 72 69 67 69 6E 22 3A 7B 22 49 64 22 3A 22 31 30 33 30 22 2C 22 46 57 22 3A 31 34 30 38 30 2C 22 53 4E 22 3A 35 37 30 31 30 37 33 7D 2C 22 70 72 6F 64 75 63 74 22 3A 22 31 20 45 74 68 69 6F 70 69 61 22 2C 22 67 69 64 22 3A 31 7D 7D CA 7C 19 C6
+[2026-02-16T10:14:03.569Z] [INFO] [TopBrewer] RX Pkt: CMD=0x6 LEN=89
+[2026-02-16T10:14:15.708Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 D1 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 16 EA 4B 9E
+[2026-02-16T10:14:15.710Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:14:19.166Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:14:21.830Z] [INFO] [Dashboard] Selected: 3 Brazil - Opening Customizer
+[2026-02-16T10:14:21.837Z] [INFO] [Customizer] Requesting details for 3 Brazil
+[2026-02-16T10:14:21.839Z] [INFO] [Customizer] Requesting details for 3 Brazil
+[2026-02-16T10:14:21.842Z] [INFO] [TopBrewer] Reading drink details characteristic: c0ffee00-2624-46ff-9311-4d7083160102
+[2026-02-16T10:14:22.045Z] [INFO] [TopBrewer] Got drink details: 26 bytes
+[2026-02-16T10:14:22.049Z] [INFO] [SFWU] MenuDetails RAW (26 bytes): 14 02 01 00 00 00 63 00 00 03 e7 00 00 07 ce 01 00 08 33 20 42 72 61 7a 69 6c
+[2026-02-16T10:14:22.050Z] [INFO] [SFWU]   Header: status=20 id=2 gid=1
+[2026-02-16T10:14:22.052Z] [INFO] [SFWU]   Bytes 3-14 LE: min=1660944384 nom=-419233792 max=-838402048
+[2026-02-16T10:14:22.055Z] [INFO] [SFWU]   Bytes 3-14 BE: min=99 nom=999 max=1998
+[2026-02-16T10:14:22.057Z] [INFO] [SFWU] Parsed: ID=2 Name='3 Brazil' Min=99 Nom=999 Max=1998 Carafe=1 Ingredients=0
+[2026-02-16T10:14:22.061Z] [INFO] [Customizer] Recipe loaded: "3 Brazil" min=0.99 nom=9.99 max=19.98 ingredients=0
+[2026-02-16T10:14:22.064Z] [INFO] [TopBrewer] Reading drink details characteristic: c0ffee00-2624-46ff-9311-4d7083160102
+[2026-02-16T10:14:22.242Z] [INFO] [TopBrewer] Got drink details: 26 bytes
+[2026-02-16T10:14:22.244Z] [INFO] [SFWU] MenuDetails RAW (26 bytes): 14 02 01 00 00 00 63 00 00 03 e7 00 00 07 ce 01 00 08 33 20 42 72 61 7a 69 6c
+[2026-02-16T10:14:22.246Z] [INFO] [SFWU]   Header: status=20 id=2 gid=1
+[2026-02-16T10:14:22.250Z] [INFO] [SFWU]   Bytes 3-14 LE: min=1660944384 nom=-419233792 max=-838402048
+[2026-02-16T10:14:22.251Z] [INFO] [SFWU]   Bytes 3-14 BE: min=99 nom=999 max=1998
+[2026-02-16T10:14:22.254Z] [INFO] [SFWU] Parsed: ID=2 Name='3 Brazil' Min=99 Nom=999 Max=1998 Carafe=1 Ingredients=0
+[2026-02-16T10:14:22.256Z] [INFO] [Customizer] Recipe loaded: "3 Brazil" min=0.99 nom=9.99 max=19.98 ingredients=0
+[2026-02-16T10:14:24.927Z] [INFO] [Customizer] Order: menuId=2 gravimetric=false customVolume=3.49 globalNom=9.99
+[2026-02-16T10:14:24.937Z] [INFO] [TopBrewer] Starting Session...
+[2026-02-16T10:14:25.152Z] [INFO] [SFWU] SEND  (22 bytes)
+    HEX: AA 01 01 02 00 C4 00 00 00 00 00 06 05 02 00 00 01 5D 9F B9 8A FB
+[2026-02-16T10:14:25.154Z] [INFO] [TopBrewer] SEND CustomOrder(ID=2, Ings=0) (22 bytes)
+    HEX: AA 01 01 02 00 C4 00 00 00 00 00 06 05 02 00 00 01 5D 9F B9 8A FB
+[2026-02-16T10:14:25.508Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:14:25.558Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:14:25.601Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:14:25.610Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:14:25.701Z] [INFO] [SFWU] RECV  (103 bytes)
+    HEX: AA 01 04 01 00 06 20 D2 00 00 00 57 7B 22 6F 72 64 65 72 22 3A 7B 22 4F 72 69 67 69 6E 22 3A 7B 22 49 64 22 3A 22 31 30 33 30 22 2C 22 46 57 22 3A 31 34 30 38 30 2C 22 53 4E 22 3A 35 37 30 31 30 37 33 7D 2C 22 70 72 6F 64 75 63 74 22 3A 22 33 20 42 72 61 7A 69 6C 22 2C 22 67 69 64 22 3A 31 7D 7D 3D 96 A1 AB
+[2026-02-16T10:14:25.703Z] [INFO] [TopBrewer] RX Pkt: CMD=0x6 LEN=87
+[2026-02-16T10:14:25.704Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:14:28.879Z] [INFO] [Dashboard] Selected: 1 Ethiopia - Opening Customizer
+[2026-02-16T10:14:28.887Z] [INFO] [Customizer] Requesting details for 1 Ethiopia
+[2026-02-16T10:14:28.888Z] [INFO] [Customizer] Requesting details for 1 Ethiopia
+[2026-02-16T10:14:28.891Z] [INFO] [TopBrewer] Reading drink details characteristic: c0ffee00-2624-46ff-9311-4d7083160100
+[2026-02-16T10:14:29.064Z] [INFO] [TopBrewer] Got drink details: 28 bytes
+[2026-02-16T10:14:29.066Z] [INFO] [SFWU] MenuDetails RAW (28 bytes): 14 00 01 00 00 00 63 00 00 03 e7 00 00 07 ce 01 00 0a 31 20 45 74 68 69 6f 70 69 61
+[2026-02-16T10:14:29.067Z] [INFO] [SFWU]   Header: status=20 id=0 gid=1
+[2026-02-16T10:14:29.069Z] [INFO] [SFWU]   Bytes 3-14 LE: min=1660944384 nom=-419233792 max=-838402048
+[2026-02-16T10:14:29.071Z] [INFO] [SFWU]   Bytes 3-14 BE: min=99 nom=999 max=1998
+[2026-02-16T10:14:29.072Z] [INFO] [SFWU] Parsed: ID=0 Name='1 Ethiopia' Min=99 Nom=999 Max=1998 Carafe=1 Ingredients=0
+[2026-02-16T10:14:29.075Z] [INFO] [Customizer] Recipe loaded: "1 Ethiopia" min=0.99 nom=9.99 max=19.98 ingredients=0
+[2026-02-16T10:14:29.077Z] [INFO] [TopBrewer] Reading drink details characteristic: c0ffee00-2624-46ff-9311-4d7083160100
+[2026-02-16T10:14:29.276Z] [INFO] [TopBrewer] Got drink details: 28 bytes
+[2026-02-16T10:14:29.278Z] [INFO] [SFWU] MenuDetails RAW (28 bytes): 14 00 01 00 00 00 63 00 00 03 e7 00 00 07 ce 01 00 0a 31 20 45 74 68 69 6f 70 69 61
+[2026-02-16T10:14:29.280Z] [INFO] [SFWU]   Header: status=20 id=0 gid=1
+[2026-02-16T10:14:29.282Z] [INFO] [SFWU]   Bytes 3-14 LE: min=1660944384 nom=-419233792 max=-838402048
+[2026-02-16T10:14:29.285Z] [INFO] [SFWU]   Bytes 3-14 BE: min=99 nom=999 max=1998
+[2026-02-16T10:14:29.287Z] [INFO] [SFWU] Parsed: ID=0 Name='1 Ethiopia' Min=99 Nom=999 Max=1998 Carafe=1 Ingredients=0
+[2026-02-16T10:14:29.289Z] [INFO] [Customizer] Recipe loaded: "1 Ethiopia" min=0.99 nom=9.99 max=19.98 ingredients=0
+[2026-02-16T10:14:30.338Z] [INFO] [Customizer] Order: menuId=0 gravimetric=false customVolume=9.99 globalNom=9.99
+[2026-02-16T10:14:30.352Z] [INFO] [TopBrewer] Starting Session...
+[2026-02-16T10:14:30.559Z] [INFO] [SFWU] SEND  (18 bytes)
+    HEX: AA 01 01 02 00 C4 00 00 00 00 00 02 01 00 AC 70 AF 26
+[2026-02-16T10:14:30.561Z] [INFO] [TopBrewer] SEND CustomOrder(ID=0, Ings=0) (18 bytes)
+    HEX: AA 01 01 02 00 C4 00 00 00 00 00 02 01 00 AC 70 AF 26
+[2026-02-16T10:14:30.733Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:14:30.771Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:14:30.819Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:14:30.866Z] [INFO] [SFWU] RECV  (105 bytes)
+    HEX: AA 01 04 01 00 06 20 D3 00 00 00 59 7B 22 6F 72 64 65 72 22 3A 7B 22 4F 72 69 67 69 6E 22 3A 7B 22 49 64 22 3A 22 31 30 33 30 22 2C 22 46 57 22 3A 31 34 30 38 30 2C 22 53 4E 22 3A 35 37 30 31 30 37 33 7D 2C 22 70 72 6F 64 75 63 74 22 3A 22 31 20 45 74 68 69 6F 70 69 61 22 2C 22 67 69 64 22 3A 31 7D 7D 66 32 B2 A8
+[2026-02-16T10:14:30.868Z] [INFO] [TopBrewer] RX Pkt: CMD=0x6 LEN=89
+[2026-02-16T10:14:31.226Z] [INFO] [SFWU] RECV  (352 bytes)
+    HEX: AA 01 04 01 00 A0 20 D4 00 00 01 50 00 7B 22 72 65 70 6F 72 74 22 3A 7B 22 4F 72 69 67 69 6E 22 3A 7B 22 49 64 22 3A 22 31 30 33 30 22 2C 22 46 57 22 3A 31 34 30 38 30 2C 22 53 4E 22 3A 35 37 30 31 30 37 33 7D 2C 22 43 6F 75 6E 74 65 72 73 22 3A 5B 7B 22 6E 22 3A 22 31 20 45 74 68 69 6F 70 69 61 22 2C 22 76 22 3A 33 36 32 35 2C 22 67 69 64 22 3A 31 7D 2C 7B 22 6E 22 3A 22 32 20 4E 69 63 61 72 61 67 75 61 22 2C 22 76 22 3A 38 32 39 32 2C 22 67 69 64 22 3A 31 7D 2C 7B 22 6E 22 3A 22 33 20 42 72 61 7A 69 6C 22 2C 22 76 22 3A 34 38 32 30 2C 22 67 69 64 22 3A 31 7D 2C 7B 22 6E 22 3A 22 34 20 52 6F 62 75 73 74 61 22 2C 22 76 22 3A 31 36 31 36 2C 22 67 69 64 22 3A 31 7D 2C 7B 22 6E 22 3A 22 20 20 22 2C 22 76 22 3A 34 38 39 36 2C 22 67 69 64 22 3A 34 7D 2C 7B 22 6E 22 3A 22 20 20 22 2C 22 76 22 3A 33 31 34 33 2C 22 67 69 64 22 3A 32 31 7D 2C 7B 22 6E 22 3A 22 20 20 22 2C 22 76 22 3A 37 39 36 2C 22 67 69 64 22 3A 35 7D 2C 7B 22 6E 22 3A 22 31 32 30 20 47 6F 72 67 6F 6E 61 22 2C 22 76 22 3A 32 36 38 33 2C 22 67 69 64 22 3A 38 7D 2C 7B 22 AE C7 BD 79
+[2026-02-16T10:14:31.230Z] [INFO] [TopBrewer] RX Pkt: CMD=0xA0 LEN=336
+[2026-02-16T10:14:31.232Z] [INFO] [TopBrewer] Starting Multipart Assembly (A0)
+[2026-02-16T10:14:31.402Z] [INFO] [SFWU] RECV  (214 bytes)
+    HEX: AA 01 04 01 00 A2 20 D5 00 00 00 C6 00 6E 22 3A 22 31 32 30 20 41 4D 43 22 2C 22 76 22 3A 34 31 33 38 2C 22 67 69 64 22 3A 35 7D 2C 7B 22 6E 22 3A 22 31 32 30 20 50 6F 72 74 6F 66 69 6E 6F 22 2C 22 76 22 3A 31 36 33 30 2C 22 67 69 64 22 3A 31 37 7D 2C 7B 22 6E 22 3A 22 31 32 30 20 43 69 74 79 20 52 6F 61 73 74 22 2C 22 76 22 3A 31 31 34 34 2C 22 67 69 64 22 3A 36 7D 5D 2C 22 45 78 74 55 49 22 3A 32 2C 22 48 6F 75 72 73 53 69 6E 63 65 43 6C 65 61 6E 22 3A 36 35 35 33 34 2C 22 6E 22 3A 22 53 69 6C 6F 53 79 73 74 65 6D 22 2C 22 52 65 73 6F 75 72 63 65 73 22 3A 5B 5D 2C 22 41 75 74 6F 55 70 64 61 74 65 22 3A 74 72 75 65 7D 7D 92 F3 64 5B
+[2026-02-16T10:14:31.403Z] [INFO] [TopBrewer] RX Pkt: CMD=0xA2 LEN=198
+[2026-02-16T10:14:45.932Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 D6 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 7F 0D CD C6
+[2026-02-16T10:14:45.935Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:14:46.468Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:14:56.810Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:14:56.901Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:14:56.912Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:14:56.949Z] [INFO] [SFWU] RECV  (106 bytes)
+    HEX: AA 01 04 01 00 06 20 D7 00 00 00 5A 7B 22 6F 72 64 65 72 22 3A 7B 22 4F 72 69 67 69 6E 22 3A 7B 22 49 64 22 3A 22 31 30 33 30 22 2C 22 46 57 22 3A 31 34 30 38 30 2C 22 53 4E 22 3A 35 37 30 31 30 37 33 7D 2C 22 70 72 6F 64 75 63 74 22 3A 22 32 20 4E 69 63 61 72 61 67 75 61 22 2C 22 67 69 64 22 3A 31 7D 7D 7A C3 23 3E
+[2026-02-16T10:14:56.950Z] [INFO] [TopBrewer] RX Pkt: CMD=0x6 LEN=90
+[2026-02-16T10:15:16.014Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 D8 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 AC C2 C1 76
+[2026-02-16T10:15:16.017Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:15:20.790Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:15:20.885Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:15:20.934Z] [INFO] [SFWU] RECV  (103 bytes)
+    HEX: AA 01 04 01 00 06 20 D9 00 00 00 57 7B 22 6F 72 64 65 72 22 3A 7B 22 4F 72 69 67 69 6E 22 3A 7B 22 49 64 22 3A 22 31 30 33 30 22 2C 22 46 57 22 3A 31 34 30 38 30 2C 22 53 4E 22 3A 35 37 30 31 30 37 33 7D 2C 22 70 72 6F 64 75 63 74 22 3A 22 33 20 42 72 61 7A 69 6C 22 2C 22 67 69 64 22 3A 31 7D 7D 8D 69 DD 70
+[2026-02-16T10:15:20.935Z] [INFO] [TopBrewer] RX Pkt: CMD=0x6 LEN=87
+[2026-02-16T10:15:21.129Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:15:21.179Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:15:32.784Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:15:32.834Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:15:32.881Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:15:32.886Z] [INFO] [SFWU] RECV  (103 bytes)
+    HEX: AA 01 04 01 00 06 20 DA 00 00 00 57 7B 22 6F 72 64 65 72 22 3A 7B 22 4F 72 69 67 69 6E 22 3A 7B 22 49 64 22 3A 22 31 30 33 30 22 2C 22 46 57 22 3A 31 34 30 38 30 2C 22 53 4E 22 3A 35 37 30 31 30 37 33 7D 2C 22 70 72 6F 64 75 63 74 22 3A 22 33 20 42 72 61 7A 69 6C 22 2C 22 67 69 64 22 3A 31 7D 7D BD 47 B8 23
+[2026-02-16T10:15:32.888Z] [INFO] [TopBrewer] RX Pkt: CMD=0x6 LEN=87
+[2026-02-16T10:15:33.121Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:15:46.188Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 DB 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 D7 DC 43 95
+[2026-02-16T10:15:46.190Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:16:16.296Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 DC 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 BE 3B C5 CD
+[2026-02-16T10:16:16.299Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:16:46.320Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 DD 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 21 E1 46 53
+[2026-02-16T10:16:46.322Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:17:16.248Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 DE 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 5A FF C4 B0
+[2026-02-16T10:17:16.251Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:17:46.213Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 DF 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 C5 25 47 2E
+[2026-02-16T10:17:46.216Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:18:16.195Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 E0 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 55 1C FF 34
+[2026-02-16T10:18:16.198Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:18:46.177Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 E1 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 CA C6 7C AA
+[2026-02-16T10:18:46.180Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:19:16.207Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 E2 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 B1 D8 FE 49
+[2026-02-16T10:19:16.210Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:19:46.192Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 E3 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 2E 02 7D D7
+[2026-02-16T10:19:46.195Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:20:16.175Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 E4 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 47 E5 FB 8F
+[2026-02-16T10:20:16.177Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:20:46.200Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 E5 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 D8 3F 78 11
+[2026-02-16T10:20:46.202Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:21:16.182Z] [INFO] [SFWU] RECV  (32 bytes)
+    HEX: AA 01 03 01 00 02 20 E6 00 00 00 10 00 00 00 02 00 00 37 00 00 00 00 00 00 56 FD D1 A3 21 FA F2
+[2026-02-16T10:21:16.186Z] [INFO] [TopBrewer] RX Pkt: CMD=0x2 LEN=16
+[2026-02-16T10:21:32.403Z] [INFO] [Dashboard] Selected: 2 Nicaragua - Opening Customizer
+[2026-02-16T10:21:32.411Z] [INFO] [Customizer] Requesting details for 2 Nicaragua
+[2026-02-16T10:21:32.413Z] [INFO] [Customizer] Requesting details for 2 Nicaragua
+[2026-02-16T10:21:32.415Z] [INFO] [TopBrewer] Reading drink details characteristic: c0ffee00-2624-46ff-9311-4d7083160101
+[2026-02-16T10:21:32.607Z] [INFO] [TopBrewer] Got drink details: 29 bytes
+[2026-02-16T10:21:32.610Z] [INFO] [SFWU] MenuDetails RAW (29 bytes): 14 01 01 00 00 00 63 00 00 03 e7 00 00 07 ce 01 00 0b 32 20 4e 69 63 61 72 61 67 75 61
+[2026-02-16T10:21:32.611Z] [INFO] [SFWU]   Header: status=20 id=1 gid=1
+[2026-02-16T10:21:32.612Z] [INFO] [SFWU]   Bytes 3-14 LE: min=1660944384 nom=-419233792 max=-838402048
+[2026-02-16T10:21:32.614Z] [INFO] [SFWU]   Bytes 3-14 BE: min=99 nom=999 max=1998
+[2026-02-16T10:21:32.615Z] [INFO] [SFWU] Parsed: ID=1 Name='2 Nicaragua' Min=99 Nom=999 Max=1998 Carafe=1 Ingredients=0
+[2026-02-16T10:21:32.617Z] [INFO] [Customizer] Recipe loaded: "2 Nicaragua" min=0.99 nom=9.99 max=19.98 ingredients=0
+[2026-02-16T10:21:32.618Z] [INFO] [TopBrewer] Reading drink details characteristic: c0ffee00-2624-46ff-9311-4d7083160101
+[2026-02-16T10:21:32.804Z] [INFO] [TopBrewer] Got drink details: 29 bytes
+[2026-02-16T10:21:32.806Z] [INFO] [SFWU] MenuDetails RAW (29 bytes): 14 01 01 00 00 00 63 00 00 03 e7 00 00 07 ce 01 00 0b 32 20 4e 69 63 61 72 61 67 75 61
+[2026-02-16T10:21:32.807Z] [INFO] [SFWU]   Header: status=20 id=1 gid=1
+[2026-02-16T10:21:32.809Z] [INFO] [SFWU]   Bytes 3-14 LE: min=1660944384 nom=-419233792 max=-838402048
+[2026-02-16T10:21:32.810Z] [INFO] [SFWU]   Bytes 3-14 BE: min=99 nom=999 max=1998
+[2026-02-16T10:21:32.811Z] [INFO] [SFWU] Parsed: ID=1 Name='2 Nicaragua' Min=99 Nom=999 Max=1998 Carafe=1 Ingredients=0
+[2026-02-16T10:21:32.813Z] [INFO] [Customizer] Recipe loaded: "2 Nicaragua" min=0.99 nom=9.99 max=19.98 ingredients=0
+[2026-02-16T10:21:33.704Z] [INFO] [Customizer] Order: menuId=1 gravimetric=false customVolume=9.99 globalNom=9.99
+[2026-02-16T10:21:33.719Z] [INFO] [TopBrewer] Starting Session...
+[2026-02-16T10:21:33.922Z] [INFO] [SFWU] SEND  (18 bytes)
+    HEX: AA 01 01 02 00 C4 00 00 00 00 00 02 01 01 DB 77 9F B0
+[2026-02-16T10:21:33.923Z] [INFO] [TopBrewer] SEND CustomOrder(ID=1, Ings=0) (18 bytes)
+    HEX: AA 01 01 02 00 C4 00 00 00 00 00 02 01 01 DB 77 9F B0
+[2026-02-16T10:21:34.072Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:21:34.121Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:21:34.174Z] [INFO] [TopBrewer] Parsed Brew Status from Characteristic
+[2026-02-16T10:21:34.223Z] [INFO] [SFWU] RECV  (106 bytes)
+    HEX: AA 01 04 01 00 06 20 E7 00 00 00 5A 7B 22 6F 72 64 65 72 22 3A 7B 22 4F 72 69 67 69 6E 22 3A 7B 22 49 64 22 3A 22 31 30 33 30 22 2C 22 46 57 22 3A 31 34 30 38 30 2C 22 53 4E 22 3A 35 37 30 31 30 37 33 7D 2C 22 70 72 6F 64 75 63 74 22 3A 22 32 20 4E 69 63 61 72 61 67 75 61 22 2C 22 67 69 64 22 3A 31 7D 7D D0 0D 2B F0
+[2026-02-16T10:21:34.225Z] [INFO] [TopBrewer] RX Pkt: CMD=0x6 LEN=90

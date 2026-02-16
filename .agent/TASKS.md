@@ -154,3 +154,9 @@
   - `dashboard/src/bluetooth/SiloManager.ts` — Added `tare()`, `getNetWeight()`, `onNetWeightUpdate` event
   - `dashboard/src/features/customization/DrinkCustomizer.tsx` — Removed old gravimetric logic, wired DoseController + BrewMonitor
 - **Reference**: See `Match Ordering and Precision Gravimetric Dosing.md` in project root
+
+### TASK-015: Fix Gravimetric Learning Logic ✅
+- Completed 2026-02-16 by dosing agent (Claude Code)
+- **Description**: Gravimetric dosing would only learn from overshoots (positive `materialAfterStop`). If it undershot (stopped too early), it got stuck in a cautious state.
+- **Fix**: Removed the `materialAfterStop > 0` condition in `DoseController.ts` and allowed `valveDelay` to decrease. Added safety clamp to 0.
+- **Files Changed**: `dashboard/src/features/dosing/DoseController.ts`

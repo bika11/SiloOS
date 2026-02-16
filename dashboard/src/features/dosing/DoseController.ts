@@ -299,10 +299,11 @@ export class DoseController {
         // overshoot = flowRate * valveDelay → valveDelay = overshoot / flowRate
         const stopAt = (this.stopTime - this.startTime) / 1000; // when did we send stop?
         const materialAfterStop = actualKg - (flowRateKgPerS * stopAt);
-        if (materialAfterStop > 0 && flowRateKgPerS > 0.001) {
+        if (flowRateKgPerS > 0.001) {
             const observedDelay = materialAfterStop / flowRateKgPerS;
-            this.profile.valveDelayS =
-                (1 - alpha) * this.profile.valveDelayS + alpha * observedDelay;
+            const newDelay = (1 - alpha) * this.profile.valveDelayS + alpha * observedDelay;
+            // Clamp to 0 to prevent negative delay (physics violation)
+            this.profile.valveDelayS = Math.max(0, newDelay);
         }
 
         this.profile.totalDoses++;

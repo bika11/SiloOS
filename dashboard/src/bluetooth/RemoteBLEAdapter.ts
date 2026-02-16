@@ -68,7 +68,8 @@ export class RemoteBLEAdapter {
     }
 
     isConnected(): boolean {
-        return this.siloManager?.isMachineConnected() ?? false;
+        // Use bridge connection, not async machineConnected (race condition on HMR/reload)
+        return this.siloManager?.isBridgeConnected() ?? false;
     }
 
     async readCharacteristic(uuid: string): Promise<Uint8Array> {

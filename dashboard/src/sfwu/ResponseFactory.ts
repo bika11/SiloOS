@@ -72,8 +72,12 @@ export class ResponseFactory {
      * Parse direct characteristic reads (e.g. DRINKS)
      */
     static parseCharacteristic(uuid: string, data: Uint8Array): ParsedSfwuResponse {
-        if (uuid === CHARACTERISTICS.DRINKS) {
+        const normalizedUuid = uuid.toLowerCase();
+        if (normalizedUuid === CHARACTERISTICS.DRINKS) {
             return { type: 'MENU', data: MenuParser.parse(data) };
+        }
+        if (normalizedUuid === CHARACTERISTICS.BREW_STATUS) {
+            return { type: 'BREW_STATUS', data: BrewStatusParser.parse(data) };
         }
         return { type: 'UNKNOWN', data: null };
     }

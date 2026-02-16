@@ -12,7 +12,7 @@ import { parseMenuXml } from '../utils/xmlParser';
 import type { ParsedMenuItem } from '../entities/Menu';
 import { MenuDetailsParser } from '../sfwu/parsers/MenuDetailsParser';
 import { ResponseFactory, type ParsedSfwuResponse } from '../sfwu/ResponseFactory';
-import type { BrewStatus } from '../entities/BrewStatus';
+import type { BrewStatus } from '../sfwu/parsers/BrewStatusParser';
 import type { OrderResponse } from '../entities/OrderResponse';
 import type { Temperatures } from '../entities/Temperature';
 
@@ -464,6 +464,12 @@ export class TopBrewerConnection {
                 // 3. Fallback for legacy XML commands (0x06)
                 else if (packet.command === 0x0006) {
                     this.handleXmlPayload(packet.data);
+                }
+                // 4. Handle VER_GET (0x02) - Ping/Heartbeat from Machine
+                else if (packet.command === 0x0002) {
+                    // Machine requesting version/status often acts as a heartbeat
+                    // We acknowledge it implicitly by parsing it, but for now we just suppress the log
+                    // logger.debug('TopBrewer', 'Received VER_GET (0x02)');
                 }
                 else {
                     logger.debug('TopBrewer', `Unhandled Command: 0x${packet.command.toString(16).toUpperCase()}`);

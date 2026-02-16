@@ -11,7 +11,7 @@
 | **Scale (RS485)** | ✅ OPERATIONAL | 2026-02-12 | Laumas TLS485 reading |
 | **SFWU Protocol** | ✅ FIXED | 2026-02-12 | Relay address corrected (0x03→0x02) |
 | **Build Pipeline** | ⚠️ NEEDS REVIEW | 2026-02-12 | Vite builds, HMR IP hardcoded |
-| **Gravimetric Dosing** | 🆕 IMPLEMENTED | 2026-02-12 | DoseController + BrewMonitor, needs live brew test |
+| **Gravimetric Dosing** | 🆕 IMPLEMENTED | 2026-02-16 | Learning bug fixed (undershoot recovery), ready for test |
 
 ## Architecture Diagram
 
@@ -113,3 +113,9 @@ Browser (PWA)  ──WebSocket──▶  Raspberry Pi  ──BLE──▶  TopBr
 - **Findings**: 13 issues identified (4 critical, 3 high, 3 medium, 3 low)
 - **Files Reviewed**: All 75 project files
 - **Next Steps**: Execute task board (TASKS.md), fix remaining critical issues
+
+### 2026-02-16 — Gravimetric Learning Fix
+- **Agent**: Dosing (Claude Code)
+- **Action**: Fixed logic bug in `DoseController.ts`
+- **Root Cause**: Learning algorithm ignored undershoots, preventing the system from reducing `valveDelay` if it was too cautious.
+- **Impact**: Gravimetric selection should now converge quickly to the correct target, even if starting with a high delay estimate.

@@ -41,16 +41,13 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
     const [doseController, setDoseController] = useState<DoseController | null>(null);
     const weightListenerRef = useRef<((w: number) => void) | null>(null);
 
-    // Gravimetric target weight in kg
-    const [manualTarget, setManualTarget] = useState<number>(0.5);
-
     useEffect(() => {
-        // 1. Listen for details
+        let didLoad = false;
         const handleDetails = (data: MenuDetails) => {
             if (data.menuItemId === drink.id) {
+                didLoad = true;
                 setDetails(data);
 
-                // Initialize custom values with nominal ones
                 const initialValues: Record<string, number> = {};
                 data.ingredients.forEach(ing => {
                     ing.variants.forEach(variant => {
@@ -61,27 +58,32 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
                 setCustomValues(initialValues);
                 setCustomVolume(data.globalNom || 200);
 
-                // Default gravimetric target: 0.5 kg (adjustable via slider)
-                // Do not derive from recipe — recipe uses different unit conventions
-                if (manualTarget === 0) {
-                    setManualTarget(0.5);
-                }
+                logger.info('Customizer',
+                    `Recipe loaded: "${data.name}" min=${data.globalMin} nom=${data.globalNom} max=${data.globalMax} ` +
+                    `ingredients=${data.ingredients.length}`
+                );
+                data.ingredients.forEach(ing => {
+                    ing.variants.forEach(v => {
+                        logger.info('Customizer',
+                            `  ing=${ing.id} var=${v.id} "${v.name}" ${v.min}-${v.defaultValue}-${v.max} ${v.unit}`
+                        );
+                    });
+                });
+
                 setLoading(false);
             }
         };
 
         connection.events.onDrinkDetailsReceived = handleDetails;
 
-        // 2. Request details
         logger.info('Customizer', `Requesting details for ${drink.name}`);
         connection.requestDrinkDetails(drink.id).catch((err: any) => {
             logger.error('Customizer', 'Failed to request details', err);
             setLoading(false);
         });
 
-        // 3. Prevent getting stuck
         const timeout = setTimeout(() => {
-            if (loading) {
+            if (!didLoad) {
                 logger.warn('Customizer', `Timeout fetching details for ${drink.name}`);
                 setLoading(false);
             }
@@ -91,18 +93,17 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
             connection.events.onDrinkDetailsReceived = undefined;
             clearTimeout(timeout);
         };
-    }, [drink, connection, loading]); // Added loading to dependency array to avoid stale closure issue with timeout
+    }, [drink, connection]);
 
     // Wire weight updates to active DoseController
     useEffect(() => {
         if (!doseController) return;
 
         const handler = (w: number) => {
-            doseController.onWeight(w); // kg, matches DoseController units
+            doseController.onWeight(w);
         };
         weightListenerRef.current = handler;
 
-        // Save the original handler and attach ours
         const origHandler = siloManager['events']?.onWeightUpdate;
         siloManager['events'] = {
             ...siloManager['events'],
@@ -128,39 +129,9 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
         }));
     };
 
-    const calculateTotalVolume = () => {
-        // If gravimetric is enabled, use the manual slider value!
-        if (isGravimetric && manualTarget > 0) {
-            return manualTarget;
-        }
-
-        if (!details) return 0;
-        let total = 0;
-        details.ingredients.forEach(ing => {
-            ing.variants.forEach(variant => {
-                if (variant.unit === 'ml') {
-                    const key = `${ing.id}-${variant.id}`;
-                    const value = customValues[key] !== undefined ? customValues[key] : variant.defaultValue;
-                    total += value;
-                }
-            });
-        });
-
-        // Fallback for non-gravimetric mode (standard brew)
-        if (total === 0 && details.globalNom > 0) {
-            if (details.globalNom > 500) return Math.round(details.globalNom / 10);
-            return details.globalNom;
-        }
-
-        return Math.round(total);
-    };
-
-    const currentVolume = calculateTotalVolume();
-
     const handleBrew = async () => {
         if (!details) return;
 
-        const totalVolume = currentVolume;
         const ingredients: OrderIngredient[] = [];
 
         details.ingredients.forEach(ing => {
@@ -176,20 +147,20 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
             });
         });
 
-        // Use totalVolume or customVolume (the latter is a fallback)
-        const targetVolume = totalVolume > 0 ? totalVolume : customVolume;
+        logger.info('Customizer', `Order: menuId=${drink.id} gravimetric=${isGravimetric} customVolume=${customVolume} globalNom=${details.globalNom}`);
+        ingredients.forEach(i => logger.info('Customizer', `  ing=${i.ingredientId} var=${i.variantId} val=${i.value}`));
 
         if (isGravimetric) {
             // --- Precision Gravimetric Dosing with Auto Top-Up ---
             const siloId = drink.name || `drink_${drink.id}`;
             const MAX_TOP_UPS = 2;
-            const TOP_UP_TOLERANCE_KG = 0.01; // 10 g tolerance before triggering top-up
+            const TOP_UP_TOLERANCE_KG = 0.01;
 
-            /**
-             * Recursive helper: runs one dose of targetKg, then auto top-ups if under-dosed.
-             * topUpN = 0 for first dose, 1+ for top-up rounds.
-             */
-            const runDose = async (targetKg: number, topUpN: number) => {
+            // Convert slider value (recipe units: g or ml) to kg for DoseController
+            const targetKg = customVolume / 1000;
+            logger.info('Customizer', `Gravimetric target: ${customVolume} ${recipeUnit} → ${targetKg.toFixed(3)} kg`);
+
+            const runDose = async (doseTargetKg: number, topUpN: number) => {
                 const ctrl = new DoseController(
                     {
                         onComplete: (result) => {
@@ -210,39 +181,37 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
                             logger.warn('Customizer', `Dose aborted: ${reason}`);
                         },
                     },
-                    { targetKg, siloId }
+                    { targetKg: doseTargetKg, siloId }
                 );
 
-                // Tare at current scale weight (kg, no conversion needed)
                 ctrl.tare(siloManager.getWeight());
 
-                // Send order — cupSize -1 means machine uses nominal, scale controls stop
                 await connection.sendCustomOrder({
                     menuId: drink.id,
-                    cups: 1,
+                    cups: -1,
                     cupSize: -1,
                     ingredients,
                 });
 
-                // Preemptive timer in DoseController fires the stop callback
                 ctrl.start(() => { connection.cancelOrder(); });
-
                 setDoseController(ctrl);
             };
 
             try {
                 onBrewingStart();
-                await runDose(manualTarget, 0);
+                await runDose(targetKg, 0);
             } catch (err) {
                 logger.error('Customizer', 'Failed to start gravimetric brew', err);
             }
         } else {
             // --- Standard (non-gravimetric) brew ---
+            const sendCupSize = (customVolume === details.globalNom) ? -1 : customVolume;
+
             onBrewingStart();
             await connection.sendCustomOrder({
                 menuId: drink.id,
-                cups: 1,
-                cupSize: (targetVolume === details.globalNom) ? -1 : targetVolume,
+                cups: -1,
+                cupSize: sendCupSize,
                 ingredients,
             });
             onClose();
@@ -274,6 +243,12 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
         );
     }
 
+    // Recipe unit from first ingredient
+    const recipeUnit = details.ingredients[0]?.variants[0]?.unit || 'ml';
+    // Slider step: fine for small ranges, coarse for large
+    const sliderRange = (details.globalMax || 500) - (details.globalMin || 10);
+    const sliderStep = sliderRange > 100 ? 1 : sliderRange > 10 ? 0.5 : 0.1;
+
     return (
         <div className="customizer-overlay">
             {/* Brew Monitor Overlay (gravimetric mode) */}
@@ -295,7 +270,10 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
                     <div className="drink-meta">
                         <span className="text-zinc-500 text-sm">ID: {drink.id}</span>
                         <span className="total-volume">
-                            {currentVolume > 0 ? `${currentVolume}ml` : `${customVolume}ml`}
+                            {customVolume} {recipeUnit}
+                            {isGravimetric && (
+                                <span className="text-amber-500"> ({(customVolume / 1000).toFixed(3)} kg)</span>
+                            )}
                         </span>
                     </div>
                 </header>
@@ -311,44 +289,37 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
                             checked={isGravimetric}
                             onChange={(e) => setIsGravimetric(e.target.checked)}
                         />
-                        <span>Enable Gravimetric Dosing (Auto-Stop)</span>
+                        <span>Gravimetric Dosing (Scale Auto-Stop)</span>
                     </label>
 
                     <div className="ingredient-grid">
-                        {/* Manual Target Input for Gravimetric Mode */}
-                        {isGravimetric && (
-                            <div className="ingredient-group gravimetric-target-group">
-                                <span className="ingredient-title text-amber-500">Target Weight</span>
-                                <div className="gravimetric-target-input-row">
-                                    <input
-                                        type="number"
-                                        className="gravimetric-target-input"
-                                        value={manualTarget}
-                                        min={0.1}
-                                        max={25}
-                                        step={0.1}
-                                        onChange={(e) => {
-                                            const v = parseFloat(e.target.value);
-                                            if (!isNaN(v) && v >= 0.1 && v <= 25) setManualTarget(v);
-                                        }}
-                                    />
-                                    <span className="gravimetric-target-unit">kg</span>
+                        {/* Drink Size — one slider, same for both modes */}
+                        <div className="ingredient-group">
+                            <span className="ingredient-title text-amber-500">
+                                {isGravimetric ? 'Target Weight' : 'Drink Size'}
+                            </span>
+                            <Slider
+                                label={isGravimetric ? 'Target' : 'Size'}
+                                unit={recipeUnit}
+                                min={details.globalMin || 10}
+                                max={details.globalMax || 500}
+                                step={sliderStep}
+                                value={customVolume}
+                                onChange={(v) => setCustomVolume(v)}
+                            />
+                            {isGravimetric && (
+                                <div className="gravimetric-kg-readout">
+                                    = {(customVolume / 1000).toFixed(3)} kg
                                 </div>
-                                <Slider
-                                    label=""
-                                    unit=""
-                                    min={0.1}
-                                    max={25}
-                                    step={0.1}
-                                    value={manualTarget}
-                                    onChange={setManualTarget}
-                                />
-                            </div>
-                        )}
+                            )}
+                        </div>
 
+                        {/* Ingredient sliders from recipe */}
                         {details.ingredients.map(ing => (
                             <div key={ing.id} className="ingredient-group">
-                                <div className="ingredient-title">Ingredient {ing.id}</div>
+                                <div className="ingredient-title">
+                                    {ing.variants[0]?.name || `Ingredient ${ing.id}`}
+                                </div>
                                 {ing.variants.map(variant => {
                                     const key = `${ing.id}-${variant.id}`;
                                     const val = customValues[key];
@@ -359,7 +330,7 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
                                                 unit={variant.unit}
                                                 min={variant.min}
                                                 max={variant.max}
-                                                step={0.1}
+                                                step={variant.max > 10 ? 1 : 0.1}
                                                 value={val}
                                                 onChange={(v) => handleValueChange(ing.id, variant.id, v)}
                                             />

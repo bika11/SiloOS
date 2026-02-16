@@ -81,7 +81,7 @@ export const DashboardScreen: React.FC<DashboardProps> = ({ connection, scaleMan
         // ... brew status handler ...
         connection.events.onBrewStatusUpdate = (statusObj) => {
             if (statusObj.systemStatus === SystemStates.STATE_SYSTEM_BREWING) {
-                setStatus(getBrewStatusText(statusObj.brewState, statusObj.progress));
+                setStatus(getBrewStatusText(statusObj.state, statusObj.progress));
             } else if (statusObj.systemStatus === SystemStates.STATE_SYSTEM_ERROR) {
                 setStatus(`Error: ${statusObj.error}`);
             } else if (statusObj.systemStatus === SystemStates.STATE_SYSTEM_IDLE) {
