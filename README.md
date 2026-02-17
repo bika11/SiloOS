@@ -48,10 +48,17 @@ The primary Python script that handles:
 ## Security
 Connections to the bridge require a security token defined in `config.json`. The PWA is pre-configured to use this token automatically within the internal network.
 
+## Project Status
+
+- **Status**: Stable / Working
+- **Last Verification**: 2026-02-17
+- **Current Version**: Rollback to commit `1211edb` with Bluetooth RF-kill fix applied to the host.
+
 ## Maintenance
+
 To sync changes from a development laptop to the Pi, use the `/sync-project` workflow:
 ```bash
 # From laptop
 scp -i ./siloos_key ./ble_bridge.py siloos@10.0.124.90:/home/siloos/ble_bridge.py
-ssh -i ./siloos_key siloos@10.0.124.90 "sudo systemctl restart scale_bridge"
+ssh -i ./siloos_key siloos@10.0.124.90 "sudo systemctl restart silo-bridge"
 ```
