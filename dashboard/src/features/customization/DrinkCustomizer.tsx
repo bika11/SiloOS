@@ -153,12 +153,13 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
         if (isGravimetric) {
             // --- Precision Gravimetric Dosing with Auto Top-Up ---
             const siloId = drink.name || `drink_${drink.id}`;
-            const MAX_TOP_UPS = 2;
-            const TOP_UP_TOLERANCE_KG = 0.01;
+            const MAX_TOP_UPS = 5; // User confirmed small doses are fine
+            const TOP_UP_TOLERANCE_KG = 0.1; // 100g tolerance (scale resolution)
 
-            // Convert slider value (recipe units: g or ml) to kg for DoseController
-            const targetKg = customVolume / 1000;
-            logger.info('Customizer', `Gravimetric target: ${customVolume} ${recipeUnit} → ${targetKg.toFixed(3)} kg`);
+            // Convert slider value (recipe units: ml/kg) to kg for DoseController
+            // CRITICAL: 1 App Unit (ml) = 1 Physical Kg. No division by 1000.
+            const targetKg = customVolume;
+            logger.info('Customizer', `Gravimetric target: ${targetKg.toFixed(3)} kg (1:1 mapping from ${customVolume} ${recipeUnit})`);
 
             const runDose = async (doseTargetKg: number, topUpN: number) => {
                 const ctrl = new DoseController(
@@ -168,13 +169,17 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
                                 `Dose #${topUpN} complete: ${result.actualKg.toFixed(3)}kg / ${result.targetKg.toFixed(3)}kg`
                             );
                             const shortfall = result.targetKg - result.actualKg;
+
+                            // If shortfall is significant, trigger top-up
                             if (shortfall > TOP_UP_TOLERANCE_KG && topUpN < MAX_TOP_UPS) {
                                 logger.info('Customizer',
-                                    `Auto top-up #${topUpN + 1}: shortfall=${(shortfall * 1000).toFixed(0)}g`
+                                    `Auto top-up #${topUpN + 1}: shortfall=${shortfall.toFixed(3)}kg`
                                 );
                                 runDose(shortfall, topUpN + 1).catch(err =>
                                     logger.error('Customizer', 'Top-up failed', err)
                                 );
+                            } else {
+                                logger.info('Customizer', `Dose finished. Shortfall ${shortfall.toFixed(3)}kg within tolerance or max retries reached.`);
                             }
                         },
                         onAbort: (reason) => {
@@ -184,13 +189,35 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
                     { targetKg: doseTargetKg, siloId }
                 );
 
-                ctrl.tare(siloManager.getWeight());
+                ctrl.tare(siloManager.getWeight()); // Tare before every specific dose/top-up
+
+                // --- Calculate Scaled Recipe for Top-Up ---
+                // If this is a top-up (N > 0), we must ONLY dispense the fraction missing.
+                // scalingFactor = doseTargetKg / originalTargetKg
+                // Example: Missing 2kg of 10kg target -> Scale = 0.2 (20%)
+                const originalTargetKg = targetKg; // The total goal
+
+                // For initial dose (N=0), target is full amount, factor = 1.0
+                // For top-up, doseTargetKg is the shortfall.
+                const scalingFactor = doseTargetKg / originalTargetKg;
+
+                logger.info('Customizer', `Preparing Dose #${topUpN}. Target=${doseTargetKg.toFixed(3)}kg. Scaling Factor=${scalingFactor.toFixed(4)}`);
+
+                // Create scaled ingredients list
+                const scaledIngredients = ingredients.map(ing => ({
+                    ...ing,
+                    value: Math.max(0, ing.value * scalingFactor)
+                }));
+
+                scaledIngredients.forEach(i =>
+                    logger.info('Customizer', `  -> Scaled Ing ${i.ingredientId}: ${i.value.toFixed(2)} (Orig: ${ingredients.find(x => x.ingredientId === i.ingredientId)?.value})`)
+                );
 
                 await connection.sendCustomOrder({
                     menuId: drink.id,
-                    cups: -1,
+                    cups: 1,
                     cupSize: -1,
-                    ingredients,
+                    ingredients: scaledIngredients,
                 });
 
                 ctrl.start(() => { connection.cancelOrder(); });
@@ -199,18 +226,20 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
 
             try {
                 onBrewingStart();
-                await runDose(targetKg, 0);
+                await runDose(targetKg, 0); // Initial dose: target = full amount
             } catch (err) {
                 logger.error('Customizer', 'Failed to start gravimetric brew', err);
             }
         } else {
             // --- Standard (non-gravimetric) brew ---
+            // If "ml" = "kg", then this mode might send weird values to a normal machine, 
+            // but for SiloOS we assume gravimetric is primary.
             const sendCupSize = (customVolume === details.globalNom) ? -1 : customVolume;
 
             onBrewingStart();
             await connection.sendCustomOrder({
                 menuId: drink.id,
-                cups: -1,
+                cups: 1,
                 cupSize: sendCupSize,
                 ingredients,
             });
@@ -272,7 +301,7 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
                         <span className="total-volume">
                             {customVolume} {recipeUnit}
                             {isGravimetric && (
-                                <span className="text-amber-500"> ({(customVolume / 1000).toFixed(3)} kg)</span>
+                                <span className="text-amber-500"> ({customVolume.toFixed(3)} kg)</span>
                             )}
                         </span>
                     </div>
@@ -309,7 +338,7 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
                             />
                             {isGravimetric && (
                                 <div className="gravimetric-kg-readout">
-                                    = {(customVolume / 1000).toFixed(3)} kg
+                                    = {customVolume.toFixed(3)} kg
                                 </div>
                             )}
                         </div>

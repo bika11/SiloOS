@@ -86,6 +86,7 @@ export const ORDER_FEATURE = {
     MENU_ID: 0x01,
     CUP_COUNT: 0x02,
     CUP_SIZE: 0x04,
+    INGREDIENTS: 0x08,
 } as const;
 
 // ============================================================

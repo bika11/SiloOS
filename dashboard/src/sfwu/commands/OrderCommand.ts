@@ -39,7 +39,7 @@ export function buildOrderPayload(order: Order): Uint8Array {
     const hasCups = order.cups > 0;
     const hasCupSize = order.cupSize > 0;
 
-    const varLength = (hasMenuId ? 1 : 0) + (hasCups ? 1 : 0) + (hasCupSize ? 4 : 0);
+    const varLength = (hasMenuId ? 1 : 0) + 1 + (hasCupSize ? 4 : 0);
     const ingredientSize = 6; // 1 + 1 + 4 bytes per ingredient
     const commandSize = 1; // features byte
     const dataLength = commandSize + varLength + (order.ingredients.length * ingredientSize);
@@ -56,11 +56,11 @@ export function buildOrderPayload(order: Order): Uint8Array {
         featuresProvided |= ORDER_FEATURE.MENU_ID;
     }
 
-    // Cup count (1 byte)
-    if (hasCups) {
-        data[offset++] = order.cups & 0xff;
-        featuresProvided |= ORDER_FEATURE.CUP_COUNT;
-    }
+    // Cup count (1 byte) - MANDATORY for some machines
+    // If not set/invalid, default to 1 to ensure packet structure is valid
+    const cups = (order.cups > 0) ? order.cups : 1;
+    data[offset++] = cups & 0xff;
+    featuresProvided |= ORDER_FEATURE.CUP_COUNT;
 
     // Cup size (4 bytes, big-endian, value * 100)
     if (hasCupSize) {
@@ -68,6 +68,13 @@ export function buildOrderPayload(order: Order): Uint8Array {
         view.setUint32(offset, cupSizeScaled, false); // Explicit BIG-ENDIAN
         offset += 4;
         featuresProvided |= ORDER_FEATURE.CUP_SIZE;
+    }
+
+    // Ingredients flag
+    // Standard Mode Hack: We MUST set this flag if we are converting size (hasCupSize),
+    // otherwise the machine might skip the recalculation loop for 0-ingredient recipes.
+    if (order.ingredients.length > 0 || hasCupSize) {
+        featuresProvided |= ORDER_FEATURE.INGREDIENTS;
     }
 
     // Ingredients (6 bytes each)

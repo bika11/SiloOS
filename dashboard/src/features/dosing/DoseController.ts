@@ -99,6 +99,10 @@ export class DoseController {
     private preemptiveTimer: ReturnType<typeof setTimeout> | null = null;
     private settleTimer: ReturnType<typeof setTimeout> | null = null;
 
+    // Stall detection
+    private lastActivityTime: number = 0;
+    private lastKnownWeight: number = 0;
+
     constructor(events: DoseEvents, config: DoseConfig) {
         this.config = config;
         this.events = events;
@@ -141,6 +145,8 @@ export class DoseController {
         }
         this.onStopCallback = onStop;
         this.startTime = performance.now();
+        this.lastActivityTime = this.startTime;
+        this.lastKnownWeight = this.lastDispensedKg;
         this.setState('running');
 
         // --- Preemptive timer ---
@@ -195,6 +201,33 @@ export class DoseController {
             if (dispensedKg >= this.config.targetKg) {
                 logger.warn('DoseCtrl', `Weight-based hard stop at ${(dispensedKg * 1000).toFixed(0)}g`);
                 this.sendStop();
+            }
+
+            // --- Stall Detection ---
+            // If weight hasn't changed significantly (> 0.05kg) for 3 seconds, assume stalled/empty
+            // Scale resolution is 0.1kg, so we check if it is exactly same or very close.
+            // We use the timestamp of the last sample that was different from current.
+            const STALL_TIMEOUT_MS = 3000;
+
+            // Update activity timestamp if weight changed
+            // We compare with a sample from ~1s ago to be robust against jitter
+            if (this.samples.length > 0) {
+                const lastActivity = this.lastActivityTime || this.startTime;
+
+                // If we have gained weight since last check
+                if (Math.abs(dispensedKg - this.lastKnownWeight) > 0.005) {
+                    this.lastActivityTime = now;
+                    this.lastKnownWeight = dispensedKg;
+                } else {
+                    // No change
+                    if (now - lastActivity > STALL_TIMEOUT_MS) {
+                        logger.warn('DoseCtrl', `STALL DETECTED: No weight change for ${(now - lastActivity).toFixed(0)}ms. Assuming done/empty.`);
+                        this.sendStop();
+                    }
+                }
+            } else {
+                this.lastKnownWeight = dispensedKg;
+                this.lastActivityTime = now;
             }
         }
 
