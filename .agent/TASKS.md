@@ -160,3 +160,17 @@
 - **Description**: Gravimetric dosing would only learn from overshoots (positive `materialAfterStop`). If it undershot (stopped too early), it got stuck in a cautious state.
 - **Fix**: Removed the `materialAfterStop > 0` condition in `DoseController.ts` and allowed `valveDelay` to decrease. Added safety clamp to 0.
 - **Files Changed**: `dashboard/src/features/dosing/DoseController.ts`
+
+### TASK-016: Gravimetric Weight Polling, Cup Selection, Order Scaling ✅
+- Completed 2026-02-18 by frontend + protocol agent (Claude Code)
+- **Description**: Three-part fix: (1) gravimetric weight pipeline race condition, (2) standard mode order scaling, (3) cup selection UI
+- **Changes**:
+  - Replaced events monkey-patching with 10Hz polling + useRef for synchronous DoseController access
+  - Exposed `carafe` flag from SFWU parser, added 1-5 cup selector UI
+  - Only user-modified ingredients sent in orders (allows machine proportional scaling)
+  - Replaced recursive top-up loop with calculated cup count + DoseController cancel
+  - Gravimetric slider: 0.1-120kg @ 0.1kg resolution
+  - Profile corruption protection in DoseController.loadProfile()
+  - Enabled `scale_bridge` systemd service for auto-start on boot
+- **Files Changed**: `DrinkCustomizer.tsx`, `DrinkCustomizer.css`, `DoseController.ts`, `MenuDetailsParser.ts`, `MenuDetails.ts`
+- **Verified**: Live-tested on machine — all features confirmed working

@@ -4,14 +4,16 @@
 
 | Component | Status | Last Verified | Notes |
 |-----------|--------|---------------|-------|
-| **Dashboard PWA** | ⚠️ NEEDS REVIEW | 2026-02-12 | Gravimetric dosing implemented, needs live test |
-| **Python Bridge** | ✅ OPERATIONAL | 2026-02-12 | Running on Pi via systemd |
-| **WebSocket Relay** | ✅ OPERATIONAL | 2026-02-12 | Port 8765, auth working |
-| **BLE Connection** | ✅ OPERATIONAL | 2026-02-12 | TopBrewer connected |
-| **Scale (RS485)** | ✅ OPERATIONAL | 2026-02-12 | Laumas TLS485 reading |
+| **Dashboard PWA** | ✅ OPERATIONAL | 2026-02-18 | Gravimetric dosing, cup selection, scaling all verified |
+| **Python Bridge** | ✅ OPERATIONAL | 2026-02-18 | Running on Pi via systemd (enabled for boot) |
+| **WebSocket Relay** | ✅ OPERATIONAL | 2026-02-18 | Port 8765, auth working |
+| **BLE Connection** | ✅ OPERATIONAL | 2026-02-18 | TopBrewer connected |
+| **Scale (RS485)** | ✅ OPERATIONAL | 2026-02-18 | Laumas TLS485 reading, 10Hz polling pipeline |
 | **SFWU Protocol** | ✅ FIXED | 2026-02-12 | Relay address corrected (0x03→0x02) |
 | **Build Pipeline** | ⚠️ NEEDS REVIEW | 2026-02-12 | Vite builds, HMR IP hardcoded |
-| **Gravimetric Dosing** | 🆕 IMPLEMENTED | 2026-02-16 | Learning bug fixed (undershoot recovery), ready for test |
+| **Gravimetric Dosing** | ✅ VERIFIED | 2026-02-18 | Weight polling, calculated cups, profile corruption protection |
+| **Cup Selection** | ✅ IMPLEMENTED | 2026-02-18 | Carafe-capable drinks show 1-5 cup selector |
+| **Order Scaling** | ✅ IMPLEMENTED | 2026-02-18 | Only modified ingredients sent; CUP_SIZE triggers proportional scaling |
 
 ## Architecture Diagram
 
@@ -119,3 +121,17 @@ Browser (PWA)  ──WebSocket──▶  Raspberry Pi  ──BLE──▶  TopBr
 - **Action**: Fixed logic bug in `DoseController.ts`
 - **Root Cause**: Learning algorithm ignored undershoots, preventing the system from reducing `valveDelay` if it was too cautious.
 - **Impact**: Gravimetric selection should now converge quickly to the correct target, even if starting with a high delay estimate.
+
+### 2026-02-18 — Gravimetric Weight Polling, Cup Selection, Order Scaling
+- **Agent**: Frontend + Protocol (Claude Code)
+- **Action**: Major overhaul of DrinkCustomizer and DoseController
+- **Changes**:
+  1. **Weight pipeline fix**: Replaced unreliable `siloManager['events']` monkey-patching with 10Hz `setInterval` polling of `siloManager.getWeight()` via `useRef` for synchronous DoseController access. Fixes React state race condition where new controllers never received weight samples.
+  2. **Cup selection**: Exposed `carafe` flag from `MenuDetailsParser` to `MenuDetails` type. Added 1-5 cup selector UI (shown only for carafe-capable drinks, hidden in gravimetric mode). Cup count passed to `sendCustomOrder()`.
+  3. **Order scaling**: Only user-modified ingredients sent in orders. Untouched ingredients omitted so machine applies proportional scaling via CUP_SIZE / Nominal ratio. Note: Silo recipes have `Scalable=False` in firmware — scaling is a machine-side limitation for those.
+  4. **Gravimetric calculated cups**: Replaced fragile recursive top-up loop with calculated cup count (`Math.min(255, ceil(targetKg / nominalKg) + 2)`). DoseController sends `cancelOrder()` at target weight.
+  5. **Gravimetric slider**: 0.1-120kg range with 0.1kg resolution (was limited to recipe range).
+  6. **Profile corruption protection**: `DoseController.loadProfile()` rejects and resets profiles with `valveDelay > 5s` or `flowRate > 1.0 kg/s` or `flowRate <= 0`.
+- **Files Changed**: `DrinkCustomizer.tsx`, `DrinkCustomizer.css`, `DoseController.ts`, `MenuDetailsParser.ts`, `MenuDetails.ts`
+- **Verified**: Live-tested on machine — gravimetric dosing, cup selection, and standard brewing all confirmed working.
+- **Service**: `scale_bridge` enabled for auto-start on boot (`systemctl enable`)
