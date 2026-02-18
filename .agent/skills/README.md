@@ -1,37 +1,19 @@
 # Skills Framework
 
-Skills are reusable, domain-specific procedures that any agent can invoke when working on a task. They encode expert knowledge about specific subsystems.
+Skills are reusable, domain-specific procedures that any agent can invoke when working on a task. 
 
-## How to Use a Skill
-1. A task or workflow references a skill by name (e.g., `skill: ble-debug`)
-2. Read the skill file for step-by-step instructions
-3. Follow the procedure, adapting to the specific context
-4. Report results back in the task or STATUS.md
+## Structure
 
-## How to Create a New Skill
+- [`project/`](file:///c:/Users/anbdk/SiloOS/.agent/skills/project/): Project-specific skills for SiloOS hardware and frontend.
+- [`awesome/`](file:///c:/Users/anbdk/SiloOS/.agent/skills/awesome/): [Antigravity Awesome Skills](https://github.com/sickn33/antigravity-awesome-skills) library (850+ expert skills).
 
-Create a new `.md` file in this directory with this structure:
+## How to Use
 
-```markdown
-# Skill Name
+1. Reference a skill by name (e.g., `@brainstorming` from awesome, or `@ble-debug` from project).
+2. The agent will read the relevant `SKILL.md` or `.md` file for instructions.
+3. Follow the procedure and report results.
 
-## When to Use
-Describe the trigger conditions.
-
-## Prerequisites
-What must be true before running this skill.
-
-## Procedure
-Step-by-step instructions.
-
-## Expected Outcomes
-What success looks like.
-
-## Troubleshooting
-Common failure modes and fixes.
-```
-
-## Available Skills
+## Project Skills
 
 | Skill | File | Domain | Purpose |
 |-------|------|--------|---------|
