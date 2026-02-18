@@ -381,6 +381,12 @@ export class DoseController {
                 if (typeof parsed.flowRateKgPerS === 'number' &&
                     typeof parsed.valveDelayS === 'number' &&
                     typeof parsed.totalDoses === 'number') {
+                    // Sanity clamp: reject corrupted profiles (e.g. valveDelay > 5s is unrealistic)
+                    if (parsed.valveDelayS > 5.0 || parsed.flowRateKgPerS > 1.0 || parsed.flowRateKgPerS <= 0) {
+                        logger.warn('DoseCtrl', `Profile for "${siloId}" has invalid values (flow=${parsed.flowRateKgPerS}, delay=${parsed.valveDelayS}) — resetting`);
+                        localStorage.removeItem(STORAGE_PREFIX + siloId);
+                        return { ...DEFAULT_PROFILE };
+                    }
                     return parsed;
                 }
             }

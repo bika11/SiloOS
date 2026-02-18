@@ -116,6 +116,7 @@ export class MenuDetailsParser {
             globalMin: globalMin / scale,
             globalNom: globalNom / scale,
             globalMax: globalMax / scale,
+            carafe: carafe === 1,
             ingredients
         };
     }

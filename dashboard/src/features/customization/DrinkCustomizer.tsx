@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { TopBrewerConnection } from '../../bluetooth';
 import { ScaleManager } from '../../bluetooth/ScaleManager';
 import { SiloManager } from '../../bluetooth/SiloManager';
@@ -39,7 +39,18 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
     const [customVolume, setCustomVolume] = useState<number>(0);
     const [isGravimetric, setIsGravimetric] = useState(false);
     const [doseController, setDoseController] = useState<DoseController | null>(null);
-    const weightListenerRef = useRef<((w: number) => void) | null>(null);
+    const [cups, setCups] = useState(1);
+
+    // FIX 1: Synchronous ref for active DoseController — avoids React state race on top-ups.
+    // React's setDoseController is async; the weight-listener effect won't re-run until
+    // the next render.  The ref updates immediately so a new top-up controller receives
+    // weight samples from the moment it's created.
+    const activeDoseRef = useRef<DoseController | null>(null);
+
+    // FIX 2: Track which ingredient sliders the user actually touched.
+    // Only modified ingredients are sent in the order — untouched ones are omitted
+    // so the machine can apply its own proportional scaling from recipe_1.xml.
+    const [modifiedIngredients, setModifiedIngredients] = useState<Set<string>>(new Set());
 
     useEffect(() => {
         let didLoad = false;
@@ -57,10 +68,11 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
                 });
                 setCustomValues(initialValues);
                 setCustomVolume(data.globalNom || 200);
+                setModifiedIngredients(new Set());
 
                 logger.info('Customizer',
                     `Recipe loaded: "${data.name}" min=${data.globalMin} nom=${data.globalNom} max=${data.globalMax} ` +
-                    `ingredients=${data.ingredients.length}`
+                    `carafe=${data.carafe} ingredients=${data.ingredients.length}`
                 );
                 data.ingredients.forEach(ing => {
                     ing.variants.forEach(v => {
@@ -95,153 +107,123 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
         };
     }, [drink, connection]);
 
-    // Wire weight updates to active DoseController
+    // Weight polling: read siloManager.getWeight() at 10 Hz and feed to
+    // the active DoseController.  This is far more reliable than monkey-patching
+    // the private `events` object, which gets overwritten by other consumers.
     useEffect(() => {
-        if (!doseController) return;
+        const POLL_MS = 100; // 10 Hz
+        const id = setInterval(() => {
+            if (activeDoseRef.current) {
+                activeDoseRef.current.onWeight(siloManager.getWeight());
+            }
+        }, POLL_MS);
+        return () => clearInterval(id);
+    }, [siloManager]);
 
-        const handler = (w: number) => {
-            doseController.onWeight(w);
-        };
-        weightListenerRef.current = handler;
-
-        const origHandler = siloManager['events']?.onWeightUpdate;
-        siloManager['events'] = {
-            ...siloManager['events'],
-            onWeightUpdate: (w: number) => {
-                handler(w);
-                origHandler?.(w);
-            },
-        };
-
-        return () => {
-            weightListenerRef.current = null;
-            siloManager['events'] = {
-                ...siloManager['events'],
-                onWeightUpdate: origHandler,
-            };
-        };
-    }, [doseController, siloManager]);
-
-    const handleValueChange = (ingId: number, varId: number, value: number) => {
-        setCustomValues(prev => ({
-            ...prev,
-            [`${ingId}-${varId}`]: value
-        }));
-    };
+    const handleValueChange = useCallback((ingId: number, varId: number, value: number) => {
+        const key = `${ingId}-${varId}`;
+        setCustomValues(prev => ({ ...prev, [key]: value }));
+        setModifiedIngredients((prev: Set<string>) => new Set(prev).add(key));
+    }, []);
 
     const handleBrew = async () => {
         if (!details) return;
 
-        const ingredients: OrderIngredient[] = [];
-
+        // FIX 2: Only include ingredients the user actually changed from defaults.
+        // Untouched ingredients are omitted so the machine applies its own
+        // proportional scaling (CUP_SIZE ratio * internal nominal values).
+        const changedIngredients: OrderIngredient[] = [];
         details.ingredients.forEach(ing => {
             ing.variants.forEach(variant => {
                 const key = `${ing.id}-${variant.id}`;
-                const value = customValues[key] !== undefined ? customValues[key] : variant.defaultValue;
-
-                ingredients.push({
-                    ingredientId: ing.id,
-                    variantId: variant.id,
-                    value: value
-                });
+                if (modifiedIngredients.has(key)) {
+                    changedIngredients.push({
+                        ingredientId: ing.id,
+                        variantId: variant.id,
+                        value: customValues[key] ?? variant.defaultValue,
+                    });
+                }
             });
         });
 
-        logger.info('Customizer', `Order: menuId=${drink.id} gravimetric=${isGravimetric} customVolume=${customVolume} globalNom=${details.globalNom}`);
-        ingredients.forEach(i => logger.info('Customizer', `  ing=${i.ingredientId} var=${i.variantId} val=${i.value}`));
+        // FIX 2: CUP_SIZE — send explicit size whenever it differs from nominal.
+        // The machine uses CUP_SIZE / Nominal as a multiplier for proportional scaling.
+        // -1 means "use machine default".
+        const sendCupSize = (customVolume === details.globalNom) ? -1 : customVolume;
+
+        logger.info('Customizer',
+            `Order: menuId=${drink.id} cups=${cups} cupSize=${sendCupSize} ` +
+            `gravimetric=${isGravimetric} customVolume=${customVolume} globalNom=${details.globalNom} ` +
+            `changedIngredients=${changedIngredients.length}/${details.ingredients.length}`
+        );
+        changedIngredients.forEach(i =>
+            logger.info('Customizer', `  changed ing=${i.ingredientId} var=${i.variantId} val=${i.value}`)
+        );
 
         if (isGravimetric) {
-            // --- Precision Gravimetric Dosing with Auto Top-Up ---
+            // --- Precision Gravimetric Dosing ---
+            // Strategy: Send enough cups so the machine keeps pouring continuously.
+            // The DoseController monitors weight and sends cancelOrder() at the target.
+            // This avoids the slow top-up loop (order → pour → stop → detect shortfall → re-order).
             const siloId = drink.name || `drink_${drink.id}`;
-            const MAX_TOP_UPS = 5; // User confirmed small doses are fine
-            const TOP_UP_TOLERANCE_KG = 0.1; // 100g tolerance (scale resolution)
 
-            // Convert slider value (recipe units: ml/kg) to kg for DoseController
-            // CRITICAL: 1 App Unit (ml) = 1 Physical Kg. No division by 1000.
+            // CRITICAL: 1 App Unit = 1 Physical Kg. No division by 1000.
             const targetKg = customVolume;
-            logger.info('Customizer', `Gravimetric target: ${targetKg.toFixed(3)} kg (1:1 mapping from ${customVolume} ${recipeUnit})`);
 
-            const runDose = async (doseTargetKg: number, topUpN: number) => {
-                const ctrl = new DoseController(
-                    {
-                        onComplete: (result) => {
-                            logger.info('Customizer',
-                                `Dose #${topUpN} complete: ${result.actualKg.toFixed(3)}kg / ${result.targetKg.toFixed(3)}kg`
-                            );
-                            const shortfall = result.targetKg - result.actualKg;
+            // Calculate how many cups to request so the machine doesn't run out
+            // before we reach target weight. Add +2 buffer for safety.
+            const nominalKg = details.globalNom || 1;
+            const gravCups = Math.min(255, Math.ceil(targetKg / nominalKg) + 2);
 
-                            // If shortfall is significant, trigger top-up
-                            if (shortfall > TOP_UP_TOLERANCE_KG && topUpN < MAX_TOP_UPS) {
-                                logger.info('Customizer',
-                                    `Auto top-up #${topUpN + 1}: shortfall=${shortfall.toFixed(3)}kg`
-                                );
-                                runDose(shortfall, topUpN + 1).catch(err =>
-                                    logger.error('Customizer', 'Top-up failed', err)
-                                );
-                            } else {
-                                logger.info('Customizer', `Dose finished. Shortfall ${shortfall.toFixed(3)}kg within tolerance or max retries reached.`);
-                            }
-                        },
-                        onAbort: (reason) => {
-                            logger.warn('Customizer', `Dose aborted: ${reason}`);
-                        },
+            logger.info('Customizer',
+                `Gravimetric: target=${targetKg.toFixed(1)}kg nominal=${nominalKg}kg/cup → requesting ${gravCups} cups`
+            );
+
+            const ctrl = new DoseController(
+                {
+                    onComplete: (result) => {
+                        logger.info('Customizer',
+                            `Gravimetric done: ${result.actualKg.toFixed(3)}kg / ${result.targetKg.toFixed(3)}kg ` +
+                            `overshoot=${result.overshootKg.toFixed(3)}kg`
+                        );
                     },
-                    { targetKg: doseTargetKg, siloId }
-                );
+                    onAbort: (reason) => {
+                        logger.warn('Customizer', `Dose aborted: ${reason}`);
+                    },
+                },
+                { targetKg, siloId }
+            );
 
-                ctrl.tare(siloManager.getWeight()); // Tare before every specific dose/top-up
+            ctrl.tare(siloManager.getWeight());
 
-                // --- Calculate Scaled Recipe for Top-Up ---
-                // If this is a top-up (N > 0), we must ONLY dispense the fraction missing.
-                // scalingFactor = doseTargetKg / originalTargetKg
-                // Example: Missing 2kg of 10kg target -> Scale = 0.2 (20%)
-                const originalTargetKg = targetKg; // The total goal
+            // Send cupSize=-1 so machine uses its default recipe per cycle.
+            // The cup count ensures it keeps pouring; DoseController handles the stop.
+            await connection.sendCustomOrder({
+                menuId: drink.id,
+                cups: gravCups,
+                cupSize: -1,
+                ingredients: changedIngredients,
+            });
 
-                // For initial dose (N=0), target is full amount, factor = 1.0
-                // For top-up, doseTargetKg is the shortfall.
-                const scalingFactor = doseTargetKg / originalTargetKg;
-
-                logger.info('Customizer', `Preparing Dose #${topUpN}. Target=${doseTargetKg.toFixed(3)}kg. Scaling Factor=${scalingFactor.toFixed(4)}`);
-
-                // Create scaled ingredients list
-                const scaledIngredients = ingredients.map(ing => ({
-                    ...ing,
-                    value: Math.max(0, ing.value * scalingFactor)
-                }));
-
-                scaledIngredients.forEach(i =>
-                    logger.info('Customizer', `  -> Scaled Ing ${i.ingredientId}: ${i.value.toFixed(2)} (Orig: ${ingredients.find(x => x.ingredientId === i.ingredientId)?.value})`)
-                );
-
-                await connection.sendCustomOrder({
-                    menuId: drink.id,
-                    cups: 1,
-                    cupSize: -1,
-                    ingredients: scaledIngredients,
-                });
-
-                ctrl.start(() => { connection.cancelOrder(); });
-                setDoseController(ctrl);
-            };
+            activeDoseRef.current = ctrl;
+            ctrl.start(() => { connection.cancelOrder(); });
+            setDoseController(ctrl);
 
             try {
                 onBrewingStart();
-                await runDose(targetKg, 0); // Initial dose: target = full amount
             } catch (err) {
                 logger.error('Customizer', 'Failed to start gravimetric brew', err);
             }
         } else {
             // --- Standard (non-gravimetric) brew ---
-            // If "ml" = "kg", then this mode might send weird values to a normal machine, 
-            // but for SiloOS we assume gravimetric is primary.
-            const sendCupSize = (customVolume === details.globalNom) ? -1 : customVolume;
-
+            // Machine handles proportional scaling via CUP_SIZE / Nominal ratio.
+            // Only user-modified ingredients are sent; the rest use machine defaults.
             onBrewingStart();
             await connection.sendCustomOrder({
                 menuId: drink.id,
-                cups: 1,
+                cups,
                 cupSize: sendCupSize,
-                ingredients,
+                ingredients: changedIngredients,
             });
             onClose();
         }
@@ -274,9 +256,10 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
 
     // Recipe unit from first ingredient
     const recipeUnit = details.ingredients[0]?.variants[0]?.unit || 'ml';
-    // Slider step: fine for small ranges, coarse for large
-    const sliderRange = (details.globalMax || 500) - (details.globalMin || 10);
-    const sliderStep = sliderRange > 100 ? 1 : sliderRange > 10 ? 0.5 : 0.1;
+    // Slider config: gravimetric uses fixed 0-120kg @ 0.1 step; standard uses machine recipe range
+    const sliderMin = isGravimetric ? 0.1 : (details.globalMin || 10);
+    const sliderMax = isGravimetric ? 120 : (details.globalMax || 500);
+    const sliderStep = isGravimetric ? 0.1 : ((details.globalMax || 500) - (details.globalMin || 10)) > 100 ? 1 : 0.5;
 
     return (
         <div className="customizer-overlay">
@@ -285,6 +268,7 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
                 <BrewMonitor
                     controller={doseController}
                     onClose={() => {
+                        activeDoseRef.current = null;
                         setDoseController(null);
                         onClose();
                     }}
@@ -299,10 +283,10 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
                     <div className="drink-meta">
                         <span className="text-zinc-500 text-sm">ID: {drink.id}</span>
                         <span className="total-volume">
-                            {customVolume} {recipeUnit}
-                            {isGravimetric && (
-                                <span className="text-amber-500"> ({customVolume.toFixed(3)} kg)</span>
-                            )}
+                            {isGravimetric
+                                ? `${customVolume.toFixed(1)} kg`
+                                : `${customVolume} ${recipeUnit}`
+                            }
                         </span>
                     </div>
                 </header>
@@ -322,6 +306,24 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
                     </label>
 
                     <div className="ingredient-grid">
+                        {/* FIX 3: Cup Count — shown only for carafe-capable drinks */}
+                        {details.carafe && !isGravimetric && (
+                            <div className="ingredient-group">
+                                <span className="ingredient-title text-amber-500">Cups</span>
+                                <div className="cup-selector">
+                                    {[1, 2, 3, 4, 5].map(n => (
+                                        <button
+                                            key={n}
+                                            className={`cup-btn ${cups === n ? 'active' : ''}`}
+                                            onClick={() => setCups(n)}
+                                        >
+                                            {n}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         {/* Drink Size — one slider, same for both modes */}
                         <div className="ingredient-group">
                             <span className="ingredient-title text-amber-500">
@@ -329,9 +331,9 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
                             </span>
                             <Slider
                                 label={isGravimetric ? 'Target' : 'Size'}
-                                unit={recipeUnit}
-                                min={details.globalMin || 10}
-                                max={details.globalMax || 500}
+                                unit={isGravimetric ? 'kg' : recipeUnit}
+                                min={sliderMin}
+                                max={sliderMax}
                                 step={sliderStep}
                                 value={customVolume}
                                 onChange={(v) => setCustomVolume(v)}
@@ -379,7 +381,7 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
                         className="brew-btn"
                         size="lg"
                     >
-                        START BREWING
+                        START BREWING{cups > 1 ? ` (${cups} cups)` : ''}
                     </Button>
                 </div>
             </Card>

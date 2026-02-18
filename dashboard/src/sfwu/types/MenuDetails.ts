@@ -4,6 +4,7 @@ export interface MenuDetails {
     globalMin?: number;
     globalNom?: number;
     globalMax?: number;
+    carafe?: boolean;
     ingredients: Ingredient[];
 }
 
