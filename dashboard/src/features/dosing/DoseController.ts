@@ -6,13 +6,29 @@
  *   2. Weight-based confirmation / settling detection
  *
  * After each dose the controller learns flow rate and valve delay per silo,
- * persisting the profile in localStorage so accuracy improves over runs.
+ * persisting the profile on the Pi so accuracy improves over runs.
+ *
+ * Accuracy features:
+ *   - Quantization-aware stop (P1): rounds to 0.1 kg scale resolution
+ *   - Adaptive EMA (P2): learns aggressively early, smooths later
+ *   - Bias correction (P3): tracks overshoot trend and compensates
+ *   - Step-change flow detection (P4): computes flow rate from 0.1 kg jumps
  *
  * State machine: idle → armed → running → stopping → settling → done | aborted
  */
 
 import { SiloManager } from '../../bluetooth/SiloManager';
 import { logger } from '../../utils/logger';
+
+// ============================================================
+// CONSTANTS
+// ============================================================
+
+/** Scale hardware resolution — Laumas TLS485 reports in 0.1 kg steps */
+const SCALE_QUANTA_KG = 0.1;
+
+/** Number of recent overshoot values to keep for bias correction (P3) */
+const BIAS_HISTORY_SIZE = 5;
 
 // ============================================================
 // TYPES
@@ -23,12 +39,12 @@ export type DoseState = 'idle' | 'armed' | 'running' | 'stopping' | 'settling' |
 export interface DoseConfig {
     /** Target dispensed weight in kg */
     targetKg: number;
-    /** Unique identifier for this silo (used for localStorage learning key) */
+    /** Unique identifier for this silo (used for persistence key) */
     siloId: string;
 }
 
 /**
- * Per-silo learned profile, persisted in localStorage.
+ * Per-silo learned profile, persisted on the Pi via SiloManager.
  * Updated after every completed dose using exponential moving average.
  */
 export interface SiloProfile {
@@ -38,6 +54,8 @@ export interface SiloProfile {
     valveDelayS: number;
     /** Total number of completed doses (confidence indicator) */
     totalDoses: number;
+    /** Recent overshoot values in kg for bias correction (P3) */
+    recentOvershootsKg: number[];
 }
 
 export interface DoseResult {
@@ -72,6 +90,7 @@ const DEFAULT_PROFILE: SiloProfile = {
     flowRateKgPerS: 0.05,   // 50 g/s — cautious start, real silos may be faster
     valveDelayS: 0.5,       // 0.5 s valve coast-down
     totalDoses: 0,
+    recentOvershootsKg: [],
 };
 
 
@@ -104,6 +123,13 @@ export class DoseController {
     private lastActivityTime: number = 0;
     private lastKnownWeight: number = 0;
 
+    // P4: Step-change flow detection — tracks the last confirmed quantized
+    // weight step and its timestamp to compute accurate flow rate from
+    // the coarse 0.1 kg scale resolution.
+    private lastQuantizedKg: number = 0;
+    private lastStepTime: number = 0;
+    private stepFlowRateKgPerS: number = 0;
+
     constructor(events: DoseEvents, config: DoseConfig, siloManager: SiloManager) {
         this.config = config;
         this.events = events;
@@ -111,7 +137,8 @@ export class DoseController {
         this.profile = this.loadProfile(config.siloId);
         logger.info('DoseCtrl',
             `Silo "${config.siloId}" profile: flow=${this.profile.flowRateKgPerS.toFixed(3)} kg/s, ` +
-            `valveDelay=${this.profile.valveDelayS.toFixed(2)}s, doses=${this.profile.totalDoses}`
+            `valveDelay=${this.profile.valveDelayS.toFixed(2)}s, doses=${this.profile.totalDoses}, ` +
+            `bias=${this.computeBiasCorrection().toFixed(3)}kg`
         );
     }
 
@@ -131,6 +158,9 @@ export class DoseController {
         this.tareWeightKg = currentWeightKg;
         this.samples = [];
         this.lastDispensedKg = 0;
+        this.lastQuantizedKg = 0;
+        this.lastStepTime = 0;
+        this.stepFlowRateKgPerS = 0;
         this.setState('armed');
         logger.info('DoseCtrl', `Tared at ${(currentWeightKg * 1000).toFixed(0)} g`);
     }
@@ -152,14 +182,28 @@ export class DoseController {
         this.setState('running');
 
         // --- Preemptive timer ---
-        // effectiveTarget accounts for material that will still flow after stop signal
+        // P1: Quantization-aware stop — round effective target DOWN to the
+        // nearest 0.1 kg scale step. This ensures we always aim for a value
+        // the scale can actually report, biasing toward slight undershoot.
         const overshootKg = this.profile.flowRateKgPerS * this.profile.valveDelayS;
-        const effectiveTarget = Math.max(0.005, this.config.targetKg - overshootKg);
+
+        // P3: Bias correction — subtract the average recent overshoot trend
+        // to compensate for systematic errors
+        const biasCorrection = this.computeBiasCorrection();
+
+        // P1: Round down to nearest scale quantum (0.1 kg)
+        const rawTarget = this.config.targetKg - overshootKg - biasCorrection;
+        const effectiveTarget = Math.max(
+            SCALE_QUANTA_KG,
+            Math.floor(rawTarget / SCALE_QUANTA_KG) * SCALE_QUANTA_KG
+        );
+
         const msUntilStop = Math.max(100, (effectiveTarget / this.profile.flowRateKgPerS) * 1000);
 
         logger.info('DoseCtrl',
             `Dosing started → target=${(this.config.targetKg * 1000).toFixed(0)}g ` +
             `effectiveTarget=${(effectiveTarget * 1000).toFixed(0)}g ` +
+            `biasCorr=${(biasCorrection * 1000).toFixed(0)}g ` +
             `stopIn=${msUntilStop.toFixed(0)}ms ` +
             `(flow=${this.profile.flowRateKgPerS.toFixed(3)}kg/s, delay=${this.profile.valveDelayS.toFixed(2)}s)`
         );
@@ -186,7 +230,29 @@ export class DoseController {
         this.samples.push({ weightKg: dispensedKg, timestamp: now });
         if (this.samples.length > 20) this.samples = this.samples.slice(-20);
 
-        const flowRateKgPerS = this.computeFlowRate();
+        // P4: Step-change flow detection — detect when the scale actually
+        // jumps by a full quantum (0.1 kg) and compute flow rate from that.
+        // This is far more accurate than polling-based diffs because we know
+        // the exact weight change (0.1 kg) and measure the time between steps.
+        if (this.state === 'running') {
+            const stepDelta = Math.abs(dispensedKg - this.lastQuantizedKg);
+            if (stepDelta >= SCALE_QUANTA_KG * 0.9) { // 0.09 kg threshold (allows for float rounding)
+                if (this.lastStepTime > 0) {
+                    const stepTimeS = (now - this.lastStepTime) / 1000;
+                    if (stepTimeS > 0.05) { // Ignore implausibly fast steps
+                        // We know exactly 0.1 kg was dispensed in stepTimeS seconds
+                        this.stepFlowRateKgPerS = SCALE_QUANTA_KG / stepTimeS;
+                    }
+                }
+                this.lastQuantizedKg = dispensedKg;
+                this.lastStepTime = now;
+            }
+        }
+
+        // Use step-based flow rate if available, fall back to sample-window
+        const flowRateKgPerS = this.stepFlowRateKgPerS > 0
+            ? this.stepFlowRateKgPerS
+            : this.computeFlowRate();
         const progress = Math.min(1, dispensedKg / this.config.targetKg);
 
         this.events.onUpdate?.({
@@ -208,11 +274,8 @@ export class DoseController {
             // --- Stall Detection ---
             // If weight hasn't changed significantly (> 0.05kg) for 3 seconds, assume stalled/empty
             // Scale resolution is 0.1kg, so we check if it is exactly same or very close.
-            // We use the timestamp of the last sample that was different from current.
             const STALL_TIMEOUT_MS = 3000;
 
-            // Update activity timestamp if weight changed
-            // We compare with a sample from ~1s ago to be robust against jitter
             if (this.samples.length > 0) {
                 const lastActivity = this.lastActivityTime || this.startTime;
 
@@ -294,7 +357,11 @@ export class DoseController {
         const actualKg = this.lastDispensedKg;
         const overshootKg = actualKg - this.config.targetKg;
         const durationS = durationMs / 1000;
-        const flowRateKgPerS = durationS > 0.1 ? (actualKg / durationS) : this.profile.flowRateKgPerS;
+
+        // Prefer step-based flow rate (P4) if available, more accurate
+        const flowRateKgPerS = this.stepFlowRateKgPerS > 0
+            ? this.stepFlowRateKgPerS
+            : (durationS > 0.1 ? (actualKg / durationS) : this.profile.flowRateKgPerS);
 
         const result: DoseResult = {
             targetKg: this.config.targetKg,
@@ -305,7 +372,7 @@ export class DoseController {
         };
 
         // Learn from this dose
-        this.learn(actualKg, durationS, flowRateKgPerS);
+        this.learn(actualKg, durationS, flowRateKgPerS, overshootKg);
 
         this.setState('done');
         logger.info('DoseCtrl',
@@ -318,13 +385,22 @@ export class DoseController {
     }
 
     /**
-     * Exponential Moving Average learning.
-     * alpha=0.3 means each new dose contributes 30% to the estimate.
+     * Adaptive Exponential Moving Average learning (P2).
+     * Alpha is aggressive when the profile is young (few doses) and
+     * smooths out as confidence grows. This means:
+     *   - Dose 1: full replacement (alpha = 1.0)
+     *   - Doses 2-3: 70% new data (alpha = 0.7) — learn fast
+     *   - Doses 4-9: 40% new data (alpha = 0.4) — moderate
+     *   - Dose 10+: 20% new data (alpha = 0.2) — stable
      */
-    private learn(actualKg: number, durationS: number, flowRateKgPerS: number): void {
+    private learn(actualKg: number, durationS: number, flowRateKgPerS: number, overshootKg: number): void {
         if (actualKg < 0.001 || durationS < 0.1) return; // Skip bogus doses
 
-        const alpha = this.profile.totalDoses === 0 ? 1.0 : 0.3; // First dose: full replace
+        // P2: Adaptive alpha — aggressive when young, smooth when mature
+        const doses = this.profile.totalDoses;
+        const alpha = doses === 0 ? 1.0 :
+            doses < 3 ? 0.7 :
+                doses < 10 ? 0.4 : 0.2;
 
         // Flow rate learning
         this.profile.flowRateKgPerS =
@@ -341,6 +417,13 @@ export class DoseController {
             this.profile.valveDelayS = Math.max(0, newDelay);
         }
 
+        // P3: Track overshoot for bias correction
+        this.profile.recentOvershootsKg.push(overshootKg);
+        if (this.profile.recentOvershootsKg.length > BIAS_HISTORY_SIZE) {
+            this.profile.recentOvershootsKg =
+                this.profile.recentOvershootsKg.slice(-BIAS_HISTORY_SIZE);
+        }
+
         this.profile.totalDoses++;
 
         // Pi-Side Persistence
@@ -349,10 +432,30 @@ export class DoseController {
         logger.info('DoseCtrl',
             `Learned: flow=${this.profile.flowRateKgPerS.toFixed(3)}kg/s ` +
             `valveDelay=${this.profile.valveDelayS.toFixed(2)}s ` +
-            `doses=${this.profile.totalDoses}`
+            `doses=${this.profile.totalDoses} ` +
+            `biasCorr=${this.computeBiasCorrection().toFixed(3)}kg ` +
+            `alpha=${alpha.toFixed(1)}`
         );
     }
 
+    /**
+     * P3: Compute average overshoot from recent doses.
+     * If recent doses consistently overshoot by X kg, we subtract X
+     * from the effective target in the next dose to compensate.
+     * Only applies when we have ≥2 data points for stability.
+     */
+    private computeBiasCorrection(): number {
+        const history = this.profile.recentOvershootsKg;
+        if (history.length < 2) return 0;
+        const avg = history.reduce((sum, v) => sum + v, 0) / history.length;
+        // Clamp to prevent over-correction (max ±0.5 kg adjustment)
+        return Math.max(-0.5, Math.min(0.5, avg));
+    }
+
+    /**
+     * Legacy flow rate computation — sliding window over last 5 samples.
+     * Used as fallback when step-change detection (P4) hasn't fired yet.
+     */
     private computeFlowRate(): number {
         const window = this.samples.slice(-5);
         if (window.length < 2) return 0;
@@ -385,6 +488,10 @@ export class DoseController {
             // Sanity clamp
             if (profile.valveDelayS > 5.0 || profile.flowRateKgPerS > 1.0 || profile.flowRateKgPerS <= 0) {
                 return { ...DEFAULT_PROFILE };
+            }
+            // Ensure recentOvershootsKg exists (backward compat with old profiles)
+            if (!Array.isArray(profile.recentOvershootsKg)) {
+                profile.recentOvershootsKg = [];
             }
             return profile;
         }

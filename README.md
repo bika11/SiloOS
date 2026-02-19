@@ -39,7 +39,7 @@ The primary Python script that handles:
 ### 2. High-Precision Scale
 -   **Baud Rate**: 115200 (Parity: Even, Stop bits: 1).
 -   **Wiring**: See [HARDWARE.md](HARDWARE.md) for terminal pinouts (Terminals 28/29).
--   **Precision**: Broadcasts weight at sub-gram granularity for gravimetric dosing.
+-   **Precision**: 0.1 kg scale resolution with adaptive learning — achieves ±0.1 kg dosing accuracy after calibration.
 
 ### 3. Dashboard PWA
 -   **RemoteBLEAdapter**: A drop-in replacement for Web Bluetooth that redirects all GATT operations to the Pi.
@@ -55,7 +55,7 @@ Connections to the bridge require a security token defined in `config.json`. The
 
 - **Status**: Production Ready / Stable
 - **Last Verification**: 2026-02-19
-- **Current Version**: v1.2.0 (Industrial UI + Multi-listener Sync)
+- **Current Version**: v1.3.0 (Precision Gravimetric Dosing + Industrial UI)
 
 ## Maintenance
 

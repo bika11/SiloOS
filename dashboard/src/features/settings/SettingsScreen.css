@@ -88,6 +88,178 @@
     color: var(--warning);
 }
 
+/* --- Dosing Calibration Section --- */
+.dosing-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    background: none;
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-3) var(--space-4);
+    cursor: pointer;
+    color: var(--zinc-50);
+    transition: background 0.2s;
+}
+
+.dosing-toggle:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.dosing-chevron {
+    font-size: 0.65rem;
+    color: var(--zinc-500);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dosing-chevron.open {
+    transform: rotate(90deg);
+}
+
+.dosing-calibration-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    margin-top: var(--space-3);
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.dosing-help-text {
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-md);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    line-height: 1.6;
+    color: var(--zinc-500);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.dosing-help-text p {
+    margin: 0 0 4px 0;
+}
+
+.dosing-help-text p:last-child {
+    margin-bottom: 0;
+}
+
+.dosing-help-text strong {
+    color: var(--zinc-50);
+}
+
+.dosing-silo-card {
+    padding: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    border: 1px solid var(--card-border);
+}
+
+.dosing-silo-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dosing-silo-name {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.dosing-dose-count {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--zinc-500);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+}
+
+.dosing-steppers {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3);
+}
+
+.dosing-overshoot-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.dosing-overshoot-label {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--zinc-500);
+}
+
+.dosing-overshoot-chips {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.overshoot-chip {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid;
+}
+
+.overshoot-chip.good {
+    color: #4ade80;
+    border-color: rgba(74, 222, 128, 0.3);
+    background: rgba(74, 222, 128, 0.08);
+}
+
+.overshoot-chip.warn {
+    color: #fbbf24;
+    border-color: rgba(251, 191, 36, 0.3);
+    background: rgba(251, 191, 36, 0.08);
+}
+
+.overshoot-chip.bad {
+    color: #f87171;
+    border-color: rgba(248, 113, 113, 0.3);
+    background: rgba(248, 113, 113, 0.08);
+}
+
+.dosing-reset-btn {
+    margin-top: var(--space-2);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.dosing-reset-btn:hover {
+    opacity: 1;
+    border-color: #f87171;
+    color: #f87171;
+}
+
 /* Light Theme Overrides */
 body.light-theme {
     --background: #f4f4f5;

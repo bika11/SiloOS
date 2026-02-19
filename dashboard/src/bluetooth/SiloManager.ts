@@ -1,4 +1,5 @@
 import { logger } from '../utils/logger';
+import type { Recipe } from '../features/dosing/Recipe';
 
 export interface SiloEvents {
     onWeightUpdate?: (weight: number) => void;
@@ -24,6 +25,7 @@ export class SiloManager {
     private settings: any = { theme: 'dark', hidden_recipes: [] };
     private preferences: Record<string, any> = {};
     private profiles: Record<string, any> = {};
+    private recipes: Record<string, Recipe> = {};
 
     // Callbacks for the RemoteBLEAdapter
     private listeners: {
@@ -31,7 +33,11 @@ export class SiloManager {
         status: ((c: boolean) => void)[];
         notifications: ((uuid: string, data: Uint8Array) => void)[];
         sfwu: ((packet: string) => void)[];
-    } = { settings: [], status: [], notifications: [], sfwu: [] };
+        recipes: ((r: Record<string, Recipe>) => void)[];
+    } = { settings: [], status: [], notifications: [], sfwu: [], recipes: [] };
+
+    public addRecipesListener(cb: (r: Record<string, Recipe>) => void) { this.listeners.recipes.push(cb); }
+    public removeRecipesListener(cb: (r: Record<string, Recipe>) => void) { this.listeners.recipes = this.listeners.recipes.filter(l => l !== cb); }
 
     public addSettingsListener(cb: (s: any) => void) { this.listeners.settings.push(cb); }
     public removeSettingsListener(cb: (s: any) => void) { this.listeners.settings = this.listeners.settings.filter(l => l !== cb); }
@@ -115,6 +121,9 @@ export class SiloManager {
                         if (data.profiles) {
                             this.profiles = data.profiles;
                         }
+                        if (data.recipes) {
+                            this.recipes = data.recipes;
+                        }
                     }
 
                     // 2. Weight handling
@@ -137,6 +146,10 @@ export class SiloManager {
                     }
                     if (data.type === 'profiles_update') {
                         this.profiles = data.profiles;
+                    }
+                    if (data.type === 'recipes_update') {
+                        this.recipes = data.recipes;
+                        this.listeners.recipes.forEach(l => l(data.recipes));
                     }
 
                     // 4. Machine connection status handling
@@ -368,6 +381,17 @@ export class SiloManager {
         this.send({
             type: 'update_profiles',
             profiles: newProfiles
+        });
+    }
+
+    getRecipes(): Record<string, Recipe> {
+        return this.recipes;
+    }
+
+    updateRecipes(newRecipes: Record<string, Recipe>): void {
+        this.send({
+            type: 'update_recipes',
+            recipes: newRecipes
         });
     }
 }

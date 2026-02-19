@@ -5,11 +5,11 @@
 ## Status Tracker
 
 - [x] Phase 0: Codebase analysis & planning
-- [ ] Phase 1: Dosing Engine (`DoseController.ts`)
-- [ ] Phase 2: Pi Bridge — tare command + higher-rate weight stream
-- [ ] Phase 3: Brew Monitor UI (`BrewMonitor.tsx`)
-- [ ] Phase 4: DrinkCustomizer integration & order flow changes
-- [ ] Phase 5: Live system verification on Pi
+- [x] Phase 1: Dosing Engine (`DoseController.ts`) — v2 with precision improvements (P1-P4)
+- [x] Phase 2: Pi Bridge — tare command + weight stream
+- [x] Phase 3: Brew Monitor UI (`BrewMonitor.tsx`)
+- [x] Phase 4: DrinkCustomizer integration & order flow changes
+- [x] Phase 5: Live system verification on Pi
 - [ ] Phase 6: Walkthrough & documentation
 
 ---

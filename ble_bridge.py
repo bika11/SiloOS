@@ -32,7 +32,8 @@ class Config:
                 "hidden_recipes": []
             },
             "preferences": {}, # Drink-specific tweaks (vol, intensity)
-            "profiles": {}     # Learned silo flow rates/delays
+            "profiles": {},     # Learned silo flow rates/delays
+            "recipes": {}       # Custom sequential recipes
         }
         self.load()
 
@@ -43,7 +44,7 @@ class Config:
                 # Clean keys and merge dictionaries
                 for k, v in loaded.items():
                     k_clean = k.strip().lower()
-                    if k_clean in ["settings", "preferences", "profiles"] and isinstance(v, dict):
+                    if k_clean in ["settings", "preferences", "profiles", "recipes"] and isinstance(v, dict):
                         self.data[k_clean].update(v)
                     else:
                         self.data[k_clean] = v.strip() if isinstance(v, str) else v
@@ -145,7 +146,8 @@ async def websocket_handler(request):
             "tare_offset": tare_offset,
             "settings": config.settings,
             "preferences": config.preferences,
-            "profiles": config.profiles
+            "profiles": config.profiles,
+            "recipes": config.recipes
         }))
         
         # Send machine status
@@ -191,6 +193,11 @@ async def websocket_handler(request):
                         config.data["profiles"].update(data.get("profiles", {}))
                         config.save()
                         await broadcast_relay({"type": "profiles_update", "profiles": config.profiles})
+
+                    elif data.get("type") == "update_recipes":
+                        config.data["recipes"].update(data.get("recipes", {}))
+                        config.save()
+                        await broadcast_relay({"type": "recipes_update", "recipes": config.recipes})
 
                     # 4. Handle Machine Commands (Relay to BLE)
                     elif data.get("type") == "write" and topbrewer_client:

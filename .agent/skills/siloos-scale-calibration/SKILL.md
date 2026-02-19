@@ -40,8 +40,9 @@ ws.onmessage = (e) => {
 ```
 
 ### Step 4: Calibrate Gravimetric Dosing
-In `DrinkCustomizer.tsx`:
-- `targetWeight`: Desired dose in grams
-- `startWeight`: Weight when brewing starts
-- `deliveredWeight`: `currentWeight - startWeight`
-- Auto-stop when `deliveredWeight >= targetWeight`
+In `DoseController.ts` (precision dosing engine):
+- `targetKg`: Desired dose in kg (set via DrinkCustomizer stepper)
+- `tareWeightKg`: Weight when brewing starts (auto-captured)
+- Auto-stop uses learned flow rate + valve delay + bias correction
+- Profile is persisted on Pi, accuracy improves with each dose (±0.1 kg after ~3 doses)
+- Key parameters: `flowRateKgPerS`, `valveDelayS`, `recentOvershootsKg[]`

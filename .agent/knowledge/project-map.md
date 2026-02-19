@@ -10,6 +10,7 @@ A plain-English guide to where things are in the SiloOS project.
 
 ## /dashboard (Frontend)
 - `src/features/`: UI screens (Menu, Dashboard, Settings, Discovery).
+- `src/features/dosing/`: Precision gravimetric dosing engine (`DoseController.ts`) and brew monitor UI.
 - `src/sfwu/`: The "Brain" of the protocol. Translates UI clicks into binary machine commands.
 - `src/bluetooth/`: Logic for talking to the WebSocket bridge; includes `SiloManager` for centralized sync.
 - `src/utils/logger.ts`: Unified logging system that forwards dashboard logs to the bridge.

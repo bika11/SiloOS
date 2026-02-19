@@ -10,6 +10,7 @@ import { SiloManager } from '../../bluetooth/SiloManager';
 import type { ParsedMenuItem } from '../../entities/Menu';
 import { SystemStates } from '../../bluetooth/SystemStates';
 import { BrewingStatus } from '../../bluetooth/BrewingStatus';
+import { RecipesPanel } from '../dosing/RecipesPanel';
 
 const getBrewStatusText = (state: number, progress?: number): string => {
     const progressText = progress !== undefined && progress > 0 ? ` (${progress}%)` : '';
@@ -39,7 +40,13 @@ interface DashboardProps {
     hiddenRecipes: number[];
 }
 
-export const DashboardScreen: React.FC<DashboardProps> = ({ connection, scaleManager, siloManager, menuItems, hiddenRecipes }) => {
+export const DashboardScreen: React.FC<DashboardProps> = ({
+    connection,
+    scaleManager,
+    siloManager,
+    menuItems,
+    hiddenRecipes
+}: DashboardProps) => {
     const [status, setStatus] = useState<string>('Ready');
     const [selectedDrink, setSelectedDrink] = useState<ParsedMenuItem | null>(null);
 
@@ -50,7 +57,7 @@ export const DashboardScreen: React.FC<DashboardProps> = ({ connection, scaleMan
         }
 
         // Subscribe to state changes
-        connection.events.onStateChange = (state) => {
+        connection.events.onStateChange = (state: string) => {
             if (state === 'connected') {
                 setStatus('Ready');
             } else if (state === 'error') {
@@ -61,7 +68,7 @@ export const DashboardScreen: React.FC<DashboardProps> = ({ connection, scaleMan
         };
 
         // brew status handler
-        connection.events.onBrewStatusUpdate = (statusObj) => {
+        connection.events.onBrewStatusUpdate = (statusObj: any) => {
             if (statusObj.systemStatus === SystemStates.STATE_SYSTEM_BREWING) {
                 setStatus(getBrewStatusText(statusObj.state, statusObj.progress));
             } else if (statusObj.systemStatus === SystemStates.STATE_SYSTEM_ERROR) {
@@ -130,6 +137,9 @@ export const DashboardScreen: React.FC<DashboardProps> = ({ connection, scaleMan
                     </p>
                 )}
             </div>
+
+            {/* Recipes Section */}
+            <RecipesPanel siloManager={siloManager} />
         </div>
     );
 };
