@@ -123,6 +123,7 @@ export class SiloManager {
                         }
                         if (data.recipes) {
                             this.recipes = data.recipes;
+                            this.listeners.recipes.forEach(l => l(data.recipes));
                         }
                     }
 

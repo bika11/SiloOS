@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card } from '../../components/ui/Card';
 import { TopBrewerConnection } from '../../bluetooth';
 import { logger } from '../../utils/logger';
@@ -139,7 +139,7 @@ export const DashboardScreen: React.FC<DashboardProps> = ({
             </div>
 
             {/* Recipes Section */}
-            <RecipesPanel siloManager={siloManager} />
+            <RecipesPanel siloManager={siloManager} connection={connection ?? null} menuItems={visibleItems} />
         </div>
     );
 };

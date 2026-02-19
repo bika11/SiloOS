@@ -3,8 +3,8 @@
  */
 
 export interface RecipeStep {
-    /** Silo ID (e.g., '1', '2', '3') */
-    siloId: string;
+    menuId: number;       // Machine drink ID (from ParsedMenuItem.id)
+    menuName: string;     // Cached display name (from ParsedMenuItem.name)
     /** Target weight to dispense in kg */
     targetKg: number;
 }

@@ -185,17 +185,17 @@ async def websocket_handler(request):
                         await broadcast_relay({"type": "settings_update", "settings": config.settings})
 
                     elif data.get("type") == "update_preferences":
-                        config.data["preferences"].update(data.get("preferences", {}))
+                        config.data["preferences"] = data.get("preferences", {})
                         config.save()
                         await broadcast_relay({"type": "preferences_update", "preferences": config.preferences})
 
                     elif data.get("type") == "update_profiles":
-                        config.data["profiles"].update(data.get("profiles", {}))
+                        config.data["profiles"] = data.get("profiles", {})
                         config.save()
                         await broadcast_relay({"type": "profiles_update", "profiles": config.profiles})
 
                     elif data.get("type") == "update_recipes":
-                        config.data["recipes"].update(data.get("recipes", {}))
+                        config.data["recipes"] = data.get("recipes", {})
                         config.save()
                         await broadcast_relay({"type": "recipes_update", "recipes": config.recipes})
 
