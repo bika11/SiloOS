@@ -129,37 +129,45 @@ export const DashboardScreen: React.FC<DashboardProps> = ({ connection, scaleMan
                     onBrewingStart={() => setStatus('Starting...')}
                 />
             )}
-            <Card className={`status-card ${!connection ? 'disconnected' : ''}`}>
-                <h2>{status}</h2>
-                <div className="machine-icon">{!connection ? '🔌' : '☕'}</div>
+            <Card className={`status-card ${!connection ? 'disconnected' : ''} glass border-amber/10`}>
+                <div className="flex flex-col items-center justify-center py-6">
+                    <div className="machine-icon mb-4 text-4xl">{!connection ? '🔌' : '☕'}</div>
+                    <h2 className="text-3xl font-mono text-amber uppercase tracking-widest font-bold">
+                        {status}
+                    </h2>
+                </div>
                 {!selectedDrink && <ScaleReadout scaleManager={scaleManager} siloManager={siloManager} />}
             </Card>
 
-            <div className="action-section">
-                <h3>Drink Menu {!connection && '(Offline)'}</h3>
+            <div className="action-section mt-6">
+                <h3 className="text-xs font-mono text-zinc-500 uppercase tracking-widest mb-4">
+                    Drink Menu {!connection && '(Offline)'}
+                </h3>
                 <DrinkMenuScreen
                     items={menuItems}
                     onOrder={handleOrder}
                     isLoading={isMenuLoading}
                 />
                 {!connection && (
-                    <p className="hint">Connect to TopBrewer to browse menu.</p>
+                    <p className="hint text-zinc-600 font-mono text-xs italic mt-4">
+                        Connect to TopBrewer to browse menu.
+                    </p>
                 )}
             </div>
 
-            <div className="log-viewer small">
-                <h3>Recent Activity</h3>
-                <div className="log-list">
+            <div className="log-viewer small mt-auto glass bg-black/40 border-zinc-800/50 rounded-xl p-4">
+                <h3 className="text-[10px] font-mono text-zinc-500 uppercase tracking-[0.2em] mb-3">Recent Activity</h3>
+                <div className="log-list max-h-32 overflow-y-auto pr-2">
                     {logs.map((log, i) => {
                         if (!log) return null;
                         const timeStr = log.timestamp && typeof log.timestamp === 'string' && log.timestamp.includes('T')
                             ? log.timestamp.split('T')[1].split('.')[0]
                             : '--:--:--';
                         return (
-                            <div key={i} className={`log-line level-${log.level}`}>
-                                <span className="time">{timeStr}</span>
-                                <span className="tag">[{log.tag}]</span>
-                                <span className="msg">{log.message}</span>
+                            <div key={i} className={`log-line level-${log.level} flex gap-4 text-[11px] font-mono border-b border-white/5 py-1`}>
+                                <span className="time text-zinc-600">{timeStr}</span>
+                                <span className="tag text-amber/60 font-medium">[{log.tag}]</span>
+                                <span className="msg text-zinc-300 truncate">{log.message}</span>
                             </div>
                         );
                     })}

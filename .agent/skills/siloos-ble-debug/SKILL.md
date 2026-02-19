@@ -1,4 +1,9 @@
-# Skill: BLE Debug
+---
+name: siloos-ble-debug
+description: "Troubleshooting TopBrewer BLE connection, GATT errors, and WebSocket relay issues."
+---
+
+# SiloOS BLE Debug Skill
 
 ## When to Use
 - TopBrewer is not responding to commands
