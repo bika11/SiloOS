@@ -50,26 +50,22 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
     const [modifiedIngredients, setModifiedIngredients] = useState<Set<string>>(new Set());
 
     // Persistence Keys
-    const PERSIST_KEY_VOLUME = `siloos_vol_${drink.id}`;
-    const PERSIST_KEY_VALS = `siloos_vals_${drink.id}`;
+    const PREF_KEY_VOLUME = `vol_${drink.id}`;
+    const PREF_KEY_VALS = `vals_${drink.id}`;
 
     useEffect(() => {
         const handleDetails = (data: MenuDetails) => {
             if (data.menuItemId === drink.id) {
                 setDetails(data);
 
-                // MEMORY RULE: Try to load from localStorage first
-                const savedVals = localStorage.getItem(PERSIST_KEY_VALS);
-                const savedVol = localStorage.getItem(PERSIST_KEY_VOLUME);
+                // Pi-Side Persistence: Load from SiloManager instead of localStorage
+                const prefs = siloManager.getPreferences();
+                const savedVals = prefs[PREF_KEY_VALS];
+                const savedVol = prefs[PREF_KEY_VOLUME];
 
                 if (savedVals) {
-                    try {
-                        const parsed = JSON.parse(savedVals);
-                        setCustomValues(parsed);
-                        setModifiedIngredients(new Set(Object.keys(parsed)));
-                    } catch (e) {
-                        logger.error('Customizer', 'Failed to parse saved vals', e);
-                    }
+                    setCustomValues(savedVals);
+                    setModifiedIngredients(new Set(Object.keys(savedVals)));
                 } else {
                     const initialValues: Record<string, number> = {};
                     data.ingredients.forEach(ing => {
@@ -97,20 +93,39 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
         connection.requestDrinkDetails(drink.id).catch(() => setLoading(false));
 
         return () => { connection.events.onDrinkDetailsReceived = undefined; };
-    }, [drink, connection, PERSIST_KEY_VALS, PERSIST_KEY_VOLUME]);
+    }, [drink, connection, PREF_KEY_VALS, PREF_KEY_VOLUME, siloManager]);
 
-    // Save on every change
+    // Handle incoming updates from other clients
+    useEffect(() => {
+        const handlePrefUpdate = (prefs: any) => {
+            const savedVals = prefs[PREF_KEY_VALS];
+            const savedVol = prefs[PREF_KEY_VOLUME];
+
+            if (savedVals) {
+                setCustomValues(savedVals);
+                setModifiedIngredients(new Set(Object.keys(savedVals)));
+            }
+            if (savedVol) {
+                setCustomVolume(parseFloat(savedVol));
+            }
+        };
+
+        siloManager.onPreferencesUpdate = handlePrefUpdate;
+        return () => { if (siloManager.onPreferencesUpdate === handlePrefUpdate) siloManager.onPreferencesUpdate = undefined; };
+    }, [siloManager, PREF_KEY_VALS, PREF_KEY_VOLUME]);
+
+    // Save on every change via SiloManager
     useEffect(() => {
         if (Object.keys(customValues).length > 0) {
-            localStorage.setItem(PERSIST_KEY_VALS, JSON.stringify(customValues));
+            siloManager.updatePreferences({ [PREF_KEY_VALS]: customValues });
         }
-    }, [customValues, PERSIST_KEY_VALS]);
+    }, [customValues, PREF_KEY_VALS, siloManager]);
 
     useEffect(() => {
         if (customVolume > 0) {
-            localStorage.setItem(PERSIST_KEY_VOLUME, customVolume.toString());
+            siloManager.updatePreferences({ [PREF_KEY_VOLUME]: customVolume });
         }
-    }, [customVolume, PERSIST_KEY_VOLUME]);
+    }, [customVolume, PREF_KEY_VOLUME, siloManager]);
 
     const handleValueChange = useCallback((ingId: number, varId: number, value: number) => {
         const key = `${ingId}-${varId}`;
@@ -179,7 +194,8 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
                         logger.warn('Customizer', `Dose aborted: ${reason}`);
                     },
                 },
-                { targetKg, siloId }
+                { targetKg, siloId },
+                siloManager
             );
 
             ctrl.tare(siloManager.getWeight());

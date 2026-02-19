@@ -51,6 +51,10 @@
   color-scheme: dark;
 }
 
+body.light-theme {
+  color-scheme: light;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -179,6 +183,18 @@ h2 {
 
 .tracking-wide {
   letter-spacing: 0.05em;
+}
+
+.text-left {
+  text-align: left;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-right {
+  text-align: right;
 }
 
 /* Layout Utilities */
@@ -346,6 +362,38 @@ h2 {
   color: var(--silos-amber);
   border: 1px solid var(--silos-amber);
   animation: pulse-amber 2s infinite;
+}
+
+.status-led {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+}
+
+.status-led.online {
+  background-color: var(--success);
+  box-shadow: 0 0 8px var(--success);
+}
+
+.status-led.offline {
+  background-color: var(--error);
+  box-shadow: 0 0 8px var(--error);
+  animation: pulse-error 2s infinite;
+}
+
+@keyframes pulse-error {
+  0% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.3;
+  }
+
+  100% {
+    opacity: 1;
+  }
 }
 
 @keyframes pulse-amber {

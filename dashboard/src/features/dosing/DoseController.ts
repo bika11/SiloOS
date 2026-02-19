@@ -11,6 +11,7 @@
  * State machine: idle → armed → running → stopping → settling → done | aborted
  */
 
+import { SiloManager } from '../../bluetooth/SiloManager';
 import { logger } from '../../utils/logger';
 
 // ============================================================
@@ -73,7 +74,6 @@ const DEFAULT_PROFILE: SiloProfile = {
     totalDoses: 0,
 };
 
-const STORAGE_PREFIX = 'silo_profile_v1_';
 
 // ============================================================
 // CONTROLLER
@@ -86,6 +86,7 @@ interface WeightSample {
 
 export class DoseController {
     private config: DoseConfig;
+    private siloManager: SiloManager;
     public events: DoseEvents;
     private profile: SiloProfile;
 
@@ -103,9 +104,10 @@ export class DoseController {
     private lastActivityTime: number = 0;
     private lastKnownWeight: number = 0;
 
-    constructor(events: DoseEvents, config: DoseConfig) {
+    constructor(events: DoseEvents, config: DoseConfig, siloManager: SiloManager) {
         this.config = config;
         this.events = events;
+        this.siloManager = siloManager;
         this.profile = this.loadProfile(config.siloId);
         logger.info('DoseCtrl',
             `Silo "${config.siloId}" profile: flow=${this.profile.flowRateKgPerS.toFixed(3)} kg/s, ` +
@@ -340,7 +342,9 @@ export class DoseController {
         }
 
         this.profile.totalDoses++;
-        this.saveProfile(this.config.siloId, this.profile);
+
+        // Pi-Side Persistence
+        this.siloManager.updateProfiles({ [this.config.siloId]: this.profile });
 
         logger.info('DoseCtrl',
             `Learned: flow=${this.profile.flowRateKgPerS.toFixed(3)}kg/s ` +
@@ -374,33 +378,17 @@ export class DoseController {
     // --------------------------------------------------------
 
     private loadProfile(siloId: string): SiloProfile {
-        try {
-            const raw = localStorage.getItem(STORAGE_PREFIX + siloId);
-            if (raw) {
-                const parsed = JSON.parse(raw) as SiloProfile;
-                if (typeof parsed.flowRateKgPerS === 'number' &&
-                    typeof parsed.valveDelayS === 'number' &&
-                    typeof parsed.totalDoses === 'number') {
-                    // Sanity clamp: reject corrupted profiles (e.g. valveDelay > 5s is unrealistic)
-                    if (parsed.valveDelayS > 5.0 || parsed.flowRateKgPerS > 1.0 || parsed.flowRateKgPerS <= 0) {
-                        logger.warn('DoseCtrl', `Profile for "${siloId}" has invalid values (flow=${parsed.flowRateKgPerS}, delay=${parsed.valveDelayS}) — resetting`);
-                        localStorage.removeItem(STORAGE_PREFIX + siloId);
-                        return { ...DEFAULT_PROFILE };
-                    }
-                    return parsed;
-                }
-            }
-        } catch {
-            // ignore
-        }
-        return { ...DEFAULT_PROFILE };
-    }
+        const profiles = this.siloManager.getProfiles();
+        const profile = profiles[siloId];
 
-    private saveProfile(siloId: string, profile: SiloProfile): void {
-        try {
-            localStorage.setItem(STORAGE_PREFIX + siloId, JSON.stringify(profile));
-        } catch {
-            logger.warn('DoseCtrl', 'Failed to save silo profile to localStorage');
+        if (profile && typeof profile.flowRateKgPerS === 'number') {
+            // Sanity clamp
+            if (profile.valveDelayS > 5.0 || profile.flowRateKgPerS > 1.0 || profile.flowRateKgPerS <= 0) {
+                return { ...DEFAULT_PROFILE };
+            }
+            return profile;
         }
+
+        return { ...DEFAULT_PROFILE };
     }
 }

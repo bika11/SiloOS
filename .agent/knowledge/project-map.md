@@ -9,9 +9,10 @@ A plain-English guide to where things are in the SiloOS project.
 - `HARDWARE.md`: Documentation on wiring and hardware specs.
 
 ## /dashboard (Frontend)
-- `src/features/`: The UI screens (Menu, Customizer, Discovery, Dosing).
+- `src/features/`: UI screens (Menu, Dashboard, Settings, Discovery).
 - `src/sfwu/`: The "Brain" of the protocol. Translates UI clicks into binary machine commands.
-- `src/bluetooth/`: Logic for talking to the WebSocket bridge and managing data streams.
+- `src/bluetooth/`: Logic for talking to the WebSocket bridge; includes `SiloManager` for centralized sync.
+- `src/utils/logger.ts`: Unified logging system that forwards dashboard logs to the bridge.
 
 ## /.agent (Intelligence Layer)
 - `rules/`: The project's constitution and coding standards.

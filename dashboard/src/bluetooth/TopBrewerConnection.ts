@@ -376,6 +376,16 @@ export class TopBrewerConnection {
                     logger.debug('TopBrewer', `  - ID=${item.id} GID=${item.graphicId} Name='${item.name}'`);
                 });
                 this.events.onMenuReceived?.(response.data);
+            } else {
+                // TRY XML Fallback for Drinks characteristic
+                try {
+                    const text = new TextDecoder().decode(data);
+                    if (text.includes('<menu>')) {
+                        logger.info('TopBrewer', 'Detected XML Menu in Drinks Characteristic');
+                        const menu = parseMenuXml(text);
+                        this.events.onMenuReceived?.(menu);
+                    }
+                } catch (e) { /* ignore */ }
             }
             return;
         }

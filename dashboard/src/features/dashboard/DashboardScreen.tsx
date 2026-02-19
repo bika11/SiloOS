@@ -35,50 +35,32 @@ interface DashboardProps {
     connection?: TopBrewerConnection | null;
     scaleManager: ScaleManager;
     siloManager: SiloManager;
+    menuItems: ParsedMenuItem[];
+    hiddenRecipes: number[];
 }
 
-export const DashboardScreen: React.FC<DashboardProps> = ({ connection, scaleManager, siloManager }) => {
+export const DashboardScreen: React.FC<DashboardProps> = ({ connection, scaleManager, siloManager, menuItems, hiddenRecipes }) => {
     const [status, setStatus] = useState<string>('Ready');
-    const [logs, setLogs] = useState<any[]>([]);
-    const [menuItems, setMenuItems] = useState<ParsedMenuItem[]>([]);
-    const [isMenuLoading, setIsMenuLoading] = useState(false);
     const [selectedDrink, setSelectedDrink] = useState<ParsedMenuItem | null>(null);
-    const hasMenuLoaded = useRef(false);
 
     useEffect(() => {
         if (!connection) {
             setStatus('TopBrewer Disconnected');
-            setMenuItems([]);
             return;
         }
-
-        // Subscribe to menu updates
-        connection.events.onMenuReceived = (items) => {
-            setMenuItems(items);
-            setIsMenuLoading(false);
-            hasMenuLoaded.current = true; // Mark as loaded
-            setStatus('Ready');
-        };
 
         // Subscribe to state changes
         connection.events.onStateChange = (state) => {
             if (state === 'connected') {
-                // Only fetch if not already loaded
-                if (!hasMenuLoaded.current) {
-                    logger.info('Dashboard', 'Machine connected. Requesting menu...');
-                    setIsMenuLoading(true);
-                    connection.requestMenu().catch(() => setIsMenuLoading(false));
-                }
+                setStatus('Ready');
             } else if (state === 'error') {
                 setStatus('Machine Error');
             } else if (state === 'idle') {
-                hasMenuLoaded.current = false; // Reset on disconnect
-                setMenuItems([]);
                 setStatus('TopBrewer Disconnected');
             }
         };
 
-        // ... brew status handler ...
+        // brew status handler
         connection.events.onBrewStatusUpdate = (statusObj) => {
             if (statusObj.systemStatus === SystemStates.STATE_SYSTEM_BREWING) {
                 setStatus(getBrewStatusText(statusObj.state, statusObj.progress));
@@ -89,33 +71,27 @@ export const DashboardScreen: React.FC<DashboardProps> = ({ connection, scaleMan
             }
         };
 
-        // Initial fetch if already connected and not loaded
-        if (connection.getState() === 'connected' && !hasMenuLoaded.current) {
-            setIsMenuLoading(true);
-            connection.requestMenu().catch(() => setIsMenuLoading(false));
-        }
-
         return () => {
-            connection.events.onMenuReceived = undefined;
             connection.events.onStateChange = undefined;
             connection.events.onBrewStatusUpdate = undefined;
         };
     }, [connection]);
-
-    useEffect(() => {
-        // Poll logs for display (always runs)
-        const logInterval = setInterval(() => {
-            setLogs([...logger.getLogs()].reverse().slice(0, 10));
-        }, 1000);
-
-        return () => clearInterval(logInterval);
-    }, []);
 
     const handleOrder = async (item: ParsedMenuItem) => {
         if (!connection) return;
         logger.info('Dashboard', `Selected: ${item.name} - Opening Customizer`);
         setSelectedDrink(item);
     };
+
+    // Filter out hidden recipes
+    const visibleItems = menuItems.filter(item => {
+        const isHidden = (hiddenRecipes || []).includes(item.id);
+        return !isHidden;
+    });
+
+    if (menuItems.length > 0) {
+        logger.debug('Dashboard', `Visible Items: ${visibleItems.length}/${menuItems.length} (Hidden IDs: ${hiddenRecipes?.join(',')})`);
+    }
 
     return (
         <div className="dashboard-content">
@@ -144,34 +120,15 @@ export const DashboardScreen: React.FC<DashboardProps> = ({ connection, scaleMan
                     Drink Menu {!connection && '(Offline)'}
                 </h3>
                 <DrinkMenuScreen
-                    items={menuItems}
+                    items={visibleItems}
                     onOrder={handleOrder}
-                    isLoading={isMenuLoading}
+                    isLoading={menuItems.length === 0 && !!connection}
                 />
                 {!connection && (
                     <p className="hint text-zinc-600 font-mono text-xs italic mt-4">
                         Connect to TopBrewer to browse menu.
                     </p>
                 )}
-            </div>
-
-            <div className="log-viewer small mt-auto glass bg-black/40 border-zinc-800/50 rounded-xl p-4">
-                <h3 className="text-[10px] font-mono text-zinc-500 uppercase tracking-[0.2em] mb-3">Recent Activity</h3>
-                <div className="log-list max-h-32 overflow-y-auto pr-2">
-                    {logs.map((log, i) => {
-                        if (!log) return null;
-                        const timeStr = log.timestamp && typeof log.timestamp === 'string' && log.timestamp.includes('T')
-                            ? log.timestamp.split('T')[1].split('.')[0]
-                            : '--:--:--';
-                        return (
-                            <div key={i} className={`log-line level-${log.level} flex gap-4 text-[11px] font-mono border-b border-white/5 py-1`}>
-                                <span className="time text-zinc-600">{timeStr}</span>
-                                <span className="tag text-amber/60 font-medium">[{log.tag}]</span>
-                                <span className="msg text-zinc-300 truncate">{log.message}</span>
-                            </div>
-                        );
-                    })}
-                </div>
             </div>
         </div>
     );

@@ -1,0 +1,115 @@
+/* Settings Screen Styles */
+.settings-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-6);
+    animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+    }
+
+    to {
+        transform: translateY(0);
+    }
+}
+
+.settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-6);
+}
+
+.settings-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    overflow-y: auto;
+}
+
+.settings-section h3 {
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    color: var(--zinc-500);
+    letter-spacing: 0.1em;
+    margin-bottom: var(--space-2);
+}
+
+.recipe-list {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.recipe-item:last-child {
+    border-bottom: none;
+}
+
+.advanced-log-viewer {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--card-border);
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.log-filter-input {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-md);
+    padding: 4px 8px;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--zinc-50);
+}
+
+.recipe-item {
+    display: grid;
+    grid-template-columns: 1fr 48px;
+    align-items: center;
+    min-height: 56px;
+    padding: 0 var(--space-4);
+}
+
+.log-entry.level-error {
+    color: var(--error);
+}
+
+.log-entry.level-warn {
+    color: var(--warning);
+}
+
+/* Light Theme Overrides */
+body.light-theme {
+    --background: #f4f4f5;
+    --card: rgba(255, 255, 255, 0.8);
+    --card-border: rgba(0, 0, 0, 0.1);
+    --zinc-50: #18181b;
+    --zinc-900: #e4e4e7;
+    --zinc-800: #d4d4d8;
+    --zinc-700: #a1a1aa;
+    --industrial-shadow: 4px 4px 12px rgba(0, 0, 0, 0.1), -4px -4px 12px rgba(255, 255, 255, 0.5);
+}
+
+body.light-theme .glass {
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(10px);
+}
+
+body.light-theme .text-zinc-300 {
+    color: #3f3f46;
+}
+
+body.light-theme .btn-secondary {
+    background: #e4e4e7;
+    color: #18181b;
+}

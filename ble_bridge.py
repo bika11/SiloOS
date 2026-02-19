@@ -16,7 +16,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 logger = logging.getLogger("SiloOS")
 # logger.setLevel(logging.DEBUG) # Uncomment for deep BLE troubleshooting
 
-# --- CONFIGURATION HANDLER ---
+# --- CONFIGURATION & SETTINGS HANDLER ---
 class Config:
     def __init__(self, path="/home/siloos/config.json"):
         self.path = path
@@ -25,7 +25,14 @@ class Config:
             "laumas_baud": 115200,
             "ws_port": 8765,
             "topbrewer_mac": "88:6B:0F:BC:00:A1",
-            "auth_token": "silo-secret"
+            "auth_token": "silo-secret",
+            "tare_offset": 0.0,
+            "settings": {
+                "theme": "dark",
+                "hidden_recipes": []
+            },
+            "preferences": {}, # Drink-specific tweaks (vol, intensity)
+            "profiles": {}     # Learned silo flow rates/delays
         }
         self.load()
 
@@ -33,12 +40,24 @@ class Config:
         try:
             with open(self.path, "r") as f:
                 loaded = json.load(f)
-                # Clean keys and values
+                # Clean keys and merge dictionaries
                 for k, v in loaded.items():
-                    self.data[k.strip().lower()] = v.strip() if isinstance(v, str) else v
-            logger.info(f"?? Loaded configuration from {self.path}")
+                    k_clean = k.strip().lower()
+                    if k_clean in ["settings", "preferences", "profiles"] and isinstance(v, dict):
+                        self.data[k_clean].update(v)
+                    else:
+                        self.data[k_clean] = v.strip() if isinstance(v, str) else v
+            logger.info(f"Loaded configuration from {self.path}")
         except Exception as e:
-            logger.warning(f"?? Could not load {self.path} ({e}), using defaults")
+            logger.warning(f"Could not load {self.path} ({e}), using defaults")
+
+    def save(self):
+        try:
+            with open(self.path, "w") as f:
+                json.dump(self.data, f, indent=4)
+            logger.info(f"Saved configuration to {self.path}")
+        except Exception as e:
+            logger.error(f"Failed to save configuration: {e}")
 
     def __getattr__(self, name):
         return self.data.get(name.lower())
@@ -60,7 +79,7 @@ DRINKS_MENU  = "c0ffee00-2624-46ff-9311-4d7083160201"
 
 # --- GLOBAL STATE ---
 current_weight = 0.0
-tare_offset = 0.0
+tare_offset = float(config.tare_offset or 0.0)
 connected_websockets = set()
 topbrewer_client = None
 
@@ -107,10 +126,11 @@ async def broadcast_relay(msg_dict):
             connected_websockets.discard(ws)
 
 async def websocket_handler(request):
+    global tare_offset
     # Security Check: Auth Token in Query Param
     client_token = request.query.get("auth")
     if AUTH_TOKEN and client_token != AUTH_TOKEN:
-        logger.warning(f"?? Connection Refused: Invalid Auth Token from {request.remote}")
+        logger.warning(f"Connection Refused: Invalid Auth Token from {request.remote}")
         return web.Response(status=401, text="Unauthorized")
 
     ws = web.WebSocketResponse()
@@ -118,17 +138,22 @@ async def websocket_handler(request):
     connected_websockets.add(ws)
     logger.info(f"New WebSocket Client Connected from {request.remote}")
     try:
-        # Send initial weight
-        await ws.send_str(json.dumps({"weight": current_weight}))
+        # Sync current state to new client
+        await ws.send_str(json.dumps({
+            "type": "sync",
+            "weight": current_weight,
+            "tare_offset": tare_offset,
+            "settings": config.settings,
+            "preferences": config.preferences,
+            "profiles": config.profiles
+        }))
         
         # Send machine status
         is_machine_alive = False
         if topbrewer_client:
             try: is_machine_alive = bool(topbrewer_client.is_connected)
             except: pass
-        status_msg = {"type": "status", "connected": is_machine_alive}
-        logger.info(f"?? Sending Initial Status to Client: {status_msg}")
-        await ws.send_str(json.dumps(status_msg))
+        await ws.send_str(json.dumps({"type": "status", "connected": is_machine_alive}))
 
         async for msg in ws:
             if msg.type == web.WSMsgType.TEXT:
@@ -142,15 +167,32 @@ async def websocket_handler(request):
                     
                     # 2. Handle Tare Command
                     elif data.get("type") == "tare":
-                        global tare_offset
                         tare_offset = current_weight
-                        logger.info(f"Tare set to {tare_offset}g")
-                        await ws.send_str(json.dumps({
+                        config.data["tare_offset"] = tare_offset
+                        config.save()
+                        logger.info(f"Tare set to {tare_offset}g (Saved to Pi)")
+                        await broadcast_relay({
                             "type": "tare_ack",
                             "offset": tare_offset
-                        }))
+                        })
 
-                    # 3. Handle Machine Commands (Relay to BLE)
+                    # 3. Handle Persistence Updates (Settings, Prefs, Profiles)
+                    elif data.get("type") == "update_settings":
+                        config.data["settings"].update(data.get("settings", {}))
+                        config.save()
+                        await broadcast_relay({"type": "settings_update", "settings": config.settings})
+
+                    elif data.get("type") == "update_preferences":
+                        config.data["preferences"].update(data.get("preferences", {}))
+                        config.save()
+                        await broadcast_relay({"type": "preferences_update", "preferences": config.preferences})
+
+                    elif data.get("type") == "update_profiles":
+                        config.data["profiles"].update(data.get("profiles", {}))
+                        config.save()
+                        await broadcast_relay({"type": "profiles_update", "profiles": config.profiles})
+
+                    # 4. Handle Machine Commands (Relay to BLE)
                     elif data.get("type") == "write" and topbrewer_client:
                         uuid = data.get("uuid")
                         raw_hex = data.get("data")
@@ -160,9 +202,8 @@ async def websocket_handler(request):
                     
                     elif data.get("type") == "read" and topbrewer_client:
                         uuid = data.get("uuid")
-                        logger.info(f"?? Relayed READ Request for {uuid}")
+                        logger.info(f"Relayed READ Request for {uuid}")
                         val = await topbrewer_client.read_gatt_char(uuid)
-                        logger.info(f"?? Read Response: {len(val)} bytes")
                         await ws.send_str(json.dumps({
                             "type": "read_response",
                             "uuid": uuid,

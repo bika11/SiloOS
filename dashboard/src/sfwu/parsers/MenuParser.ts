@@ -35,11 +35,13 @@ export class MenuParser {
                 const name = decoder.decode(nameBytes);
                 offset += nameLen;
 
-                items.push({
-                    id: id,
-                    name: name,
-                    graphicId: gid
-                });
+                if (name.trim()) {
+                    items.push({
+                        id: id,
+                        name: name,
+                        graphicId: gid
+                    });
+                }
             }
         } catch (e) {
             logger.error('SFWU', 'Failed to parse binary menu', e);

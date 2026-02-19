@@ -25,3 +25,9 @@ The system uses a custom `DoseController` to manage the large-scale dispensing.
 We communicate with the Silo Controller using the standard `SFWU` (Scanomat Firmware Update) protocol, masquerading as a coffee machine.
 *   **Ingredients**: Mapped to Silos.
 *   **Recipes**: Mapped to Silo blends/outputs.
+
+### 4. State & Settings Sync
+The system achieves real-time responsiveness using a **Multi-Listener Pattern** within `SiloManager.ts`.
+*   **Decoupled Updates**: Multiple UI components (App, Settings, Dashboard) subscribe to settings updates independently.
+*   **Instant Propagation**: Theme changes, recipe visibility toggles, and machine status updates are broadcast via WebSocket and applied across all connected clients without requiring a page refresh.
+*   **Persistence**: Settings are stored on the Raspberry Pi "Brain" and synchronized to clients on connection.

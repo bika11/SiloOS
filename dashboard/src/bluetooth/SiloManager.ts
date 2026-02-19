@@ -18,12 +18,34 @@ export class SiloManager {
     private machineConnected: boolean = false;
     private lastWeight: number = 0;
     private lastNetWeight: number = 0;
+    private tareOffset: number = 0;
     private reconnectTimeout: any = null;
     private url: string;
+    private settings: any = { theme: 'dark', hidden_recipes: [] };
+    private preferences: Record<string, any> = {};
+    private profiles: Record<string, any> = {};
 
     // Callbacks for the RemoteBLEAdapter
+    private listeners: {
+        settings: ((s: any) => void)[];
+        status: ((c: boolean) => void)[];
+        notifications: ((uuid: string, data: Uint8Array) => void)[];
+        sfwu: ((packet: string) => void)[];
+    } = { settings: [], status: [], notifications: [], sfwu: [] };
+
+    public addSettingsListener(cb: (s: any) => void) { this.listeners.settings.push(cb); }
+    public removeSettingsListener(cb: (s: any) => void) { this.listeners.settings = this.listeners.settings.filter(l => l !== cb); }
+    public addStatusListener(cb: (c: boolean) => void) { this.listeners.status.push(cb); }
+    public removeStatusListener(cb: (c: boolean) => void) { this.listeners.status = this.listeners.status.filter(l => l !== cb); }
+    public addNotificationListener(cb: (uuid: string, data: Uint8Array) => void) { this.listeners.notifications.push(cb); }
+    public removeNotificationListener(cb: (uuid: string, data: Uint8Array) => void) { this.listeners.notifications = this.listeners.notifications.filter(l => l !== cb); }
+    public addSfwuListener(cb: (packet: string) => void) { this.listeners.sfwu.push(cb); }
+    public removeSfwuListener(cb: (packet: string) => void) { this.listeners.sfwu = this.listeners.sfwu.filter(l => l !== cb); }
+
+    // RemoteBLEAdapter compatibility properties
     public onStatusUpdate?: (connected: boolean) => void;
     public onMachineNotification?: (uuid: string, data: Uint8Array) => void;
+    public onSfwuPacket?: (hex: string) => void;
 
     // Track pending reads
     private pendingReads: Map<string, (data: Uint8Array) => void> = new Map();
@@ -35,7 +57,10 @@ export class SiloManager {
         // This handles SSH tunnels (localhost), HTTPS (wss), and direct IP access.
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const host = window.location.hostname;
-        const authToken = 'silo-secret'; // Default secret, should be moved to env/config later
+
+        // Use environment variable if available, otherwise fallback to default
+        const authToken = (import.meta as any).env?.VITE_WS_AUTH_TOKEN || 'silo-secret';
+
         this.url = url || `${protocol}//${host}:8765/?auth=${authToken}`;
 
         if (events) {
@@ -71,8 +96,29 @@ export class SiloManager {
                 try {
                     const data = JSON.parse(event.data);
 
-                    // 1. Weight handling
-                    if (typeof data.weight === 'number') {
+                    // 1. Initial Sync handling
+                    if (data.type === 'sync') {
+                        if (typeof data.weight === 'number') {
+                            this.lastWeight = data.weight;
+                            this.events.onWeightUpdate?.(data.weight);
+                        }
+                        if (typeof data.tare_offset === 'number') {
+                            this.tareOffset = data.tare_offset;
+                        }
+                        if (data.settings) {
+                            this.settings = data.settings;
+                            this.listeners.settings.forEach(l => l(data.settings));
+                        }
+                        if (data.preferences) {
+                            this.preferences = data.preferences;
+                        }
+                        if (data.profiles) {
+                            this.profiles = data.profiles;
+                        }
+                    }
+
+                    // 2. Weight handling
+                    if (typeof data.weight === 'number' && data.type !== 'sync') {
                         this.lastWeight = data.weight;
                         this.events.onWeightUpdate?.(data.weight);
                     }
@@ -81,10 +127,22 @@ export class SiloManager {
                         this.events.onNetWeightUpdate?.(data.net);
                     }
 
-                    // 2. Machine connection status handling
+                    // 3. Dynamic updates from bridge
+                    if (data.type === 'settings_update') {
+                        this.settings = data.settings;
+                        this.listeners.settings.forEach(l => l(data.settings));
+                    }
+                    if (data.type === 'preferences_update') {
+                        this.preferences = data.preferences;
+                    }
+                    if (data.type === 'profiles_update') {
+                        this.profiles = data.profiles;
+                    }
+
+                    // 4. Machine connection status handling
                     if (data.type === 'status') {
                         this.machineConnected = data.connected;
-                        this.onStatusUpdate?.(data.connected);
+                        this.listeners.status.forEach(l => l(data.connected));
                         this.events.onStatusUpdate?.(data.connected);
                     }
 
@@ -92,6 +150,7 @@ export class SiloManager {
                     if (data.type === 'notification') {
                         const payload = this.hexToBytes(data.data);
                         this.onMachineNotification?.(data.uuid, payload);
+                        this.listeners.notifications.forEach(l => l(data.uuid, payload));
                         this.events.onMachineNotification?.(data.uuid, payload);
                     }
 
@@ -105,7 +164,13 @@ export class SiloManager {
                         }
                     }
 
-                    // 5. Tare acknowledgment
+                    // 6. SFWU Packet handling (Legacy support / Broadcasts)
+                    if (data.type === 'sfwu' && data.packet) {
+                        this.onSfwuPacket?.(data.packet);
+                        this.listeners.sfwu.forEach(l => l(data.packet));
+                    }
+
+                    // 7. Tare acknowledgment
                     if (data.type === 'tare_ack') {
                         if (this.pendingTare) {
                             this.pendingTare(data.offset);
@@ -271,5 +336,38 @@ export class SiloManager {
         } else {
             this.connect();
         }
+    }
+
+    getSettings(): any {
+        return this.settings;
+    }
+
+    updateSettings(newSettings: any): void {
+        this.send({
+            type: 'update_settings',
+            settings: newSettings
+        });
+    }
+
+    getPreferences(): Record<string, any> {
+        return this.preferences;
+    }
+
+    updatePreferences(newPreferences: any): void {
+        this.send({
+            type: 'update_preferences',
+            preferences: newPreferences
+        });
+    }
+
+    getProfiles(): Record<string, any> {
+        return this.profiles;
+    }
+
+    updateProfiles(newProfiles: any): void {
+        this.send({
+            type: 'update_profiles',
+            profiles: newProfiles
+        });
     }
 }

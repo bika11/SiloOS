@@ -26,4 +26,16 @@ This is the system's immune system. Every error encountered, diagnosed, and reso
 
 ## Active Lessons
 
-_No lessons logged yet. Entries will appear here as the agent encounters and resolves errors._
+[2026-02-19] SEVERITY: high
+  ERROR: UI state drift and listener overwrites
+  CONTEXT: Multiple components (App.tsx and SettingsScreen.tsx) trying to sync settings via SiloManager.
+  CAUSE: Single callback properties (e.g., `onSettingsUpdate`) were being overwritten when new components mounted.
+  FIX: Implemented a multi-listener pattern (`addSettingsListener`/`removeSettingsListener`) using an array of callbacks.
+  PREVENT: Always use multi-listener patterns for core managers/adapters shared across the application.
+
+[2026-02-19] SEVERITY: medium
+  ERROR: Interactive element misalignment in industrial views
+  CONTEXT: Aligning recipe visibility toggles and names in the settings list.
+  CAUSE: Flexbox utilities created inconsistent spacing in dense lists with varying text lengths.
+  FIX: Used CSS Grid (`grid-template-columns: 1fr 48px`) to pin toggles to the right.
+  PREVENT: Use CSS Grid for critical UI alignments in industrial dashboards to ensure pixel-perfect positioning.

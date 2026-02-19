@@ -2,9 +2,11 @@ import { useState, useEffect, Component, ErrorInfo, ReactNode } from 'react';
 import { TopBrewerConnection } from './bluetooth';
 import { DiscoveryScreen } from './features/discovery/DiscoveryScreen';
 import { DashboardScreen } from './features/dashboard/DashboardScreen';
+import { SettingsScreen } from './features/settings/SettingsScreen';
 import { ScaleManager } from './bluetooth/ScaleManager';
 import { SiloManager } from './bluetooth/SiloManager';
 import { logger } from './utils/logger';
+import type { ParsedMenuItem } from './entities/Menu';
 import './App.css';
 import './features.css'; // Ensure feature styles are loaded
 
@@ -48,11 +50,29 @@ function App() {
     return sm;
   });
   const [isSupported, setIsSupported] = useState(true);
-  const [appState, setAppState] = useState<'discovery' | 'dashboard'>('dashboard');
+  const [appState, setAppState] = useState<'discovery' | 'dashboard' | 'settings'>('dashboard');
+  const [menuItems, setMenuItems] = useState<ParsedMenuItem[]>([]);
+  const [settings, setSettings] = useState(siloManager.getSettings());
 
   useEffect(() => {
     // SiloOS Dashboard Specialization: Auto-connect to native gateway
     setIsSupported(true); // Remote is always supported
+
+    // Sync settings from siloManager
+    const onSettings = (newSettings: any) => {
+      setSettings(newSettings);
+      if (newSettings.theme === 'light') {
+        document.body.classList.add('light-theme');
+      } else {
+        document.body.classList.remove('light-theme');
+      }
+    };
+    siloManager.addSettingsListener(onSettings);
+
+    // Initial check for theme
+    if (siloManager.getSettings().theme === 'light') {
+      document.body.classList.add('light-theme');
+    }
 
     // Auto-connect to the machine via Pi
     const conn = new TopBrewerConnection(undefined, true);
@@ -60,8 +80,31 @@ function App() {
 
     // Note: The actual BLE connection happens on the Pi.
     // We just need to tell the connection object to "connect" to our relay.
-    conn.connect();
-  }, []);
+    conn.connect().then(success => {
+      if (success) {
+        conn.requestMenu();
+      }
+    });
+
+    // Subscribe to menu updates centrally
+    conn.events.onMenuReceived = (items) => {
+      setMenuItems(items);
+    };
+
+    return () => {
+      conn.events.onMenuReceived = undefined;
+      siloManager.removeSettingsListener(onSettings);
+    };
+  }, [siloManager]);
+
+  // Theme Sync Effect
+  useEffect(() => {
+    if (settings.theme === 'light') {
+      document.body.classList.add('light-theme');
+    } else {
+      document.body.classList.remove('light-theme');
+    }
+  }, [settings.theme]);
 
   const handleConnect = (conn: TopBrewerConnection) => {
     setConnection(conn);
@@ -76,18 +119,37 @@ function App() {
     setAppState('discovery');
   };
 
+  const isBridgeConnected = siloManager.isBridgeConnected();
+
   return (
     <ErrorBoundary>
-      <div className="app-container">
+      <div className={`app-container ${settings.theme}-theme`}>
         {appState === 'discovery' && (
           <DiscoveryScreen onConnect={handleConnect} isSupported={isSupported} />
         )}
 
-        {appState === 'dashboard' && (
+        {(appState === 'dashboard' || appState === 'settings') && (
           <div className="screen dashboard-screen">
             <header className="header">
-              <h1>SiloOS Live Dashboard</h1>
+              <div className="flex items-center gap-3">
+                <h1>SiloOS Live Dashboard</h1>
+                <div className={`status-led ${isBridgeConnected ? 'online' : 'offline'}`}
+                  title={isBridgeConnected ? 'Bridge Online' : 'Bridge Offline'}></div>
+              </div>
               <div className="flex gap-2">
+                <button className="btn-secondary" onClick={() => setAppState(appState === 'settings' ? 'dashboard' : 'settings')}>
+                  {appState === 'settings' ? 'Back' : 'Settings'}
+                </button>
+                {connection && (
+                  <>
+                    <button className="btn-secondary" onClick={() => logger.downloadLogs()}>
+                      Logs
+                    </button>
+                    <button className="btn-secondary" onClick={handleDisconnect}>
+                      Exit
+                    </button>
+                  </>
+                )}
                 {!connection && (
                   <button className="btn btn-primary" onClick={() => {
                     const conn = new TopBrewerConnection(undefined, true);
@@ -95,26 +157,29 @@ function App() {
                       if (success) setConnection(conn);
                     });
                   }}>
-                    Connect TopBrewer
+                    Connect
                   </button>
-                )}
-                {connection && (
-                  <>
-                    <button className="btn-secondary" onClick={() => logger.downloadLogs()}>
-                      Export Logs
-                    </button>
-                    <button className="btn-secondary" onClick={handleDisconnect}>
-                      Disconnect
-                    </button>
-                  </>
                 )}
               </div>
             </header>
-            <DashboardScreen
-              connection={connection}
-              scaleManager={scaleManager}
-              siloManager={siloManager}
-            />
+
+            {appState === 'dashboard' && (
+              <DashboardScreen
+                connection={connection}
+                scaleManager={scaleManager}
+                siloManager={siloManager}
+                menuItems={menuItems}
+                hiddenRecipes={settings.hidden_recipes || []}
+              />
+            )}
+
+            {appState === 'settings' && (
+              <SettingsScreen
+                siloManager={siloManager}
+                menuItems={menuItems}
+                onClose={() => setAppState('dashboard')}
+              />
+            )}
           </div>
         )}
       </div>

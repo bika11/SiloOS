@@ -1,0 +1,6 @@
+bleak==0.22.3
+aiohttp==3.10.11
+websockets==13.1
+pyserial==3.5
+dbus-next==0.2.3
+bluez-peripheral==0.1.1

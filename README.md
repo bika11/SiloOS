@@ -48,11 +48,14 @@ The primary Python script that handles:
 ## Security
 Connections to the bridge require a security token defined in `config.json`. The PWA is pre-configured to use this token automatically within the internal network.
 
+- **Industrial UI**: Specialized SiloOS dashboard with real-time weights, gravimetric control, and advanced log viewer.
+- **Real-time Sync**: Multi-listener architecture ensures settings (theme, visibility) are synchronized instantly across all PWA instances.
+
 ## Project Status
 
-- **Status**: Stable / Working
-- **Last Verification**: 2026-02-17
-- **Current Version**: Rollback to commit `1211edb` with Bluetooth RF-kill fix applied to the host.
+- **Status**: Production Ready / Stable
+- **Last Verification**: 2026-02-19
+- **Current Version**: v1.2.0 (Industrial UI + Multi-listener Sync)
 
 ## Maintenance
 

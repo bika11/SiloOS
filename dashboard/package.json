@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:ui": "vitest --ui"
   },
   "dependencies": {
     "fast-xml-parser": "^5.3.4",
@@ -21,13 +23,16 @@
     "@types/react-dom": "^19.2.3",
     "@types/web-bluetooth": "^0.0.21",
     "@vitejs/plugin-react": "^5.1.1",
+    "@vitest/ui": "^3.0.5",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
+    "jsdom": "^26.0.0",
     "puppeteer": "^24.37.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
-    "vite": "^7.2.4"
+    "vite": "^7.2.4",
+    "vitest": "^3.0.5"
   }
 }

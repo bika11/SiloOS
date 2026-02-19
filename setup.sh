@@ -18,7 +18,11 @@ sudo DEBIAN_FRONTEND=noninteractive apt-get install -y bluez python3 python3-pip
 # 3. Setup Python Environment
 echo "?? Configuring Python environment..."
 # Using --break-system-packages to allow installation on modern Pi OS (dedicated device)
-pip3 install --user bleak aiohttp websockets pyserial dbus-next bluez-peripheral --break-system-packages
+if [ -f requirements.txt ]; then
+    pip3 install --user -r requirements.txt --break-system-packages
+else
+    pip3 install --user bleak aiohttp websockets pyserial dbus-next bluez-peripheral --break-system-packages
+fi
 
 # 4. Bluetooth Permissions
 echo "?? Configuring Bluetooth permissions..."
@@ -34,7 +38,11 @@ if [ ! -f config.json ]; then
   "laumas_port": "/dev/ttyUSB0",
   "laumas_baud": 115200,
   "ws_port": 8765,
-  "auth_token": "silo-secret"
+  "auth_token": "silo-secret",
+  "settings": {
+    "theme": "dark",
+    "hidden_recipes": []
+  }
 }
 EOF
 fi

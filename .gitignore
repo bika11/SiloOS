@@ -1,0 +1,19 @@
+# Credentials
+siloos_key
+siloos_key.pub
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+ENV/
+
+# Logs
+topbrewer_logs_*.txt
+*.log
+
+# Dashboard build artifacts if any
+dashboard/dist/
