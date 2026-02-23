@@ -10,6 +10,7 @@ from bluez_peripheral.advert import Advertisement
 from bleak import BleakClient, BleakScanner
 import binascii
 import subprocess # For hard resets
+import uuid
 
 # --- LOGGING SETUP ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -91,13 +92,13 @@ CMD_UUID     = "0000ff12-0000-1000-8000-00805f9b34fb"
 
 class BookooService(Service):
     def __init__(self):
-        super().__init__(SERVICE_UUID, primary=True)
+        super().__init__(uuid.UUID(SERVICE_UUID), primary=True)
 
-    @characteristic(WEIGHT_UUID, CharFlags.READ | CharFlags.NOTIFY)
+    @characteristic(uuid.UUID(WEIGHT_UUID), CharFlags.READ | CharFlags.NOTIFY)
     def weight_measurement(self, options):
         return bytes([0x03, 0x0B] + [0x00]*18)
 
-    @characteristic(CMD_UUID, CharFlags.WRITE | CharFlags.WRITE_WITHOUT_RESPONSE)
+    @characteristic(uuid.UUID(CMD_UUID), CharFlags.WRITE | CharFlags.WRITE_WITHOUT_RESPONSE)
     def command_input(self, options):
         pass
 
@@ -290,8 +291,13 @@ async def main():
         except: pass
 
     service = BookooService()
-    await service.register(bus, adapter=adapter)
-    
+    try:
+        await service.register(bus, adapter=adapter)
+        logger.info("?? Native BLE GATT Server Registered")
+    except Exception as e:
+        logger.error(f"?? Failed to register BLE GATT Service: {e}")
+        logger.warning("?? Falling back to Cable/WebSocket Data Mode Only")
+
     try:
         advert = Advertisement("BOOKOO_PI", [SERVICE_UUID], appearance=0x0000, timeout=0)
         await advert.register(bus, adapter)

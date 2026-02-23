@@ -39,3 +39,10 @@ This is the system's immune system. Every error encountered, diagnosed, and reso
   CAUSE: Flexbox utilities created inconsistent spacing in dense lists with varying text lengths.
   FIX: Used CSS Grid (`grid-template-columns: 1fr 48px`) to pin toggles to the right.
   PREVENT: Use CSS Grid for critical UI alignments in industrial dashboards to ensure pixel-perfect positioning.
+
+[2026-02-23] SEVERITY: high
+  ERROR: `dbus_next.errors.DBusError: No object received` during `service.register()`
+  CONTEXT: Running `ble_bridge.py` on a fresh Raspberry Pi OS (Debian Trixie) install via `setup.sh`.
+  CAUSE: The Linux BlueZ daemon rejected unprivileged DBUS GATT application registrations on new installs, taking down the entire Python script and stopping the Cable/WebSocket scale reader mode.
+  FIX: Wrapped the BLE GATT `service.register()` call in a `try/except` block to allow graceful fallback to USB Cable/WebSocket mode.
+  PREVENT: Never allow a secondary broadcasting protocol (like BLE emulation) to crash the primary data collection loop (RS485/WebSocket). Always wrap experimental hardware interfaces in `try/except` fallbacks.
