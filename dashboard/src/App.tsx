@@ -133,19 +133,33 @@ function App() {
             <header className="header">
               <div className="flex items-center gap-3">
                 <h1>SiloOS Live Dashboard</h1>
-                <div className={`status-led ${isBridgeConnected ? 'online' : 'offline'}`}
-                  title={isBridgeConnected ? 'Bridge Online' : 'Bridge Offline'}></div>
+                <div
+                  className={`status-led ${isBridgeConnected ? 'online' : 'offline'}`}
+                  title={isBridgeConnected ? 'Bridge Online' : 'Bridge Offline'}
+                  aria-hidden="true"
+                ></div>
               </div>
               <div className="flex gap-2">
-                <button className="btn-secondary" onClick={() => setAppState(appState === 'settings' ? 'dashboard' : 'settings')}>
+                <button
+                  className="btn-secondary"
+                  aria-label={appState === 'settings' ? 'Back to Dashboard' : 'Open Settings'}
+                  onClick={() => setAppState(appState === 'settings' ? 'dashboard' : 'settings')}
+                >
                   {appState === 'settings' ? 'Back' : 'Settings'}
                 </button>
                 {connection && (
                   <>
                     <button className="btn-secondary" onClick={() => logger.downloadLogs()}>
-                      Logs
+                      Download Logs
                     </button>
-                    <button className="btn-secondary" onClick={handleDisconnect}>
+                    <button
+                      className="btn-secondary"
+                      onClick={() => {
+                        if (window.confirm('Disconnect from TopBrewer?')) {
+                          handleDisconnect();
+                        }
+                      }}
+                    >
                       Exit
                     </button>
                   </>

@@ -40,9 +40,14 @@
   /* Glove touch target baseline */
 
   /* Radius */
+  --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 20px;
+
+  /* Amber alias — resolves silent --amber-500 var failures in feature CSS */
+  --amber-500: var(--silos-amber);
+  --amber-400: var(--silos-amber-bright);
 
   /* Effects */
   --glass-blur: blur(20px);
@@ -115,7 +120,7 @@ body {
   right: 0;
   bottom: 0;
   background-color: var(--zinc-900);
-  transition: .4s;
+  transition: background-color 0.4s ease, border-color 0.4s ease;
   border-radius: 34px;
   border: 1px solid var(--card-border);
 }
@@ -128,7 +133,7 @@ body {
   left: 3px;
   bottom: 3px;
   background-color: var(--zinc-400);
-  transition: .4s;
+  transition: transform 0.4s ease, background-color 0.4s ease, box-shadow 0.4s ease;
   border-radius: 50%;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
@@ -407,5 +412,19 @@ h2 {
 
   100% {
     opacity: 1;
+  }
+}
+
+/* Accessibility: respect user motion preferences */
+@media (prefers-reduced-motion: reduce) {
+
+  .status-led.offline,
+  .status-loading {
+    animation: none;
+  }
+
+  .customizer-card,
+  .settings-screen {
+    animation: none;
   }
 }

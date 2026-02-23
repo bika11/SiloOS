@@ -120,7 +120,7 @@ export const RecipeEditor: React.FC<RecipeEditorProps> = ({
                         <select
                             value={step.menuId}
                             onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateStepMenu(index, parseInt(e.target.value))}
-                            className="flex-1 bg-zinc-800 border border-zinc-700 px-3 py-2 rounded text-sm font-mono focus:border-amber outline-none text-white appearance-none cursor-pointer"
+                            className="flex-1 bg-zinc-800 border border-zinc-700 px-3 py-2 rounded text-sm font-mono focus:border-amber outline-none text-white cursor-pointer"
                         >
                             {menuItems.map((item: ParsedMenuItem) => (
                                 <option key={item.id} value={item.id}>
@@ -164,13 +164,13 @@ export const RecipeEditor: React.FC<RecipeEditorProps> = ({
             </Button>
 
             {/* Actions */}
-            <div className="flex justify-end gap-3 pt-6 border-t border-zinc-800">
-                <Button variant="secondary" onClick={onCancel}>
+            <div className="flex gap-4 pt-6 border-t border-zinc-800">
+                <Button variant="secondary" onClick={onCancel} className="flex-1">
                     CANCEL
                 </Button>
                 <Button
                     onClick={handleSave}
-                    className="!bg-amber !text-black hover:!bg-amber/90 font-bold tracking-widest"
+                    className="flex-[2] !bg-amber !text-black hover:!bg-amber/90 font-bold tracking-widest"
                 >
                     SAVE BLEND
                 </Button>

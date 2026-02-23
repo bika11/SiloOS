@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { Recipe, RecipeStep } from './Recipe';
 import type { ParsedMenuItem } from '../../entities/Menu';
 import { SiloManager } from '../../bluetooth/SiloManager';
@@ -26,19 +26,45 @@ export const RecipesPanel: React.FC<RecipesPanelProps> = ({
     const [activeRunner, setActiveRunner] = useState<RecipeRunner | null>(null);
     const [runnerUpdate, setRunnerUpdate] = useState<RecipeUpdate | null>(null);
 
-    // Sync recipes from Pi
+    // Sync recipes from Pi and listen for global aborts
     useEffect(() => {
         setRecipes(siloManager.getRecipes());
 
         const handleRecipesChange = (newRecipes: Record<string, Recipe>): void => {
             setRecipes(newRecipes);
         };
+        const handleGlobalAbort = (reason: string) => {
+            if (activeRunnerRef.current) {
+                logger.warn('RecipesPanel', `Global abort received: ${reason}`);
+                activeRunnerRef.current.abort(reason);
+            }
+        };
+
         siloManager.addRecipesListener(handleRecipesChange);
+
+        // Add global abort listener to events object safely
+        const prevAbort = siloManager['events']?.onGlobalAbort;
+        siloManager['events'] = {
+            ...siloManager['events'],
+            onGlobalAbort: (reason) => {
+                handleGlobalAbort(reason);
+                prevAbort?.(reason);
+            }
+        };
 
         return () => {
             siloManager.removeRecipesListener(handleRecipesChange);
+            if (siloManager['events']) {
+                siloManager['events'].onGlobalAbort = prevAbort;
+            }
         };
     }, [siloManager]);
+
+    // Keep a ref to the active runner so the effect above can access the latest one without re-binding
+    const activeRunnerRef = useRef<RecipeRunner | null>(null);
+    useEffect(() => {
+        activeRunnerRef.current = activeRunner;
+    }, [activeRunner]);
 
     // Wire runner events
     useEffect(() => {
@@ -241,16 +267,22 @@ export const RecipesPanel: React.FC<RecipesPanelProps> = ({
                         <Card key={recipe.id} className="p-4 bg-zinc-900/50 hover:border-amber/30 transition-all group">
                             <div className="flex justify-between items-start mb-2">
                                 <h4 className="font-bold text-amber font-mono">{recipe.name}</h4>
-                                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="flex gap-2">
                                     <button
                                         className="text-zinc-500 hover:text-white transition-colors"
                                         onClick={() => { setEditingRecipe(recipe); setIsEditing(true); }}
+                                        aria-label={`Edit ${recipe.name}`}
                                     >
                                         <span className="text-[10px] uppercase font-mono">Edit</span>
                                     </button>
                                     <button
                                         className="text-zinc-500 hover:text-red-500 transition-colors"
-                                        onClick={() => handleDeleteRecipe(recipe.id)}
+                                        onClick={() => {
+                                            if (window.confirm(`Delete "${recipe.name}"? This cannot be undone.`)) {
+                                                handleDeleteRecipe(recipe.id);
+                                            }
+                                        }}
+                                        aria-label={`Delete ${recipe.name}`}
                                     >
                                         <span className="text-[10px] uppercase font-mono">Del</span>
                                     </button>

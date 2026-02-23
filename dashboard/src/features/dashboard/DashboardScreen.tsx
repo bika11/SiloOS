@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card } from '../../components/ui/Card';
 import { TopBrewerConnection } from '../../bluetooth';
 import { logger } from '../../utils/logger';
@@ -50,6 +50,12 @@ export const DashboardScreen: React.FC<DashboardProps> = ({
     const [status, setStatus] = useState<string>('Ready');
     const [selectedDrink, setSelectedDrink] = useState<ParsedMenuItem | null>(null);
 
+    // Emergency Stop State
+    const [holdProgress, setHoldProgress] = useState(0);
+    const [isHolding, setIsHolding] = useState(false);
+    const holdTimerRef = useRef<number | null>(null);
+    const progressRef = useRef<number>(0);
+
     useEffect(() => {
         if (!connection) {
             setStatus('TopBrewer Disconnected');
@@ -90,6 +96,70 @@ export const DashboardScreen: React.FC<DashboardProps> = ({
         setSelectedDrink(item);
     };
 
+    const handleEmergencyStop = async () => {
+        logger.warn('Dashboard', 'EMERGENCY STOP TRIGGERED!');
+        setStatus('Aborting...');
+
+        // 1. Stop any active recipes/dosing sequences
+        siloManager.abortAll('Emergency Stop');
+
+        // 2. Stop the TopBrewer
+        if (connection) {
+            await connection.cancelOrder();
+        }
+    };
+
+    // --- Emergency Stop Hold Logic --- //
+    const HOLD_DURATION_MS = 2000;
+    const UPDATE_INTERVAL_MS = 50;
+
+    const startHold = () => {
+        // Only allow holding if machine is active to prevent confusion
+        const isActive = status !== 'Ready' && status !== 'TopBrewer Disconnected' && status !== 'Machine Error';
+        if (!isActive) return;
+
+        setIsHolding(true);
+        progressRef.current = 0;
+        setHoldProgress(0);
+
+        holdTimerRef.current = window.setInterval(() => {
+            progressRef.current += (UPDATE_INTERVAL_MS / HOLD_DURATION_MS) * 100;
+
+            if (progressRef.current >= 100) {
+                // Time reached!
+                stopHold();
+                setHoldProgress(100);
+                handleEmergencyStop();
+
+                // Visual reset after trigger
+                setTimeout(() => setHoldProgress(0), 1000);
+            } else {
+                setHoldProgress(progressRef.current);
+            }
+        }, UPDATE_INTERVAL_MS);
+    };
+
+    const stopHold = () => {
+        setIsHolding(false);
+        if (holdTimerRef.current) {
+            clearInterval(holdTimerRef.current);
+            holdTimerRef.current = null;
+        }
+
+        // If we didn't reach 100%, reset immediately (or could animate down)
+        if (progressRef.current < 100) {
+            progressRef.current = 0;
+            setHoldProgress(0);
+        }
+    };
+
+    // Cleanup timer on unmount
+    useEffect(() => {
+        return () => {
+            if (holdTimerRef.current) clearInterval(holdTimerRef.current);
+        };
+    }, []);
+
     // Filter out hidden recipes
     const visibleItems = menuItems.filter(item => {
         const isHidden = (hiddenRecipes || []).includes(item.id);
@@ -99,6 +169,8 @@ export const DashboardScreen: React.FC<DashboardProps> = ({
     if (menuItems.length > 0) {
         logger.debug('Dashboard', `Visible Items: ${visibleItems.length}/${menuItems.length} (Hidden IDs: ${hiddenRecipes?.join(',')})`);
     }
+
+    const isMachineActive = status !== 'Ready' && status !== 'TopBrewer Disconnected' && status !== 'Machine Error';
 
     return (
         <div className="dashboard-content">
@@ -114,10 +186,45 @@ export const DashboardScreen: React.FC<DashboardProps> = ({
             )}
             <Card className={`status-card ${!connection ? 'disconnected' : ''} glass border-amber/10`}>
                 <div className="flex flex-col items-center justify-center py-6">
-                    <div className="machine-icon mb-4 text-4xl">{!connection ? '🔌' : '☕'}</div>
-                    <h2 className="text-3xl font-mono text-amber uppercase tracking-widest font-bold">
+                    <div className="machine-icon mb-4 text-4xl" aria-hidden="true">{!connection ? '🔌' : '☕'}</div>
+                    <h2 className="text-3xl font-mono text-amber uppercase tracking-widest font-bold text-center">
                         {status}
                     </h2>
+
+                    {connection && (
+                        <div className="mt-8 mb-6 w-full max-w-md flex justify-center">
+                            <div className="btn-emergency-wrapper">
+                                {/* The physical button wrapper */}
+                                <button
+                                    className={`btn-emergency ${isMachineActive ? 'active-machine' : 'inactive-machine'} ${isHolding ? 'holding' : ''}`}
+                                    onMouseDown={startHold}
+                                    onMouseUp={stopHold}
+                                    onMouseLeave={stopHold}
+                                    onTouchStart={(e: React.TouchEvent<HTMLButtonElement>) => { e.preventDefault(); startHold(); }}
+                                    onTouchEnd={stopHold}
+                                    onTouchCancel={stopHold}
+                                >
+                                    {/* Progress Background */}
+                                    {isMachineActive && (
+                                        <div
+                                            className="btn-emergency-progress"
+                                            style={{ width: `${holdProgress}%` }}
+                                        />
+                                    )}
+
+                                    {/* Content (Text over progress) */}
+                                    <span className="btn-emergency-content">
+                                        <span>EMERGENCY STOP</span>
+                                        {isHolding && holdProgress < 100 && (
+                                            <span className="btn-emergency-hint">
+                                                Hold to abort...
+                                            </span>
+                                        )}
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
                 {!selectedDrink && <ScaleReadout scaleManager={scaleManager} siloManager={siloManager} />}
             </Card>

@@ -37,7 +37,7 @@ export const Button: React.FC<ButtonProps> = ({
             {...props}
         >
             {isLoading ? (
-                <span className="opacity-70">Loading...</span>
+                <span className="opacity-70">Loading…</span>
             ) : children}
         </button>
     );

@@ -7,6 +7,7 @@ export interface SiloEvents {
     onConnectionChange?: (connected: boolean) => void;
     onStatusUpdate?: (connected: boolean) => void;
     onMachineNotification?: (uuid: string, data: Uint8Array) => void;
+    onGlobalAbort?: (reason: string) => void;
 }
 
 /**
@@ -394,5 +395,13 @@ export class SiloManager {
             type: 'update_recipes',
             recipes: newRecipes
         });
+    }
+
+    /**
+     * Broadcasts a global abort to any active controllers (Recipes / Customizers)
+     */
+    public abortAll(reason: string = 'Emergency Stop') {
+        logger.warn('SiloManager', `Broadcasting global abort: ${reason}`);
+        this.events.onGlobalAbort?.(reason);
     }
 }

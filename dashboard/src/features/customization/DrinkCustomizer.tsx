@@ -146,6 +146,32 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
         return () => clearInterval(id);
     }, [siloManager]);
 
+    // Handle Global Abort (Emergency Stop)
+    useEffect(() => {
+        const handleGlobalAbort = (reason: string) => {
+            if (activeDoseRef.current) {
+                logger.warn('Customizer', `Global abort received: ${reason}`);
+                activeDoseRef.current.abort(reason);
+            }
+        };
+
+        const prevAbort = siloManager['events']?.onGlobalAbort;
+        siloManager['events'] = {
+            ...siloManager['events'],
+            onGlobalAbort: (reason) => {
+                handleGlobalAbort(reason);
+                prevAbort?.(reason);
+            }
+        };
+
+        return () => {
+            if (siloManager['events']) {
+                siloManager['events'].onGlobalAbort = prevAbort;
+            }
+        };
+    }, [siloManager]);
+
+
     const handleBrew = async () => {
         if (!details) return;
 

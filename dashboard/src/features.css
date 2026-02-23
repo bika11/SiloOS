@@ -53,7 +53,7 @@
     text-transform: uppercase;
     font-weight: 600;
     letter-spacing: 0.05em;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .btn-large:hover {
@@ -140,7 +140,7 @@
     text-align: center;
     height: 120px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
 }
 
 .drink-card:hover {
@@ -165,4 +165,93 @@
     color: var(--zinc-500);
     text-align: center;
     font-style: italic;
+}
+
+/* Emergency Stop Button - 3D Physical Design */
+.btn-emergency-wrapper {
+    position: relative;
+    display: inline-block;
+    width: 280px;
+    height: 80px;
+}
+
+.btn-emergency {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 40px;
+    /* Fully rounded ends / pill shape */
+    font-weight: 700;
+    font-family: var(--font-mono);
+    letter-spacing: 0.1em;
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    transition: all 0.15s ease-out;
+    border: none;
+    outline: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.btn-emergency.active-machine {
+    cursor: pointer;
+    background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    /* Deep red solid bottom border for 3D effect + soft drop shadow */
+    box-shadow: 0 8px 0 #991b1b, 0 15px 25px rgba(220, 38, 38, 0.4);
+    transform: translateY(0);
+}
+
+.btn-emergency.active-machine:hover {
+    box-shadow: 0 6px 0 #991b1b, 0 12px 20px rgba(220, 38, 38, 0.4);
+    transform: translateY(2px);
+}
+
+.btn-emergency.active-machine.holding {
+    background: #b91c1c;
+    box-shadow: 0 0px 0 #991b1b, 0 4px 10px rgba(220, 38, 38, 0.4);
+    transform: translateY(8px);
+    transition: all 0.1s ease-out;
+}
+
+.btn-emergency.inactive-machine {
+    cursor: not-allowed;
+    background: #27272a;
+    color: #52525b;
+    box-shadow: 0 4px 0 #18181b, 0 4px 10px rgba(0, 0, 0, 0.5);
+    opacity: 0.7;
+}
+
+.btn-emergency-progress {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    background-color: #7f1d1d;
+    /* Darker red for fill behind text */
+    transition: width 0.05s linear;
+    /* Match UPDATE_INTERVAL_MS */
+    pointer-events: none;
+    z-index: 0;
+}
+
+.btn-emergency-content {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.btn-emergency-hint {
+    font-size: 0.75rem;
+    margin-top: 4px;
+    color: #fecaca;
+    letter-spacing: normal;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    opacity: 0.9;
 }
