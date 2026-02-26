@@ -7,7 +7,7 @@ from bluez_peripheral.gatt.service import Service
 from bluez_peripheral.gatt.characteristic import characteristic, CharacteristicFlags as CharFlags
 from bluez_peripheral.util import get_message_bus, Adapter
 from bluez_peripheral.advert import Advertisement
-from bleak import BleakClient, BleakScanner
+from bleak import BleakClient
 import binascii
 import subprocess # For hard resets
 
