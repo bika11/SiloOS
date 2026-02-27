@@ -1,7 +1,10 @@
 ﻿import asyncio
 import json
 import logging
+import os
+import time
 import serial
+from logging.handlers import RotatingFileHandler
 from aiohttp import web
 from bluez_peripheral.gatt.service import Service
 from bluez_peripheral.gatt.characteristic import characteristic, CharacteristicFlags as CharFlags
@@ -15,6 +18,29 @@ import subprocess # For hard resets
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("SiloOS")
 # logger.setLevel(logging.DEBUG) # Uncomment for deep BLE troubleshooting
+
+# --- AUDIT LOG SETUP (persistent, structured, file-based) ---
+AUDIT_LOG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
+os.makedirs(AUDIT_LOG_DIR, exist_ok=True)
+
+audit_logger = logging.getLogger("SiloOS.audit")
+audit_handler = RotatingFileHandler(
+    os.path.join(AUDIT_LOG_DIR, "dispensing.log"),
+    maxBytes=10 * 1024 * 1024,  # 10 MB per file
+    backupCount=10               # Keep 100 MB total history
+)
+audit_handler.setFormatter(logging.Formatter('%(message)s'))
+audit_logger.addHandler(audit_handler)
+audit_logger.setLevel(logging.INFO)
+audit_logger.propagate = False  # Don't duplicate to console
+
+def audit(event_type, **kwargs):
+    """Write a structured JSON audit event to persistent log file."""
+    try:
+        entry = {"ts": time.time(), "event": event_type, **kwargs}
+        audit_logger.info(json.dumps(entry))
+    except Exception:
+        pass  # Audit must never crash the main process
 
 # --- CONFIGURATION HANDLER ---
 class Config:
@@ -63,6 +89,7 @@ current_weight = 0.0
 tare_offset = 0.0
 connected_websockets = set()
 topbrewer_client = None
+active_doses = {}  # Per-silo dispensing tracker (observe-only): siloId -> {start_time, start_weight, target_kg, client}
 
 # --- BOOKOO PROTOCOL CONSTANTS ---
 SERVICE_UUID = "00000ffe-0000-1000-8000-00805f9b34fb"
@@ -117,6 +144,7 @@ async def websocket_handler(request):
     await ws.prepare(request)
     connected_websockets.add(ws)
     logger.info(f"New WebSocket Client Connected from {request.remote}")
+    audit("ws_connect", client=str(request.remote), total_clients=len(connected_websockets))
     try:
         # Send initial weight
         await ws.send_str(json.dumps({"weight": current_weight}))
@@ -143,8 +171,12 @@ async def websocket_handler(request):
                     # 2. Handle Tare Command
                     elif data.get("type") == "tare":
                         global tare_offset
+                        prev_tare = tare_offset
                         tare_offset = current_weight
-                        logger.info(f"Tare set to {tare_offset}g")
+                        logger.info(f"Tare set to {tare_offset}g (was {prev_tare}g)")
+                        audit("tare", prev_offset=prev_tare, new_offset=tare_offset,
+                              weight=current_weight, client=str(request.remote),
+                              active_doses=list(active_doses.keys()))
                         await ws.send_str(json.dumps({
                             "type": "tare_ack",
                             "offset": tare_offset
@@ -169,11 +201,60 @@ async def websocket_handler(request):
                             "data": binascii.hexlify(val).decode()
                         }))
 
+                    # 4. Handle Dose Telemetry (observe-only — Pi never controls dispensing)
+                    elif data.get("type") == "dose_start":
+                        silo_id = data.get("siloId", "unknown")
+                        if silo_id in active_doses:
+                            audit("dose_conflict", silo_id=silo_id,
+                                  existing_client=active_doses[silo_id].get("client"),
+                                  new_client=str(request.remote))
+                        active_doses[silo_id] = {
+                            "start_time": time.time(),
+                            "start_weight": current_weight,
+                            "target_kg": data.get("targetKg"),
+                            "tare_kg": data.get("tareKg"),
+                            "client": str(request.remote),
+                        }
+                        audit("dose_start", silo_id=silo_id,
+                              target_kg=data.get("targetKg"),
+                              tare_kg=data.get("tareKg"),
+                              weight=current_weight,
+                              tare_offset=tare_offset,
+                              client=str(request.remote),
+                              other_active=[k for k in active_doses if k != silo_id])
+
+                    elif data.get("type") == "dose_result":
+                        silo_id = data.get("siloId", "unknown")
+                        dose_info = active_doses.pop(silo_id, None)
+                        audit("dose_complete", silo_id=silo_id,
+                              client_reported={
+                                  "target_kg": data.get("targetKg"),
+                                  "actual_kg": data.get("actualKg"),
+                                  "overshoot_kg": data.get("overshootKg"),
+                                  "duration_ms": data.get("durationMs"),
+                                  "flow_rate": data.get("flowRateKgPerS"),
+                              },
+                              pi_weight_now=current_weight,
+                              pi_start_weight=dose_info.get("start_weight") if dose_info else None,
+                              pi_duration_s=round(time.time() - dose_info["start_time"], 3) if dose_info else None,
+                              client=str(request.remote))
+
+                    elif data.get("type") == "dose_abort":
+                        silo_id = data.get("siloId", "unknown")
+                        dose_info = active_doses.pop(silo_id, None)
+                        audit("dose_abort", silo_id=silo_id,
+                              reason=data.get("reason"),
+                              pi_weight_now=current_weight,
+                              pi_start_weight=dose_info.get("start_weight") if dose_info else None,
+                              pi_duration_s=round(time.time() - dose_info["start_time"], 3) if dose_info else None,
+                              client=str(request.remote))
+
                 except Exception as e:
                     logger.error(f"PWA Msg Error: {e}")
     finally:
         connected_websockets.discard(ws)
         logger.info("WebSocket Client Disconnected")
+        audit("ws_disconnect", client=str(request.remote), total_clients=len(connected_websockets))
     return ws
 
 async def broadcast_websocket(weight):
@@ -271,6 +352,7 @@ async def main():
         while True:
             try:
                 ser = serial.Serial(LAUMAS_PORT, LAUMAS_BAUD, parity=serial.PARITY_EVEN, stopbits=1, timeout=0.05)
+                audit("serial_connect", port=LAUMAS_PORT, baud=LAUMAS_BAUD)
                 buffer = bytearray()
                 while True:
                     chunk = ser.read(100)
@@ -283,20 +365,24 @@ async def main():
                                 new_weight = float(raw_val) / 10.0
                                 if abs(new_weight - current_weight) > 0.01:
                                     current_weight = new_weight
+                                    audit("weight", g=current_weight)
                                     packet = create_bookoo_packet(current_weight)
                                     try:
                                         logger.info(f"?? Scale Weight Update: {current_weight}g")
                                         loop.call_soon_threadsafe(service.get_characteristic(WEIGHT_UUID).changed, packet)
-                                    except: pass
+                                    except Exception as ble_err:
+                                        audit("ble_notify_error", error=str(ble_err), weight=current_weight)
                                     loop.call_soon_threadsafe(lambda w=current_weight: asyncio.create_task(broadcast_websocket(w)))
                                 del buffer[:i+15]
                                 i = 0
                                 continue
                             i += 1
-                        if len(buffer) > 300: del buffer[:100]
+                        if len(buffer) > 300:
+                            audit("buffer_overflow", buffer_size=len(buffer), discarded=100)
+                            del buffer[:100]
             except Exception as e:
                 logger.error(f"Serial Error: {e}")
-                import time
+                audit("serial_error", error=str(e))
                 time.sleep(5)
 
     await loop.run_in_executor(None, read_serial_loop)

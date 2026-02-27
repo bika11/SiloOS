@@ -192,6 +192,14 @@ export class SiloManager {
     }
 
     /**
+     * Send dose telemetry to the Pi for audit logging.
+     * Fire-and-forget — never affects dispensing control flow.
+     */
+    sendTelemetry(data: Record<string, unknown>): void {
+        this.send(data);
+    }
+
+    /**
      * BLE Relay methods
      */
 

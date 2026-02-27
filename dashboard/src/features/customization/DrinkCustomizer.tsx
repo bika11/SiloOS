@@ -165,6 +165,12 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
                 const ctrl = new DoseController(
                     {
                         onComplete: (result) => {
+                            siloManager.sendTelemetry({
+                                type: 'dose_result', siloId,
+                                targetKg: result.targetKg, actualKg: result.actualKg,
+                                overshootKg: result.overshootKg, durationMs: result.durationMs,
+                                flowRateKgPerS: result.flowRateKgPerS, topUpN,
+                            });
                             logger.info('Customizer',
                                 `Dose #${topUpN} complete: ${result.actualKg.toFixed(3)}kg / ${result.targetKg.toFixed(3)}kg`
                             );
@@ -183,6 +189,7 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
                             }
                         },
                         onAbort: (reason) => {
+                            siloManager.sendTelemetry({ type: 'dose_abort', siloId, reason, topUpN });
                             logger.warn('Customizer', `Dose aborted: ${reason}`);
                         },
                     },
@@ -221,6 +228,10 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
                 });
 
                 ctrl.start(() => { connection.cancelOrder(); });
+                siloManager.sendTelemetry({
+                    type: 'dose_start', siloId,
+                    targetKg: doseTargetKg, tareKg: siloManager.getWeight(), topUpN,
+                });
                 setDoseController(ctrl);
             };
 
