@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { DoseController, type DoseUpdate, type DoseResult, type DoseState } from './DoseController';
+import { type DoseControllerLike, type DoseUpdate, type DoseResult, type DoseState } from './DoseController';
 import { Button } from '../../components/ui/Button';
 import './BrewMonitor.css';
 
 interface BrewMonitorProps {
-    controller: DoseController;
+    controller: DoseControllerLike;
     onClose: () => void;
 }
 

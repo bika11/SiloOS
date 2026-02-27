@@ -1,11 +1,25 @@
 import { logger } from '../utils/logger';
 
+export interface PiDoseMessage {
+    siloId: string;
+    state: string;
+    dispensedKg?: number;
+    targetKg?: number;
+    progress?: number;
+    flowRateKgPerS?: number;
+    result?: { targetKg: number; actualKg: number; overshootKg: number; durationMs: number; flowRateKgPerS: number };
+    reason?: string;
+}
+
 export interface SiloEvents {
     onWeightUpdate?: (weight: number) => void;
     onNetWeightUpdate?: (netWeight: number) => void;
     onConnectionChange?: (connected: boolean) => void;
     onStatusUpdate?: (connected: boolean) => void;
     onMachineNotification?: (uuid: string, data: Uint8Array) => void;
+    onDoseAck?: (siloId: string, tareG: number, targetKg: number) => void;
+    onDoseUpdate?: (msg: PiDoseMessage) => void;
+    onDoseRejected?: (siloId: string, reason: string) => void;
 }
 
 /**
@@ -111,6 +125,17 @@ export class SiloManager {
                             this.pendingTare(data.offset);
                             this.pendingTare = null;
                         }
+                    }
+
+                    // 6. Pi Dose Control messages
+                    if (data.type === 'dose_ack') {
+                        this.events.onDoseAck?.(data.siloId, data.tareG, data.targetKg);
+                    }
+                    if (data.type === 'dose_update') {
+                        this.events.onDoseUpdate?.(data as PiDoseMessage);
+                    }
+                    if (data.type === 'dose_rejected') {
+                        this.events.onDoseRejected?.(data.siloId, data.reason);
                     }
 
                 } catch (err) {

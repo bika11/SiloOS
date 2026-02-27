@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { TopBrewerConnection } from '../../bluetooth';
 import { ScaleManager } from '../../bluetooth/ScaleManager';
 import { SiloManager } from '../../bluetooth/SiloManager';
+import type { PiDoseMessage } from '../../bluetooth/SiloManager';
 import { ScaleReadout } from '../scale/ScaleReadout';
 import { BrewMonitor } from '../dosing/BrewMonitor';
-import { DoseController } from '../dosing/DoseController';
+import type { DoseControllerLike } from '../dosing/DoseController';
+import { PiDoseProxy } from '../dosing/PiDoseProxy';
 import type { ParsedMenuItem } from '../../entities/Menu';
 import type { MenuDetails } from '../../sfwu/types/MenuDetails';
 import type { OrderIngredient } from '../../sfwu/commands/OrderCommand';
@@ -38,8 +40,9 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
     const [customValues, setCustomValues] = useState<Record<string, number>>({});
     const [customVolume, setCustomVolume] = useState<number>(0);
     const [isGravimetric, setIsGravimetric] = useState(false);
-    const [doseController, setDoseController] = useState<DoseController | null>(null);
-    const weightListenerRef = useRef<((w: number) => void) | null>(null);
+    const [doseController, setDoseController] = useState<DoseControllerLike | null>(null);
+    const activeSiloIdRef = useRef<string | null>(null);
+    const deadManTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
         let didLoad = false;
@@ -95,32 +98,39 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
         };
     }, [drink, connection]);
 
-    // Wire weight updates to active DoseController
+    // Wire Pi dose_update messages to active PiDoseProxy
     useEffect(() => {
-        if (!doseController) return;
+        if (!doseController || !(doseController instanceof PiDoseProxy)) return;
 
-        const handler = (w: number) => {
-            doseController.onWeight(w);
-        };
-        weightListenerRef.current = handler;
-
-        const origHandler = siloManager['events']?.onWeightUpdate;
+        const proxy = doseController as PiDoseProxy;
+        const origHandler = siloManager['events']?.onDoseUpdate;
         siloManager['events'] = {
             ...siloManager['events'],
-            onWeightUpdate: (w: number) => {
-                handler(w);
-                origHandler?.(w);
+            onDoseUpdate: (msg: PiDoseMessage) => {
+                if (msg.siloId === activeSiloIdRef.current) {
+                    proxy.handlePiMessage(msg);
+                    // Reset dead-man's switch on every update
+                    if (deadManTimerRef.current) clearTimeout(deadManTimerRef.current);
+                    deadManTimerRef.current = setTimeout(() => {
+                        if (activeSiloIdRef.current) {
+                            logger.warn('Customizer', 'Dead-man switch: Pi silent for 5s — sending emergency cancel');
+                            siloManager.sendTelemetry({ type: 'dose_abort', siloId: activeSiloIdRef.current, reason: 'Dead-man switch: Pi silent' });
+                            connection.cancelOrder();
+                        }
+                    }, 5000);
+                }
+                origHandler?.(msg);
             },
         };
 
         return () => {
-            weightListenerRef.current = null;
             siloManager['events'] = {
                 ...siloManager['events'],
-                onWeightUpdate: origHandler,
+                onDoseUpdate: origHandler,
             };
+            if (deadManTimerRef.current) clearTimeout(deadManTimerRef.current);
         };
-    }, [doseController, siloManager]);
+    }, [doseController, siloManager, connection]);
 
     const handleValueChange = (ingId: number, varId: number, value: number) => {
         setCustomValues(prev => ({
@@ -151,66 +161,28 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
         ingredients.forEach(i => logger.info('Customizer', `  ing=${i.ingredientId} var=${i.variantId} val=${i.value}`));
 
         if (isGravimetric) {
-            // --- Precision Gravimetric Dosing with Auto Top-Up ---
+            // --- Pi-Authority Gravimetric Dosing with Auto Top-Up ---
+            // The Pi controls stop timing. Dashboard sends order + dose request.
             const siloId = drink.name || `drink_${drink.id}`;
-            const MAX_TOP_UPS = 5; // User confirmed small doses are fine
+            const MAX_TOP_UPS = 5;
             const TOP_UP_TOLERANCE_KG = 0.1; // 100g tolerance (scale resolution)
 
-            // Convert slider value (recipe units: ml/kg) to kg for DoseController
             // CRITICAL: 1 App Unit (ml) = 1 Physical Kg. No division by 1000.
             const targetKg = customVolume;
             logger.info('Customizer', `Gravimetric target: ${targetKg.toFixed(3)} kg (1:1 mapping from ${customVolume} ${recipeUnit})`);
 
             const runDose = async (doseTargetKg: number, topUpN: number) => {
-                const ctrl = new DoseController(
-                    {
-                        onComplete: (result) => {
-                            siloManager.sendTelemetry({
-                                type: 'dose_result', siloId,
-                                targetKg: result.targetKg, actualKg: result.actualKg,
-                                overshootKg: result.overshootKg, durationMs: result.durationMs,
-                                flowRateKgPerS: result.flowRateKgPerS, topUpN,
-                            });
-                            logger.info('Customizer',
-                                `Dose #${topUpN} complete: ${result.actualKg.toFixed(3)}kg / ${result.targetKg.toFixed(3)}kg`
-                            );
-                            const shortfall = result.targetKg - result.actualKg;
+                // 1. Request dose from Pi (Pi tares at current scale weight)
+                logger.info('Customizer', `Requesting Pi dose: silo="${siloId}" target=${doseTargetKg.toFixed(3)}kg topUp=#${topUpN}`);
+                siloManager.send({ type: 'dose_request', siloId, targetKg: doseTargetKg });
 
-                            // If shortfall is significant, trigger top-up
-                            if (shortfall > TOP_UP_TOLERANCE_KG && topUpN < MAX_TOP_UPS) {
-                                logger.info('Customizer',
-                                    `Auto top-up #${topUpN + 1}: shortfall=${shortfall.toFixed(3)}kg`
-                                );
-                                runDose(shortfall, topUpN + 1).catch(err =>
-                                    logger.error('Customizer', 'Top-up failed', err)
-                                );
-                            } else {
-                                logger.info('Customizer', `Dose finished. Shortfall ${shortfall.toFixed(3)}kg within tolerance or max retries reached.`);
-                            }
-                        },
-                        onAbort: (reason) => {
-                            siloManager.sendTelemetry({ type: 'dose_abort', siloId, reason, topUpN });
-                            logger.warn('Customizer', `Dose aborted: ${reason}`);
-                        },
-                    },
-                    { targetKg: doseTargetKg, siloId }
-                );
+                // Wait briefly for Pi to ack (tare + arm controller)
+                await new Promise(resolve => setTimeout(resolve, 100));
 
-                ctrl.tare(siloManager.getWeight()); // Tare before every specific dose/top-up
-
-                // --- Calculate Scaled Recipe for Top-Up ---
-                // If this is a top-up (N > 0), we must ONLY dispense the fraction missing.
-                // scalingFactor = doseTargetKg / originalTargetKg
-                // Example: Missing 2kg of 10kg target -> Scale = 0.2 (20%)
-                const originalTargetKg = targetKg; // The total goal
-
-                // For initial dose (N=0), target is full amount, factor = 1.0
-                // For top-up, doseTargetKg is the shortfall.
-                const scalingFactor = doseTargetKg / originalTargetKg;
-
+                // 2. Calculate scaled recipe for top-ups
+                const scalingFactor = doseTargetKg / targetKg;
                 logger.info('Customizer', `Preparing Dose #${topUpN}. Target=${doseTargetKg.toFixed(3)}kg. Scaling Factor=${scalingFactor.toFixed(4)}`);
 
-                // Create scaled ingredients list
                 const scaledIngredients = ingredients.map(ing => ({
                     ...ing,
                     value: Math.max(0, ing.value * scalingFactor)
@@ -220,6 +192,7 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
                     logger.info('Customizer', `  -> Scaled Ing ${i.ingredientId}: ${i.value.toFixed(2)} (Orig: ${ingredients.find(x => x.ingredientId === i.ingredientId)?.value})`)
                 );
 
+                // 3. Send order to machine via existing BLE relay
                 await connection.sendCustomOrder({
                     menuId: drink.id,
                     cups: 1,
@@ -227,17 +200,44 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
                     ingredients: scaledIngredients,
                 });
 
-                ctrl.start(() => { connection.cancelOrder(); });
-                siloManager.sendTelemetry({
-                    type: 'dose_start', siloId,
-                    targetKg: doseTargetKg, tareKg: siloManager.getWeight(), topUpN,
-                });
-                setDoseController(ctrl);
+                // 4. Tell Pi the order is sent → Pi starts preemptive timer
+                siloManager.send({ type: 'dose_started', siloId });
+
+                // 5. Create PiDoseProxy (drives BrewMonitor via Pi dose_update messages)
+                const proxy = new PiDoseProxy(siloId, doseTargetKg, siloManager);
+                activeSiloIdRef.current = siloId;
+
+                // Handle completion (top-up logic stays in dashboard)
+                proxy.events.onComplete = (result) => {
+                    logger.info('Customizer',
+                        `Dose #${topUpN} complete: ${result.actualKg.toFixed(3)}kg / ${result.targetKg.toFixed(3)}kg`
+                    );
+                    activeSiloIdRef.current = null;
+                    if (deadManTimerRef.current) clearTimeout(deadManTimerRef.current);
+
+                    const shortfall = result.targetKg - result.actualKg;
+                    if (shortfall > TOP_UP_TOLERANCE_KG && topUpN < MAX_TOP_UPS) {
+                        logger.info('Customizer', `Auto top-up #${topUpN + 1}: shortfall=${shortfall.toFixed(3)}kg`);
+                        runDose(shortfall, topUpN + 1).catch(err =>
+                            logger.error('Customizer', 'Top-up failed', err)
+                        );
+                    } else {
+                        logger.info('Customizer', `Dose finished. Shortfall ${shortfall.toFixed(3)}kg within tolerance or max retries reached.`);
+                    }
+                };
+
+                proxy.events.onAbort = (reason) => {
+                    logger.warn('Customizer', `Dose aborted: ${reason}`);
+                    activeSiloIdRef.current = null;
+                    if (deadManTimerRef.current) clearTimeout(deadManTimerRef.current);
+                };
+
+                setDoseController(proxy);
             };
 
             try {
                 onBrewingStart();
-                await runDose(targetKg, 0); // Initial dose: target = full amount
+                await runDose(targetKg, 0);
             } catch (err) {
                 logger.error('Customizer', 'Failed to start gravimetric brew', err);
             }

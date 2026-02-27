@@ -61,6 +61,16 @@ export interface DoseEvents {
     onAbort?: (reason: string) => void;
 }
 
+/**
+ * Minimal interface for anything that drives BrewMonitor (local or Pi-side controller).
+ */
+export interface DoseControllerLike {
+    events: DoseEvents;
+    getConfig(): Readonly<DoseConfig>;
+    getState(): DoseState;
+    abort(reason: string): void;
+}
+
 // ============================================================
 // DEFAULT PROFILE (used on first dose for unknown silo)
 // ============================================================

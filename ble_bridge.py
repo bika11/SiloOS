@@ -13,6 +13,7 @@ from bluez_peripheral.advert import Advertisement
 from bleak import BleakClient
 import binascii
 import subprocess # For hard resets
+from dose_controller import PiDoseController, set_audit_fn, send_cancel_to_topbrewer
 
 # --- LOGGING SETUP ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -89,7 +90,11 @@ current_weight = 0.0
 tare_offset = 0.0
 connected_websockets = set()
 topbrewer_client = None
-active_doses = {}  # Per-silo dispensing tracker (observe-only): siloId -> {start_time, start_weight, target_kg, client}
+active_doses = {}  # Per-silo dispensing tracker: siloId -> {start_time, start_weight, target_kg, client}
+active_controller = None  # PiDoseController — one active dose at a time
+
+# Bridge audit function to dose_controller module
+set_audit_fn(audit)
 
 # --- BOOKOO PROTOCOL CONSTANTS ---
 SERVICE_UUID = "00000ffe-0000-1000-8000-00805f9b34fb"
@@ -201,53 +206,72 @@ async def websocket_handler(request):
                             "data": binascii.hexlify(val).decode()
                         }))
 
-                    # 4. Handle Dose Telemetry (observe-only — Pi never controls dispensing)
-                    elif data.get("type") == "dose_start":
+                    # 4. Pi-Authority Dose Control
+                    elif data.get("type") == "dose_request":
+                        global active_controller
                         silo_id = data.get("siloId", "unknown")
-                        if silo_id in active_doses:
-                            audit("dose_conflict", silo_id=silo_id,
-                                  existing_client=active_doses[silo_id].get("client"),
-                                  new_client=str(request.remote))
-                        active_doses[silo_id] = {
-                            "start_time": time.time(),
-                            "start_weight": current_weight,
-                            "target_kg": data.get("targetKg"),
-                            "tare_kg": data.get("tareKg"),
-                            "client": str(request.remote),
-                        }
-                        audit("dose_start", silo_id=silo_id,
-                              target_kg=data.get("targetKg"),
-                              tare_kg=data.get("tareKg"),
-                              weight=current_weight,
-                              tare_offset=tare_offset,
-                              client=str(request.remote),
-                              other_active=[k for k in active_doses if k != silo_id])
+                        target_kg = data.get("targetKg", 0)
 
-                    elif data.get("type") == "dose_result":
+                        # Reject if another dose is already running
+                        if active_controller and active_controller.state in ('armed', 'running', 'stopping', 'settling'):
+                            audit("dose_rejected", silo_id=silo_id,
+                                  reason="another dose active",
+                                  active_silo=active_controller.silo_id,
+                                  active_state=active_controller.state,
+                                  client=str(request.remote))
+                            await ws.send_str(json.dumps({
+                                "type": "dose_rejected",
+                                "siloId": silo_id,
+                                "reason": f"Dose already active for '{active_controller.silo_id}'"
+                            }))
+                        else:
+                            # Tare at current Pi weight (most accurate — no WebSocket latency)
+                            tare_at = current_weight
+                            loop = asyncio.get_running_loop()
+                            active_controller = PiDoseController(
+                                silo_id=silo_id,
+                                target_kg=target_kg,
+                                tare_weight=tare_at,
+                                ble_client=topbrewer_client,
+                                broadcast_fn=broadcast_relay,
+                                loop=loop,
+                            )
+                            active_doses[silo_id] = {
+                                "start_time": time.time(),
+                                "start_weight": current_weight,
+                                "target_kg": target_kg,
+                                "client": str(request.remote),
+                            }
+                            # ACK back to requesting client AND broadcast to all
+                            await broadcast_relay({
+                                "type": "dose_ack",
+                                "siloId": silo_id,
+                                "tareG": tare_at,
+                                "targetKg": target_kg,
+                            })
+
+                    elif data.get("type") == "dose_started":
+                        # Dashboard confirms order was sent to machine → start the timer
                         silo_id = data.get("siloId", "unknown")
-                        dose_info = active_doses.pop(silo_id, None)
-                        audit("dose_complete", silo_id=silo_id,
-                              client_reported={
-                                  "target_kg": data.get("targetKg"),
-                                  "actual_kg": data.get("actualKg"),
-                                  "overshoot_kg": data.get("overshootKg"),
-                                  "duration_ms": data.get("durationMs"),
-                                  "flow_rate": data.get("flowRateKgPerS"),
-                              },
-                              pi_weight_now=current_weight,
-                              pi_start_weight=dose_info.get("start_weight") if dose_info else None,
-                              pi_duration_s=round(time.time() - dose_info["start_time"], 3) if dose_info else None,
-                              client=str(request.remote))
+                        if active_controller and active_controller.silo_id == silo_id:
+                            active_controller.start()
+                        else:
+                            audit("dose_started_orphan", silo_id=silo_id,
+                                  client=str(request.remote))
 
                     elif data.get("type") == "dose_abort":
                         silo_id = data.get("siloId", "unknown")
-                        dose_info = active_doses.pop(silo_id, None)
-                        audit("dose_abort", silo_id=silo_id,
-                              reason=data.get("reason"),
-                              pi_weight_now=current_weight,
-                              pi_start_weight=dose_info.get("start_weight") if dose_info else None,
-                              pi_duration_s=round(time.time() - dose_info["start_time"], 3) if dose_info else None,
-                              client=str(request.remote))
+                        reason = data.get("reason", "User aborted")
+                        if active_controller and active_controller.silo_id == silo_id:
+                            active_controller.abort(reason)
+                            active_controller = None
+                            active_doses.pop(silo_id, None)
+                        else:
+                            # No active Pi controller — send cancel directly as safety net
+                            if topbrewer_client:
+                                await send_cancel_to_topbrewer(topbrewer_client)
+                            audit("dose_abort_direct", silo_id=silo_id,
+                                  reason=reason, client=str(request.remote))
 
                 except Exception as e:
                     logger.error(f"PWA Msg Error: {e}")
@@ -259,6 +283,16 @@ async def websocket_handler(request):
 
 async def broadcast_websocket(weight):
     await broadcast_relay({"weight": weight, "net": weight - tare_offset})
+
+def _feed_dose_controller(weight):
+    """Forward weight to active Pi dose controller. Called from serial thread via call_soon_threadsafe."""
+    global active_controller
+    if active_controller and active_controller.state in ('running', 'stopping', 'settling'):
+        active_controller.on_weight(weight)
+        # Clean up finished controllers
+        if active_controller.state in ('done', 'aborted'):
+            active_doses.pop(active_controller.silo_id, None)
+            active_controller = None
 
 def machine_notification_handler(characteristic, data):
     payload_hex = binascii.hexlify(data).decode()
@@ -373,6 +407,8 @@ async def main():
                                     except Exception as ble_err:
                                         audit("ble_notify_error", error=str(ble_err), weight=current_weight)
                                     loop.call_soon_threadsafe(lambda w=current_weight: asyncio.create_task(broadcast_websocket(w)))
+                                    # Feed weight to active Pi dose controller
+                                    loop.call_soon_threadsafe(lambda w=current_weight: _feed_dose_controller(w))
                                 del buffer[:i+15]
                                 i = 0
                                 continue
