@@ -1,6 +1,17 @@
 import { logger } from '../utils/logger';
 import type { Recipe } from '../features/dosing/Recipe';
 
+export interface PiDoseMessage {
+    siloId: string;
+    state: string;
+    dispensedKg?: number;
+    targetKg?: number;
+    progress?: number;
+    flowRateKgPerS?: number;
+    result?: { targetKg: number; actualKg: number; overshootKg: number; durationMs: number; flowRateKgPerS: number };
+    reason?: string;
+}
+
 export interface SiloEvents {
     onWeightUpdate?: (weight: number) => void;
     onNetWeightUpdate?: (netWeight: number) => void;
@@ -8,6 +19,9 @@ export interface SiloEvents {
     onStatusUpdate?: (connected: boolean) => void;
     onMachineNotification?: (uuid: string, data: Uint8Array) => void;
     onGlobalAbort?: (reason: string) => void;
+    onDoseAck?: (siloId: string, tareG: number, targetKg: number) => void;
+    onDoseUpdate?: (msg: PiDoseMessage) => void;
+    onDoseRejected?: (siloId: string, reason: string) => void;
 }
 
 /**
@@ -193,6 +207,17 @@ export class SiloManager {
                         }
                     }
 
+                    // 6. Pi Dose Control messages
+                    if (data.type === 'dose_ack') {
+                        this.events.onDoseAck?.(data.siloId, data.tareG, data.targetKg);
+                    }
+                    if (data.type === 'dose_update') {
+                        this.events.onDoseUpdate?.(data as PiDoseMessage);
+                    }
+                    if (data.type === 'dose_rejected') {
+                        this.events.onDoseRejected?.(data.siloId, data.reason);
+                    }
+
                 } catch (err) {
                     logger.error('SiloManager', 'Failed to parse bridge data', err);
                 }
@@ -269,6 +294,14 @@ export class SiloManager {
         if (this.socket && this.isConnected) {
             this.socket.send(JSON.stringify(data));
         }
+    }
+
+    /**
+     * Send dose telemetry to the Pi for audit logging.
+     * Fire-and-forget — never affects dispensing control flow.
+     */
+    sendTelemetry(data: Record<string, unknown>): void {
+        this.send(data);
     }
 
     /**

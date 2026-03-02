@@ -1,11 +1,5 @@
 import { logger } from "../../utils/logger";
-
-export interface TemperatureSensor {
-    status: number;
-    value: number; // Scaled (Actual / 100.0)
-    unit: string;
-    name: string;
-}
+import type { TemperatureSensor } from "../../entities/Temperature";
 
 export class TemperaturesParser {
     static parse(data: Uint8Array): TemperatureSensor[] {

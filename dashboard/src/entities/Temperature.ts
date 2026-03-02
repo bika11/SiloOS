@@ -1,10 +1,9 @@
 export interface TemperatureSensor {
     status: number;
     value: number; // Parsed float (Int32 / 100.0)
-    unit: number;  // or string if decoded
+    unit: string;  // Decoded unit string (°C, °F, etc.)
     name: string;
 }
 
-export interface Temperatures {
-    sensors: TemperatureSensor[];
-}
+/** Temperature response is an array of sensors */
+export type Temperatures = TemperatureSensor[];

@@ -1,9 +1,5 @@
 import { logger } from "../../utils/logger";
-
-export interface OrderResponse {
-    status: number;
-    orderId: number;
-}
+import type { OrderResponse } from "../../entities/OrderResponse";
 
 export class OrderResponseParser {
     static parse(data: Uint8Array): OrderResponse {
