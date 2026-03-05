@@ -59,6 +59,8 @@ Connections to the bridge require a security token defined in `config.json`. The
 
 ## Maintenance
 
+- [Remote Access Guide](docs/remote_access_guide.md) — How to connect from home via Tailscale.
+
 To sync changes from a development laptop to the Pi, use the `/sync-project` workflow:
 ```bash
 # From laptop
