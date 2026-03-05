@@ -453,10 +453,9 @@ async def main():
                                 new_weight = float(raw_val) / 10.0
                                 if abs(new_weight - current_weight) > 0.01:
                                     current_weight = new_weight
-                                    audit("weight", g=current_weight)
                                     packet = create_bookoo_packet(current_weight)
                                     try:
-                                        logger.info(f"?? Scale Weight Update: {current_weight}g")
+                                        logger.debug(f"⚖ Scale Weight Update: {current_weight}g")
                                         loop.call_soon_threadsafe(service.get_characteristic(WEIGHT_UUID).changed, packet)
                                     except Exception as ble_err:
                                         audit("ble_notify_error", error=str(ble_err), weight=current_weight)
