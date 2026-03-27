@@ -1,4 +1,4 @@
-﻿import asyncio
+import asyncio
 import json
 import logging
 import os
@@ -426,7 +426,7 @@ async def main():
     app.router.add_get('/', websocket_handler)
     runner = web.AppRunner(app)
     await runner.setup()
-    site = web.TCPSite(runner, '0.0.0.0', WS_PORT)
+    site = web.TCPSite(runner, None, WS_PORT)
     await site.start()
 
     logger.info("?? Starting TopBrewer Client Link...")

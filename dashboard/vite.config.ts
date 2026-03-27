@@ -7,10 +7,16 @@ export default defineConfig({
   server: {
     host: true, // Listen on all network interfaces
     hmr: {
-      host: '10.0.124.90', // The Pi's IP address
+      host: '10.0.124.199', // The Pi's IP address
     },
     watch: {
       usePolling: true, // Recommended for network shares/syncs
+    },
+    proxy: {
+      '/api/v2': {
+        target: 'https://c-sar.cropster.com',
+        changeOrigin: true,
+      }
     }
   }
 })

@@ -64,6 +64,6 @@ Connections to the bridge require a security token defined in `config.json`. The
 To sync changes from a development laptop to the Pi, use the `/sync-project` workflow:
 ```bash
 # From laptop
-scp -i ./siloos_key ./ble_bridge.py siloos@10.0.124.90:/home/siloos/ble_bridge.py
-ssh -i ./siloos_key siloos@10.0.124.90 "sudo systemctl restart silo-bridge"
+scp -i ./siloos_key ./ble_bridge.py siloos@10.0.124.199:/home/siloos/ble_bridge.py
+ssh -i ./siloos_key siloos@10.0.124.199 "sudo systemctl restart silo-bridge"
 ```

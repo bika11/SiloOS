@@ -1,7 +1,7 @@
 # SiloOS Dashboard Sync
 # Use this to push local changes to the Pi for instant HMR updates
 
-$PI_IP = "10.0.124.90"
+$PI_IP = "10.0.124.199"
 $SSH_KEY = ".\siloos_key"
 
 Write-Host "🔄 Syncing Dashboard to Pi ($PI_IP)..." -ForegroundColor Cyan

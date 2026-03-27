@@ -22,7 +22,7 @@ Tailscale is a "zero-config" VPN that creates a secure, private network between 
 3.  **Install on your home device**: Download and install Tailscale on your home laptop, tablet, or phone.
 4.  **Connect**: 
     - Once logged in on both, your Pi will have a new **Tailscale IP address** (e.g., `100.x.y.z`).
-    - Use this IP address instead of the local one (`10.0.124.90`) to access your dashboard and SSH from anywhere in the world.
+    - Use this IP address instead of the local one (`10.0.124.199`) to access your dashboard and SSH from anywhere in the world.
 
 ---
 
@@ -37,7 +37,7 @@ This is the traditional method but is **NOT recommended** for Industrial SiloOS 
 
 ### If you must:
 1.  Log into your router's admin panel.
-2.  Forward port `8765` (WebSocket) and port `5173` (Dashboard) to the Pi's local IP (`10.0.124.90`).
+2.  Forward port `8765` (WebSocket) and port `5173` (Dashboard) to the Pi's local IP (`10.0.124.199`).
 3.  Use your workplace's **Public IP** to connect.
 
 ---
@@ -46,7 +46,7 @@ This is the traditional method but is **NOT recommended** for Industrial SiloOS 
 
 Once you have Tailscale running:
 
-- **Local (At the Silo)**: `http://10.0.124.90:5173`
+- **Local (At the Silo)**: `http://10.0.124.199:5173`
 - **Remote (At Home)**: `http://[Your-Tailscale-IP]:5173`
 
 > [!TIP]
