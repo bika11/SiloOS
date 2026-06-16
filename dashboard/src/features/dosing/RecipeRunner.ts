@@ -9,9 +9,10 @@
  *   total blend weight still hits the exact recipe target.
  */
 
-import { DoseController, type DoseUpdate, type DoseResult } from './DoseController';
+import type { DoseUpdate, DoseResult } from './DoseController';
+import { PiDoseProxy } from './PiDoseProxy';
 import type { Recipe } from './Recipe';
-import { SiloManager } from '../../bluetooth/SiloManager';
+import type { SiloManager, PiDoseMessage } from '../../bluetooth/SiloManager';
 import { TopBrewerConnection } from '../../bluetooth/TopBrewerConnection';
 import { logger } from '../../utils/logger';
 
@@ -40,12 +41,11 @@ export class RecipeRunner {
     public events: RecipeEvents;
 
     private currentStepIndex: number = -1;
-    private currentController: DoseController | null = null;
+    private currentController: PiDoseProxy | null = null;
     private state: RecipeUpdate['state'] = 'idle';
     private lastStepUpdate: DoseUpdate | null = null;
 
-    /** Weight polling interval (10 Hz) */
-    private weightPollTimer: ReturnType<typeof setInterval> | null = null;
+    private doseUpdateHandler: ((msg: PiDoseMessage) => void) | null = null;
 
     /** Tracks cumulative actual weight from all completed steps */
     private cumulativeActualKg: number = 0;
@@ -81,13 +81,6 @@ export class RecipeRunner {
         this.currentStepIndex = 0;
         this.cumulativeActualKg = 0;
         this.stepResults = [];
-
-        // Start 10 Hz weight polling
-        this.weightPollTimer = setInterval(() => {
-            if (this.currentController && this.state === 'running') {
-                this.currentController.onWeight(this.siloManager.getWeight());
-            }
-        }, 100);
 
         this.runNextStep();
     }
@@ -137,17 +130,26 @@ export class RecipeRunner {
             }
         };
 
-        this.currentController = new DoseController(doseEvents, {
-            siloId,
-            targetKg: effectiveTargetKg
-        }, this.siloManager);
+        // 1. Request dose from Pi
+        this.siloManager.send({ type: 'dose_request', siloId, targetKg: effectiveTargetKg });
 
-        // 1. Tare the scale at current weight
-        const currentWeightKg = this.siloManager.getWeight();
-        this.currentController.tare(currentWeightKg);
+        // 2. Create PiDoseProxy
+        this.currentController = new PiDoseProxy(siloId, effectiveTargetKg, this.siloManager);
+        this.currentController.events = doseEvents;
 
-        // 2. Send the actual hardware command to open the valve
-        this.sendHardwareStart(step.menuId, effectiveTargetKg);
+        // 3. Listen to Pi dose updates
+        if (this.doseUpdateHandler) {
+            this.siloManager.removeDoseUpdateListener(this.doseUpdateHandler);
+        }
+        this.doseUpdateHandler = (msg: PiDoseMessage) => {
+            if (this.currentController && msg.siloId === siloId) {
+                this.currentController.handlePiMessage(msg);
+            }
+        };
+        this.siloManager.addDoseUpdateListener(this.doseUpdateHandler);
+
+        // 4. Send Hardware Start
+        this.sendHardwareStart(step.menuId, effectiveTargetKg, siloId);
     }
 
     /**
@@ -155,7 +157,7 @@ export class RecipeRunner {
      * Uses the same proven flow as DrinkCustomizer:
      *   sendCustomOrder() → DoseController monitors → cancelOrder() on stop
      */
-    private async sendHardwareStart(menuId: number, targetKg: number): Promise<void> {
+    private async sendHardwareStart(menuId: number, targetKg: number, siloId: string): Promise<void> {
         try {
             // Calculate cups needed: enough so the machine doesn't run out
             // before DoseController sends the stop signal. +2 buffer for safety.
@@ -171,15 +173,8 @@ export class RecipeRunner {
 
             logger.info('RecipeRunner', `Hardware START sent: menuId=${menuId}, cups=${cups}`);
 
-            // Now start the DoseController — it will call our onStop callback
-            // when the target weight is reached
-            if (this.state !== 'running' || !this.currentController) return;
-
-            this.currentController.start(() => {
-                // STOP callback — DoseController says: close the valve NOW
-                logger.info('RecipeRunner', `Hardware STOP: cancelling order for menuId=${menuId}`);
-                this.connection.cancelOrder();
-            });
+            // Tell Pi the order is sent
+            this.siloManager.send({ type: 'dose_started', siloId });
 
         } catch (err) {
             logger.error('RecipeRunner', `Failed to send hardware command: ${err}`);
@@ -242,9 +237,9 @@ export class RecipeRunner {
     }
 
     private cleanup(): void {
-        if (this.weightPollTimer) {
-            clearInterval(this.weightPollTimer);
-            this.weightPollTimer = null;
+        if (this.doseUpdateHandler) {
+            this.siloManager.removeDoseUpdateListener(this.doseUpdateHandler);
+            this.doseUpdateHandler = null;
         }
     }
 

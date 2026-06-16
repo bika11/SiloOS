@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { RecipeEditor } from './RecipeEditor';
 import { RecipeRunner, type RecipeUpdate } from './RecipeRunner';
+import { SiloInventory } from '../settings/SiloInventory';
 import { logger } from '../../utils/logger';
 
 interface RecipesPanelProps {
@@ -231,7 +232,12 @@ export const RecipesPanel: React.FC<RecipesPanelProps> = ({
     // --- Recipe List ---
     return (
         <div className="mt-6">
-            <div className="flex justify-between items-center mb-4">
+            <SiloInventory
+                siloManager={siloManager}
+                activeSilos={Object.keys(siloManager.getProfiles())}
+            />
+
+            <div className="flex justify-between items-center mb-4 mt-8">
                 <h3 className="text-xs font-mono text-zinc-500 uppercase tracking-widest">
                     Custom Blends
                 </h3>

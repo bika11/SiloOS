@@ -290,6 +290,7 @@ async def websocket_handler(request):
                                 "start_weight": current_weight,
                                 "target_kg": target_kg,
                                 "client": str(request.remote),
+                                "ws": ws,
                             }
                             # ACK back to requesting client AND broadcast to all
                             await broadcast_relay({
@@ -328,6 +329,17 @@ async def websocket_handler(request):
         connected_websockets.discard(ws)
         logger.info("WebSocket Client Disconnected")
         audit("ws_disconnect", client=str(request.remote), total_clients=len(connected_websockets))
+        
+        # Safety Net: Abort active dose if controlling client disconnected
+        global active_controller
+        if active_controller:
+            silo_id = active_controller.silo_id
+            dose_info = active_doses.get(silo_id)
+            if dose_info and dose_info.get("ws") == ws:
+                logger.warning(f"Active dose aborted because its controlling WebSocket client disconnected")
+                active_controller.abort("WebSocket client disconnected")
+                active_controller = None
+                active_doses.pop(silo_id, None)
     return ws
 
 async def broadcast_websocket(weight):

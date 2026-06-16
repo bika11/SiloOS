@@ -49,7 +49,10 @@ export class SiloManager {
         notifications: ((uuid: string, data: Uint8Array) => void)[];
         sfwu: ((packet: string) => void)[];
         recipes: ((r: Record<string, Recipe>) => void)[];
-    } = { settings: [], status: [], notifications: [], sfwu: [], recipes: [] };
+        doseAck: ((siloId: string, tareG: number, targetKg: number) => void)[];
+        doseUpdate: ((msg: PiDoseMessage) => void)[];
+        doseRejected: ((siloId: string, reason: string) => void)[];
+    } = { settings: [], status: [], notifications: [], sfwu: [], recipes: [], doseAck: [], doseUpdate: [], doseRejected: [] };
 
     public addRecipesListener(cb: (r: Record<string, Recipe>) => void) { this.listeners.recipes.push(cb); }
     public removeRecipesListener(cb: (r: Record<string, Recipe>) => void) { this.listeners.recipes = this.listeners.recipes.filter(l => l !== cb); }
@@ -62,6 +65,13 @@ export class SiloManager {
     public removeNotificationListener(cb: (uuid: string, data: Uint8Array) => void) { this.listeners.notifications = this.listeners.notifications.filter(l => l !== cb); }
     public addSfwuListener(cb: (packet: string) => void) { this.listeners.sfwu.push(cb); }
     public removeSfwuListener(cb: (packet: string) => void) { this.listeners.sfwu = this.listeners.sfwu.filter(l => l !== cb); }
+
+    public addDoseAckListener(cb: (siloId: string, tareG: number, targetKg: number) => void) { this.listeners.doseAck.push(cb); }
+    public removeDoseAckListener(cb: (siloId: string, tareG: number, targetKg: number) => void) { this.listeners.doseAck = this.listeners.doseAck.filter(l => l !== cb); }
+    public addDoseUpdateListener(cb: (msg: PiDoseMessage) => void) { this.listeners.doseUpdate.push(cb); }
+    public removeDoseUpdateListener(cb: (msg: PiDoseMessage) => void) { this.listeners.doseUpdate = this.listeners.doseUpdate.filter(l => l !== cb); }
+    public addDoseRejectedListener(cb: (siloId: string, reason: string) => void) { this.listeners.doseRejected.push(cb); }
+    public removeDoseRejectedListener(cb: (siloId: string, reason: string) => void) { this.listeners.doseRejected = this.listeners.doseRejected.filter(l => l !== cb); }
 
     // RemoteBLEAdapter compatibility properties
     public onStatusUpdate?: (connected: boolean) => void;
@@ -210,12 +220,18 @@ export class SiloManager {
                     // 6. Pi Dose Control messages
                     if (data.type === 'dose_ack') {
                         this.events.onDoseAck?.(data.siloId, data.tareG, data.targetKg);
+                        this.listeners.doseAck.forEach(l => l(data.siloId, data.tareG, data.targetKg));
                     }
                     if (data.type === 'dose_update') {
+                        if (data.state === 'done' && data.result) {
+                            this.recordDose(data.siloId, data.result.actualKg);
+                        }
                         this.events.onDoseUpdate?.(data as PiDoseMessage);
+                        this.listeners.doseUpdate.forEach(l => l(data as PiDoseMessage));
                     }
                     if (data.type === 'dose_rejected') {
                         this.events.onDoseRejected?.(data.siloId, data.reason);
+                        this.listeners.doseRejected.forEach(l => l(data.siloId, data.reason));
                     }
 
                 } catch (err) {
@@ -436,5 +452,31 @@ export class SiloManager {
     public abortAll(reason: string = 'Emergency Stop') {
         logger.warn('SiloManager', `Broadcasting global abort: ${reason}`);
         this.events.onGlobalAbort?.(reason);
+    }
+
+    /**
+     * Subtracts dispensed weight from the active Silo Inventory.
+     */
+    public recordDose(siloId: string, actualKg: number) {
+        if (!this.preferences.inventory || !this.preferences.inventory[siloId]) return;
+
+        const inv = this.preferences.inventory[siloId];
+        inv.currentCalculatedKg = Math.max(0, inv.currentCalculatedKg - actualKg);
+
+        this.updatePreferences({ ...this.preferences }); // triggers sync+save
+        logger.info('Inventory', `Deducted ${(actualKg * 1000).toFixed(0)}g from Silo ${siloId}. Remaining: ${inv.currentCalculatedKg.toFixed(2)}kg`);
+    }
+
+    /**
+     * Adds weight to the active Silo Inventory (Top Up).
+     */
+    public topUpSilo(siloId: string, addedKg: number) {
+        if (!this.preferences.inventory || !this.preferences.inventory[siloId]) return;
+
+        const inv = this.preferences.inventory[siloId];
+        inv.currentCalculatedKg += addedKg;
+
+        this.updatePreferences({ ...this.preferences });
+        logger.info('Inventory', `Topped up Silo ${siloId} with ${addedKg.toFixed(2)}kg. New total: ${inv.currentCalculatedKg.toFixed(2)}kg`);
     }
 }

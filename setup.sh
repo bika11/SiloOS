@@ -66,6 +66,7 @@ sudo bash -c "cat <<EOF > /etc/systemd/system/silo-bridge.service
 [Unit]
 Description=SiloOS Scale & BLE Bridge
 After=network.target bluetooth.target
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple
@@ -84,6 +85,7 @@ sudo bash -c "cat <<EOF > /etc/systemd/system/silo-dashboard.service
 [Unit]
 Description=SiloOS Dashboard PWA
 After=network.target
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple

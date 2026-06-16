@@ -169,31 +169,25 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
         if (!doseController || !(doseController instanceof PiDoseProxy)) return;
 
         const proxy = doseController as PiDoseProxy;
-        const origHandler = siloManager['events']?.onDoseUpdate;
-        siloManager['events'] = {
-            ...siloManager['events'],
-            onDoseUpdate: (msg: PiDoseMessage) => {
-                if (msg.siloId === activeSiloIdRef.current) {
-                    proxy.handlePiMessage(msg);
-                    // Reset dead-man's switch on every update
-                    if (deadManTimerRef.current) clearTimeout(deadManTimerRef.current);
-                    deadManTimerRef.current = setTimeout(() => {
-                        if (activeSiloIdRef.current) {
-                            logger.warn('Customizer', 'Dead-man switch: Pi silent for 5s — sending emergency cancel');
-                            siloManager.sendTelemetry({ type: 'dose_abort', siloId: activeSiloIdRef.current, reason: 'Dead-man switch: Pi silent' });
-                            connection.cancelOrder();
-                        }
-                    }, 5000);
-                }
-                origHandler?.(msg);
-            },
+        const handleDoseUpdate = (msg: PiDoseMessage) => {
+            if (msg.siloId === activeSiloIdRef.current) {
+                proxy.handlePiMessage(msg);
+                // Reset dead-man's switch on every update
+                if (deadManTimerRef.current) clearTimeout(deadManTimerRef.current);
+                deadManTimerRef.current = setTimeout(() => {
+                    if (activeSiloIdRef.current) {
+                        logger.warn('Customizer', 'Dead-man switch: Pi silent for 5s — sending emergency cancel');
+                        siloManager.sendTelemetry({ type: 'dose_abort', siloId: activeSiloIdRef.current, reason: 'Dead-man switch: Pi silent' });
+                        connection.cancelOrder();
+                    }
+                }, 5000);
+            }
         };
 
+        siloManager.addDoseUpdateListener(handleDoseUpdate);
+
         return () => {
-            siloManager['events'] = {
-                ...siloManager['events'],
-                onDoseUpdate: origHandler,
-            };
+            siloManager.removeDoseUpdateListener(handleDoseUpdate);
             if (deadManTimerRef.current) clearTimeout(deadManTimerRef.current);
         };
     }, [doseController, siloManager, connection]);
