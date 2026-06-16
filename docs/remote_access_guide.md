@@ -2,7 +2,22 @@
 
 Accessing your Raspberry Pi "Brain" from outside your local network (e.g., from home) is essential for monitoring and control. Below are the two main ways to achieve this, with **Tailscale** being the highly recommended method for security and ease of use.
 
-## 1. Tailscale (Recommended)
+## 1. Dashboard Addresses
+
+The Pi has a **static IP** (manually configured, won't change) and **mDNS** (auto-discovery by hostname).
+
+| Address | Works from | Notes |
+|---------|-----------|-------|
+| `http://siloos.local:5173/` | Same Wi-Fi network | Auto-discovery, nothing to remember |
+| `http://10.0.124.90:5173/` | Same Wi-Fi network | Static IP, permanently assigned |
+| `http://100.120.122.115:5173/` | Anywhere (with Tailscale) | Tailscale VPN address |
+
+> [!TIP]
+> **Bookmark `http://siloos.local:5173/`** for local access and **`http://100.120.122.115:5173/`** for remote access.
+
+---
+
+## 2. Tailscale (Recommended for Remote Access)
 
 Tailscale is a "zero-config" VPN that creates a secure, private network between your devices, no matter where they are. It's perfect for non-coders because it doesn't require complex router settings.
 
@@ -21,12 +36,12 @@ Tailscale is a "zero-config" VPN that creates a secure, private network between 
     - Follow the link provided in the terminal to authenticate your Pi.
 3.  **Install on your home device**: Download and install Tailscale on your home laptop, tablet, or phone.
 4.  **Connect**: 
-    - Once logged in on both, your Pi will have a new **Tailscale IP address** (e.g., `100.x.y.z`).
-    - Use this IP address instead of the local one (`10.0.124.199`) to access your dashboard and SSH from anywhere in the world.
+    - Once logged in on both, your Pi will have a Tailscale IP: **`100.120.122.115`**
+    - Use this IP address instead of the local one to access your dashboard and SSH from anywhere in the world.
 
 ---
 
-## 2. Port Forwarding (NOT Recommended)
+## 3. Port Forwarding (NOT Recommended)
 
 This is the traditional method but is **NOT recommended** for Industrial SiloOS due to security risks.
 
@@ -37,17 +52,22 @@ This is the traditional method but is **NOT recommended** for Industrial SiloOS 
 
 ### If you must:
 1.  Log into your router's admin panel.
-2.  Forward port `8765` (WebSocket) and port `5173` (Dashboard) to the Pi's local IP (`10.0.124.199`).
+2.  Forward port `8765` (WebSocket) and port `5173` (Dashboard) to the Pi's local IP (`10.0.124.90`).
 3.  Use your workplace's **Public IP** to connect.
 
 ---
 
-## 3. Accessing the Dashboard
+## 4. SSH Access
 
-Once you have Tailscale running:
+For terminal access to the Pi:
 
-- **Local (At the Silo)**: `http://10.0.124.199:5173`
-- **Remote (At Home)**: `http://[Your-Tailscale-IP]:5173`
+```bash
+# Local network
+ssh -i siloos_key siloos@10.0.124.90
+
+# Remote (via Tailscale)
+ssh -i siloos_key siloos@100.120.122.115
+```
 
 > [!TIP]
 > Always use Tailscale if you want a "plug and play" experience without worrying about security or network configurations.

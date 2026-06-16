@@ -45,6 +45,20 @@ The primary Python script that handles:
 -   **RemoteBLEAdapter**: A drop-in replacement for Web Bluetooth that redirects all GATT operations to the Pi.
 -   **Dashboard UI**: Specialized SiloOS dashboard focused on bean weight monitoring and gravimetric control.
 
+## Dashboard Access
+
+The dashboard is always available at these addresses:
+
+| Address | When to use |
+|---------|-------------|
+| `http://siloos.local:5173/` | Any device on the same Wi-Fi (auto-discovery) |
+| `http://10.0.124.90:5173/` | Same Wi-Fi (static IP, won't change) |
+| `http://100.120.122.115:5173/` | From anywhere via Tailscale |
+
+> [!TIP]
+> Bookmark `http://siloos.local:5173/` for local access. It uses mDNS to find the Pi automatically — no IP to remember.
+> For remote access, bookmark the Tailscale address.
+
 ## Security
 Connections to the bridge require a security token defined in `config.json`. The PWA is pre-configured to use this token automatically within the internal network.
 
@@ -64,6 +78,6 @@ Connections to the bridge require a security token defined in `config.json`. The
 To sync changes from a development laptop to the Pi, use the `/sync-project` workflow:
 ```bash
 # From laptop
-scp -i ./siloos_key ./ble_bridge.py siloos@10.0.124.199:/home/siloos/ble_bridge.py
-ssh -i ./siloos_key siloos@10.0.124.199 "sudo systemctl restart silo-bridge"
+scp -i ./siloos_key ./ble_bridge.py siloos@10.0.124.90:/home/siloos/ble_bridge.py
+ssh -i ./siloos_key siloos@10.0.124.90 "sudo systemctl restart silo-bridge"
 ```

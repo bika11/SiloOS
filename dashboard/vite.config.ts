@@ -6,8 +6,9 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: true, // Listen on all network interfaces
+    allowedHosts: ['siloos.local'],
     hmr: {
-      host: '10.0.124.199', // The Pi's IP address
+      host: '10.0.124.90', // The Pi's static IP address
     },
     watch: {
       usePolling: true, // Recommended for network shares/syncs
