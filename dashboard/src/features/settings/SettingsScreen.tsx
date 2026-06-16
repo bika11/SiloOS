@@ -4,7 +4,6 @@ import { SiloManager } from '../../bluetooth/SiloManager';
 import { Stepper } from '../../components/ui/Stepper';
 import type { SiloProfile } from '../dosing/DoseController';
 import { logger } from '../../utils/logger';
-import { SiloInventory } from './SiloInventory';
 
 interface SettingsProps {
     siloManager: SiloManager;
@@ -141,15 +140,6 @@ export const SettingsScreen: React.FC<SettingsProps> = ({ siloManager, menuItems
                             </div>
                         ))}
                     </div>
-                </section>
-
-                {/* --- Silo Inventory --- */}
-                <section className="settings-section">
-                    <h3>Silo Inventory (Cropster)</h3>
-                    <SiloInventory
-                        siloManager={siloManager}
-                        activeSilos={Object.keys(profiles)}
-                    />
                 </section>
 
                 {/* --- Dosing Calibration (collapsible) --- */}

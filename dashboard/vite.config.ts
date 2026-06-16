@@ -17,6 +17,13 @@ export default defineConfig({
       '/api/v2': {
         target: 'https://c-sar.cropster.com',
         changeOrigin: true,
+        configure: (proxy, _options) => {
+          proxy.on('proxyRes', (proxyRes, req, res) => {
+            if (proxyRes.statusCode === 401) {
+              delete proxyRes.headers['www-authenticate'];
+            }
+          });
+        }
       }
     }
   }
