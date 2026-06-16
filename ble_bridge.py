@@ -160,7 +160,7 @@ async def broadcast_relay(msg_dict):
             connected_websockets.discard(ws)
 
 async def websocket_handler(request):
-    global tare_offset
+    global tare_offset, active_controller
     # Security Check: Auth Token in Query Param
     client_token = request.query.get("auth")
     if AUTH_TOKEN and client_token != AUTH_TOKEN:
@@ -257,7 +257,6 @@ async def websocket_handler(request):
 
                     # 4. Pi-Authority Dose Control
                     elif data.get("type") == "dose_request":
-                        global active_controller
                         silo_id = data.get("siloId", "unknown")
                         target_kg = data.get("targetKg", 0)
 
@@ -331,7 +330,6 @@ async def websocket_handler(request):
         audit("ws_disconnect", client=str(request.remote), total_clients=len(connected_websockets))
         
         # Safety Net: Abort active dose if controlling client disconnected
-        global active_controller
         if active_controller:
             silo_id = active_controller.silo_id
             dose_info = active_doses.get(silo_id)
