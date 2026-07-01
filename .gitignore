@@ -17,3 +17,4 @@ topbrewer_logs_*.txt
 
 # Dashboard build artifacts if any
 dashboard/dist/
+config.json
