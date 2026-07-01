@@ -89,10 +89,14 @@ export class SiloManager {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const host = window.location.hostname;
 
-        // Use environment variable if available, otherwise fallback to default
-        const authToken = (import.meta as any).env?.VITE_WS_AUTH_TOKEN || 'silo-secret';
+        // Use environment variable if available
+        const authToken = (import.meta as any).env?.VITE_WS_AUTH_TOKEN;
 
-        this.url = url || `${protocol}//${host}:8765/?auth=${authToken}`;
+        if (!authToken) {
+            logger.warn('SiloManager', 'VITE_WS_AUTH_TOKEN is not defined in environment variables. Connection may fail if authentication is required.');
+        }
+
+        this.url = url || `${protocol}//${host}:8765/?auth=${authToken || ''}`;
 
         if (events) {
             this.events = events;

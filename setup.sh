@@ -32,19 +32,41 @@ sudo usermod -aG dialout $USER
 # 5. Create Configuration Template
 if [ ! -f config.json ]; then
     echo "?? Creating default config.json..."
-    cat <<EOF > config.json
+
+    # Generate a secure random token for authentication
+    SECURE_TOKEN=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
+
+    # Copy from template and replace token placeholder if template exists
+    if [ -f config.example.json ]; then
+        sed "s/your-secure-token-here/$SECURE_TOKEN/" config.example.json > config.json
+    else
+        cat <<EOF > config.json
 {
   "topbrewer_mac": "88:6B:0F:BC:00:A1",
   "laumas_port": "/dev/ttyUSB0",
   "laumas_baud": 115200,
   "ws_port": 8765,
-  "auth_token": "silo-secret",
+  "auth_token": "$SECURE_TOKEN",
   "settings": {
     "theme": "dark",
     "hidden_recipes": []
   }
 }
 EOF
+    fi
+fi
+
+# Generate dashboard/.env if it doesn't exist
+if [ ! -f dashboard/.env ]; then
+    echo "?? Generating frontend .env file..."
+    # Extract token from config.json
+    SECURE_TOKEN=$(grep -oP '"auth_token"\s*:\s*"\K[^"]+' config.json)
+
+    # Failsafe if not found
+    if [ -z "$SECURE_TOKEN" ] || [ "$SECURE_TOKEN" = "your-secure-token-here" ]; then
+        SECURE_TOKEN=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
+    fi
+    echo "VITE_WS_AUTH_TOKEN=$SECURE_TOKEN" > dashboard/.env
 fi
 
 # 6. Install Node.js Dependencies (Dashboard)
