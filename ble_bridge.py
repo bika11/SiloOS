@@ -53,7 +53,7 @@ class Config:
             "laumas_baud": 115200,
             "ws_port": 8765,
             "topbrewer_mac": "88:6B:0F:BC:00:A1",
-            "auth_token": "silo-secret",
+            "auth_token": os.environ.get("SILO_AUTH_TOKEN", ""),
             "tare_offset": 0.0,
             "settings": {
                 "theme": "dark",
@@ -163,8 +163,10 @@ async def websocket_handler(request):
     global tare_offset, active_controller
     # Security Check: Auth Token in Query Param
     client_token = request.query.get("auth")
-    if AUTH_TOKEN and client_token != AUTH_TOKEN:
-        logger.warning(f"Connection Refused: Invalid Auth Token from {request.remote}")
+
+    # 🛡️ SECURITY FIX: Reject connection if no valid token configured or token mismatch
+    if not AUTH_TOKEN or AUTH_TOKEN == "YOUR_SECURE_TOKEN_HERE" or client_token != AUTH_TOKEN:
+        logger.warning(f"Connection Refused: Invalid or missing Auth Token from {request.remote}")
         return web.Response(status=401, text="Unauthorized")
 
     ws = web.WebSocketResponse()

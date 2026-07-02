@@ -38,7 +38,7 @@ if [ ! -f config.json ]; then
   "laumas_port": "/dev/ttyUSB0",
   "laumas_baud": 115200,
   "ws_port": 8765,
-  "auth_token": "silo-secret",
+  "auth_token": "YOUR_SECURE_TOKEN_HERE",
   "settings": {
     "theme": "dark",
     "hidden_recipes": []

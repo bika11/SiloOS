@@ -24,7 +24,7 @@ If you are setting up a fresh Raspberry Pi (OS Lite 64-bit recommended):
 
 1.  **Clone the Repo**: `git clone <repo_url> SiloOS`
 2.  **Run Installer**: `cd SiloOS && sudo ./setup.sh`
-3.  **Configure**: Edit `config.json` with your machine's MAC address.
+3.  **Configure**: Edit `config.json` with your machine's MAC address and set a secure `auth_token`. Create a `.env` file in the `dashboard` directory and set `VITE_WS_AUTH_TOKEN` to match.
 4.  **Start Dashboard**: `cd dashboard && npm run dev -- --host`
 
 ## Manual Setup Components
@@ -60,7 +60,7 @@ The dashboard is always available at these addresses:
 > For remote access, bookmark the Tailscale address.
 
 ## Security
-Connections to the bridge require a security token defined in `config.json`. The PWA is pre-configured to use this token automatically within the internal network.
+Connections to the bridge require a security token defined in `config.json`. You **must** configure a secure token in `config.json` (or via the `SILO_AUTH_TOKEN` environment variable) and supply it to the dashboard via the `VITE_WS_AUTH_TOKEN` environment variable.
 
 - **Industrial UI**: Specialized SiloOS dashboard with real-time weights, gravimetric control, and advanced log viewer.
 - **Real-time Sync**: Multi-listener architecture ensures settings (theme, visibility) are synchronized instantly across all PWA instances.
