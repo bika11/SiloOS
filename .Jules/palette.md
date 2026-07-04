@@ -1,0 +1,3 @@
+## 2024-07-04 - Custom Press-and-Hold Button Accessibility
+**Learning:** Custom UI components built with pointer events (e.g., `onMouseDown`, `onTouchStart`) for continuous interactions (like press-and-hold to increment a stepper value) break keyboard accessibility. Keyboard users rely on holding `Space` or `Enter`, which naturally triggers repeating `keydown` events but does not trigger pointer events.
+**Action:** When implementing press-and-hold logic, always attach complementary `onKeyDown` and `onKeyUp` handlers bound to `Enter` and `Space`. Ensure `e.preventDefault()` is called to stop default browser behaviors (like scrolling) and track the "pressing" state to prevent redundant function calls from OS-level key repeat.
