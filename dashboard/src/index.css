@@ -276,6 +276,11 @@ h2 {
   transform: scale(0.98);
 }
 
+.btn:focus-visible {
+  outline: 2px solid var(--silos-amber);
+  outline-offset: 2px;
+}
+
 .btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
