@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Card } from '../../components/ui/Card';
 import { TopBrewerConnection } from '../../bluetooth';
 import { logger } from '../../utils/logger';
@@ -160,11 +160,12 @@ export const DashboardScreen: React.FC<DashboardProps> = ({
         };
     }, []);
 
-    // Filter out hidden recipes
-    const visibleItems = menuItems.filter(item => {
-        const isHidden = (hiddenRecipes || []).includes(item.id);
-        return !isHidden;
-    });
+    // ⚡ Bolt: Memoize visible items and use Set for O(1) lookups to prevent O(n*m) filtering
+    // and stop unnecessary re-renders of child components (like RecipesPanel) on every status tick.
+    const visibleItems = useMemo(() => {
+        const hiddenSet = new Set(hiddenRecipes || []);
+        return menuItems.filter(item => !hiddenSet.has(item.id));
+    }, [menuItems, hiddenRecipes]);
 
     if (menuItems.length > 0) {
         logger.debug('Dashboard', `Visible Items: ${visibleItems.length}/${menuItems.length} (Hidden IDs: ${hiddenRecipes?.join(',')})`);
