@@ -32,13 +32,14 @@ sudo usermod -aG dialout $USER
 # 5. Create Configuration Template
 if [ ! -f config.json ]; then
     echo "?? Creating default config.json..."
+    TOKEN=$(openssl rand -hex 16)
     cat <<EOF > config.json
 {
   "topbrewer_mac": "88:6B:0F:BC:00:A1",
   "laumas_port": "/dev/ttyUSB0",
   "laumas_baud": 115200,
   "ws_port": 8765,
-  "auth_token": "silo-secret",
+  "auth_token": "$TOKEN",
   "settings": {
     "theme": "dark",
     "hidden_recipes": []
@@ -46,6 +47,9 @@ if [ ! -f config.json ]; then
 }
 EOF
 fi
+
+echo "?? Creating dashboard/.env..."
+echo "VITE_WS_AUTH_TOKEN=$TOKEN" > dashboard/.env
 
 # 6. Install Node.js Dependencies (Dashboard)
 echo "?? Checking Dashboard dependencies..."
