@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Card } from '../../components/ui/Card';
 import { TopBrewerConnection } from '../../bluetooth';
 import { logger } from '../../utils/logger';
@@ -161,14 +161,18 @@ export const DashboardScreen: React.FC<DashboardProps> = ({
     }, []);
 
     // Filter out hidden recipes
-    const visibleItems = menuItems.filter(item => {
-        const isHidden = (hiddenRecipes || []).includes(item.id);
-        return !isHidden;
-    });
+    // Optimized: useMemo and Set to prevent recalculation on frequent re-renders (e.g. 50ms hold interval)
+    // and reduce filter time complexity from O(N*M) to O(N)
+    const visibleItems = useMemo(() => {
+        const hiddenSet = new Set(hiddenRecipes || []);
+        const filtered = menuItems.filter(item => !hiddenSet.has(item.id));
 
-    if (menuItems.length > 0) {
-        logger.debug('Dashboard', `Visible Items: ${visibleItems.length}/${menuItems.length} (Hidden IDs: ${hiddenRecipes?.join(',')})`);
-    }
+        if (menuItems.length > 0) {
+            logger.debug('Dashboard', `Visible Items: ${filtered.length}/${menuItems.length} (Hidden IDs: ${hiddenRecipes?.join(',')})`);
+        }
+
+        return filtered;
+    }, [menuItems, hiddenRecipes]);
 
     const isMachineActive = status !== 'Ready' && status !== 'TopBrewer Disconnected' && status !== 'Machine Error';
 

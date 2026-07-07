@@ -1,0 +1,3 @@
+## 2024-05-24 - Frequent state updates unmask missing memoization
+**Learning:** Frequent state updates for UI progress (like the 50ms emergency hold timer in `DashboardScreen`) can cause severe performance degradation if expensive operations (like O(N*M) array filtering and console logging) are left un-memoized in the component body, as they will be re-executed on every frame.
+**Action:** Always verify that expensive derived state computations (like array filtering/mapping) and side-effects (like logging based on derived state) are wrapped in `useMemo` or `useEffect` when a component has high-frequency state updates (like animations, timers, or progress bars).
