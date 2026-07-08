@@ -149,6 +149,18 @@ input:checked+.switch-slider:before {
   box-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
 }
 
+/* Keyboard Focus Accessibility */
+:focus-visible {
+  outline: 2px solid var(--silos-amber);
+  outline-offset: 2px;
+}
+
+/* Ensure hidden switch inputs still show focus on the slider */
+input:focus-visible + .switch-slider {
+  outline: 2px solid var(--silos-amber);
+  outline-offset: 2px;
+}
+
 /* Typography Utilities */
 h1,
 h2,
