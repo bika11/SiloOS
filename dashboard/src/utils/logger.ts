@@ -27,6 +27,7 @@ const MAX_LOGS = 1000;
 class Logger {
     private logs: LogEntry[] = [];
     private minLevel: LogLevel = LogLevel.DEBUG;
+    private saveTimeout: number | null = null;
 
     private levelNames: Record<LogLevel, string> = {
         [LogLevel.DEBUG]: 'DEBUG',
@@ -51,15 +52,24 @@ class Logger {
     }
 
     private saveLogs() {
-        try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(this.logs));
-        } catch (e) {
-            // If storage is full, clear half and try again
-            if (e instanceof DOMException && e.name === 'QuotaExceededError') {
-                this.logs = this.logs.slice(MAX_LOGS / 2);
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(this.logs));
-            }
+        if (this.saveTimeout) {
+            return;
         }
+
+        // ⚡ Bolt: Throttle localStorage writes to prevent main thread blocking
+        // during high-frequency BLE packet logging (Reduces UI stutter by batching writes)
+        this.saveTimeout = window.setTimeout(() => {
+            this.saveTimeout = null;
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(this.logs));
+            } catch (e) {
+                // If storage is full, clear half and try again
+                if (e instanceof DOMException && e.name === 'QuotaExceededError') {
+                    this.logs = this.logs.slice(MAX_LOGS / 2);
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(this.logs));
+                }
+            }
+        }, 1000);
     }
 
     private onLogHook: ((entry: LogEntry) => void) | null = null;
@@ -136,6 +146,10 @@ class Logger {
     getLogs = () => [...this.logs];
 
     clear = () => {
+        if (this.saveTimeout) {
+            window.clearTimeout(this.saveTimeout);
+            this.saveTimeout = null;
+        }
         this.logs = [];
         localStorage.removeItem(STORAGE_KEY);
     };
