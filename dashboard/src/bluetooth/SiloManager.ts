@@ -89,8 +89,12 @@ export class SiloManager {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const host = window.location.hostname;
 
-        // Use environment variable if available, otherwise fallback to default
-        const authToken = (import.meta as any).env?.VITE_WS_AUTH_TOKEN || 'silo-secret';
+        // 🛡️ Sentinel: Removed hardcoded API token to prevent secret leakage
+        // Auth tokens must be injected via environment variables
+        const authToken = (import.meta as any).env?.VITE_WS_AUTH_TOKEN || '';
+        if (!authToken) {
+            logger.warn('SiloManager', 'No VITE_WS_AUTH_TOKEN provided. Connection may be unauthorized.');
+        }
 
         this.url = url || `${protocol}//${host}:8765/?auth=${authToken}`;
 
