@@ -145,7 +145,7 @@ export const RecipeEditor: React.FC<RecipeEditorProps> = ({
                             <button
                                 className="flex-shrink-0 text-zinc-600 hover:text-red-500 transition-colors p-1"
                                 onClick={() => removeStep(index)}
-                                title="Remove step"
+                                title="Remove step" aria-label="Remove step"
                             >
                                 <span className="text-xs font-mono uppercase">✕</span>
                             </button>
