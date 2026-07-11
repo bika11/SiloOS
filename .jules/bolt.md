@@ -1,0 +1,3 @@
+## 2024-06-12 - Prevent Expensive Re-Evaluations During Rapid Render Loops
+**Learning:** High-frequency rendering components, such as `DashboardScreen.tsx` with its 50ms interval `holdTimerRef` for the emergency stop, can cause non-memoized array filtering operations (`visibleItems = menuItems.filter(...)`) to severely impact main thread performance, particularly when the dependencies (`menuItems`, `hiddenRecipes`) remain unchanged during the interaction.
+**Action:** Always memoize derived state that depends on `O(N)` or greater operations (like `.filter()`, `.map()`, or `.reduce()`) when located inside components that are updated rapidly by intervals, timers, or fast user inputs. Use `useMemo` with correct dependency arrays (`[menuItems, hiddenRecipes]`).
