@@ -2,9 +2,11 @@
 import urllib.request
 import json
 import base64
+import os
 
-CLIENT_ID = "305de0edc0f643869f15610df0f44fd6"
-CLIENT_SECRET = "b0b41510c5b31ed134614ea4995bf687a79c9c606ca910d231b075cbe6a633be"
+# Security Fix: Remove hardcoded credentials. Use environment variables.
+CLIENT_ID = os.environ.get("CROPSTER_CLIENT_ID", "")
+CLIENT_SECRET = os.environ.get("CROPSTER_CLIENT_SECRET", "")
 BASE_URL = "https://c-sar.cropster.com/api/v2"
 GROUP = "SCANO"
 
