@@ -93,6 +93,7 @@ export const Stepper: React.FC<StepperProps> = ({
                     onTouchStart={(e) => { e.preventDefault(); startRepeating('minus'); }}
                     onTouchEnd={stopRepeating}
                     disabled={value <= min}
+                    aria-label={"Decrease " + label}
                 >
                     -
                 </button>
@@ -104,6 +105,7 @@ export const Stepper: React.FC<StepperProps> = ({
                     onTouchStart={(e) => { e.preventDefault(); startRepeating('plus'); }}
                     onTouchEnd={stopRepeating}
                     disabled={value >= max}
+                    aria-label={"Increase " + label}
                 >
                     +
                 </button>
