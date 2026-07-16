@@ -1,0 +1,4 @@
+## 2024-07-16 - Timing Attack Vulnerability in Auth Token Comparison
+**Vulnerability:** The `AUTH_TOKEN` string was compared to the `client_token` using `!=` instead of a constant-time comparison string comparison method, which is vulnerable to timing attacks.
+**Learning:** String comparison with `!=` operators is vulnerable to timing attacks as it terminates execution upon the first mis-matched character, allowing an attacker to iteratively figure out the password character by character depending on response time.
+**Prevention:** In Python, always use `secrets.compare_digest` to perform authentication token comparisons in constant time, regardless of if the characters match. Ensure `client_token` is explicitly checked against `None` since `secrets.compare_digest` could return a `TypeError` if one of the arguments is `None`.
