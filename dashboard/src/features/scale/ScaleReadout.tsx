@@ -111,8 +111,9 @@ export const ScaleReadout: React.FC<ScaleReadoutProps> = ({ scaleManager, siloMa
                         className={`btn-scale ${connState === 'connected' ? 'connected' : ''}`}
                         onClick={handleToggleConnect}
                         disabled={connState === 'connecting'}
+                        aria-label={connState === 'connected' ? 'Disconnect BooKoo scale' : 'Connect BooKoo scale'}
                     >
-                        {connState === 'connecting' ? '...' : (connState === 'connected' ? '🔗' : 'Connect BooKoo')}
+                        {connState === 'connecting' ? '...' : (connState === 'connected' ? <span aria-hidden="true">🔗</span> : 'Connect BooKoo')}
                     </button>
                 </div>
             </div>
