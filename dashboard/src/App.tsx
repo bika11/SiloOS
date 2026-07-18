@@ -141,7 +141,7 @@ function App() {
               </div>
               <div className="flex gap-2">
                 <button
-                  className="btn-secondary"
+                  className="btn btn-secondary"
                   aria-label={appState === 'settings' ? 'Back to Dashboard' : 'Open Settings'}
                   onClick={() => setAppState(appState === 'settings' ? 'dashboard' : 'settings')}
                 >
@@ -149,11 +149,11 @@ function App() {
                 </button>
                 {connection && (
                   <>
-                    <button className="btn-secondary" onClick={() => logger.downloadLogs()}>
+                    <button className="btn btn-secondary" onClick={() => logger.downloadLogs()}>
                       Download Logs
                     </button>
                     <button
-                      className="btn-secondary"
+                      className="btn btn-secondary"
                       onClick={() => {
                         if (window.confirm('Disconnect from TopBrewer?')) {
                           handleDisconnect();
