@@ -102,7 +102,7 @@ export const SettingsScreen: React.FC<SettingsProps> = ({ siloManager, menuItems
         <div className="settings-screen glass">
             <header className="settings-header">
                 <h2>Industrial Settings</h2>
-                <button className="btn btn-secondary" onClick={onClose}>Close</button>
+                <button className="btn btn-secondary" aria-label="Close settings" onClick={onClose}>Close</button>
             </header>
 
             <div className="settings-content">
@@ -113,6 +113,7 @@ export const SettingsScreen: React.FC<SettingsProps> = ({ siloManager, menuItems
                         <label className="switch">
                             <input
                                 type="checkbox"
+                                aria-label="Toggle light theme"
                                 checked={settings.theme === 'light'}
                                 onChange={handleThemeToggle}
                             />
@@ -133,6 +134,7 @@ export const SettingsScreen: React.FC<SettingsProps> = ({ siloManager, menuItems
                                     <input
                                         type="checkbox"
                                         className="industrial-checkbox"
+                                        aria-label={'Show ' + item.name + ' in menu'}
                                         checked={!settings.hidden_recipes?.includes(item.id)}
                                         onChange={() => toggleRecipeVisibility(item.id)}
                                     />
@@ -147,13 +149,15 @@ export const SettingsScreen: React.FC<SettingsProps> = ({ siloManager, menuItems
                     <button
                         className="dosing-toggle"
                         onClick={() => setDosingOpen(!dosingOpen)}
+                        aria-expanded={dosingOpen}
+                        aria-controls="dosing-calibration-content"
                     >
                         <h3 style={{ margin: 0 }}>Dosing Calibration</h3>
-                        <span className={`dosing-chevron ${dosingOpen ? 'open' : ''}`}>▶</span>
+                        <span className={`dosing-chevron ${dosingOpen ? 'open' : ''}`} aria-hidden="true">▶</span>
                     </button>
 
                     {dosingOpen && (
-                        <div className="dosing-calibration-content">
+                        <div className="dosing-calibration-content" id="dosing-calibration-content">
                             <div className="dosing-help-text">
                                 <p><strong>When to use:</strong> After running a few gravimetric doses, check the overshoot chips below. If they're consistently red, adjust these values.</p>
                                 <p><strong>Valve Delay</strong> — How long product keeps flowing after the valve closes. Increase if doses consistently overshoot.</p>

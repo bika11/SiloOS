@@ -1,0 +1,3 @@
+## 2024-07-20 - Custom Accordion Accessibility
+**Learning:** Custom collapsible sections (accordions) like the 'Dosing Calibration' section often lack native semantic meaning. Screen readers require `aria-expanded` on the toggle button and `aria-controls` linking to the `id` of the content container to announce the state correctly. Additionally, decorative icons (like the chevron) should be hidden from assistive tech using `aria-hidden="true"`.
+**Action:** Always ensure custom toggleable UI elements explicitly manage `aria-expanded` and `aria-controls`, and hide decorative visual state indicators from screen readers.
