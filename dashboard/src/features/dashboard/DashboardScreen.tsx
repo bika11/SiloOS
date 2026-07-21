@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Card } from '../../components/ui/Card';
 import { TopBrewerConnection } from '../../bluetooth';
 import { logger } from '../../utils/logger';
@@ -161,14 +161,18 @@ export const DashboardScreen: React.FC<DashboardProps> = ({
     }, []);
 
     // Filter out hidden recipes
-    const visibleItems = menuItems.filter(item => {
-        const isHidden = (hiddenRecipes || []).includes(item.id);
-        return !isHidden;
-    });
-
-    if (menuItems.length > 0) {
-        logger.debug('Dashboard', `Visible Items: ${visibleItems.length}/${menuItems.length} (Hidden IDs: ${hiddenRecipes?.join(',')})`);
-    }
+    // Memoized to prevent expensive array filtering from running 20 times per second during the emergency stop timer 50ms tick
+    // Expected impact: Prevents unnecessary calculations and redundant logger spam during rapid local state updates.
+    const visibleItems = useMemo(() => {
+        const items = menuItems.filter(item => {
+            const isHidden = (hiddenRecipes || []).includes(item.id);
+            return !isHidden;
+        });
+        if (menuItems.length > 0) {
+            logger.debug('Dashboard', `Visible Items: ${items.length}/${menuItems.length} (Hidden IDs: ${hiddenRecipes?.join(',')})`);
+        }
+        return items;
+    }, [menuItems, hiddenRecipes]);
 
     const isMachineActive = status !== 'Ready' && status !== 'TopBrewer Disconnected' && status !== 'Machine Error';
 
