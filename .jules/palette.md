@@ -1,0 +1,3 @@
+## 2026-07-21 - Keyboard Accessibility for Hold-to-Repeat Custom Buttons
+**Learning:** Custom UI components that rely solely on `onMouseDown` and `onTouchStart` to implement hold-to-repeat functionality completely break keyboard accessibility, as keyboard interactions (Enter/Space) typically fire `onClick` or `onKeyDown`, leaving keyboard users unable to use the control.
+**Action:** Always pair mouse/touch hold event listeners with corresponding `onKeyDown` and `onKeyUp` listeners for 'Enter' and ' ' (Space) keys, and ensure icon-only control buttons have proper `aria-label`s describing their specific context.
