@@ -92,6 +92,8 @@ export const Stepper: React.FC<StepperProps> = ({
                     onMouseLeave={stopRepeating}
                     onTouchStart={(e) => { e.preventDefault(); startRepeating('minus'); }}
                     onTouchEnd={stopRepeating}
+                    onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && !isPressing) { e.preventDefault(); startRepeating('minus'); } }}
+                    onKeyUp={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); stopRepeating(); } }}
                     disabled={value <= min}
                 >
                     -
@@ -103,6 +105,8 @@ export const Stepper: React.FC<StepperProps> = ({
                     onMouseLeave={stopRepeating}
                     onTouchStart={(e) => { e.preventDefault(); startRepeating('plus'); }}
                     onTouchEnd={stopRepeating}
+                    onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && !isPressing) { e.preventDefault(); startRepeating('plus'); } }}
+                    onKeyUp={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); stopRepeating(); } }}
                     disabled={value >= max}
                 >
                     +
