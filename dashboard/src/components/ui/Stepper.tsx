@@ -44,6 +44,7 @@ export const Stepper: React.FC<StepperProps> = ({
     }, [min, max, step, onChange, decimalPlaces]);
 
     const startRepeating = (direction: 'plus' | 'minus') => {
+        if (isPressing === direction) return; // Prevent native browser key-repeat from spawning duplicate timers
         updateValue(direction);
         setIsPressing(direction);
 
@@ -65,6 +66,7 @@ export const Stepper: React.FC<StepperProps> = ({
     const stopRepeating = () => {
         setIsPressing(null);
         clearTimeout(timerRef.current);
+        timerRef.current = null;
         speedRef.current = 200;
     };
 
@@ -92,6 +94,8 @@ export const Stepper: React.FC<StepperProps> = ({
                     onMouseLeave={stopRepeating}
                     onTouchStart={(e) => { e.preventDefault(); startRepeating('minus'); }}
                     onTouchEnd={stopRepeating}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startRepeating('minus'); } }}
+                    onKeyUp={(e) => { if (e.key === 'Enter' || e.key === ' ') stopRepeating(); }}
                     disabled={value <= min}
                 >
                     -
@@ -103,6 +107,8 @@ export const Stepper: React.FC<StepperProps> = ({
                     onMouseLeave={stopRepeating}
                     onTouchStart={(e) => { e.preventDefault(); startRepeating('plus'); }}
                     onTouchEnd={stopRepeating}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startRepeating('plus'); } }}
+                    onKeyUp={(e) => { if (e.key === 'Enter' || e.key === ' ') stopRepeating(); }}
                     disabled={value >= max}
                 >
                     +
