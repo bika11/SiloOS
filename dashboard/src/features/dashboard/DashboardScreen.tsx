@@ -114,6 +114,9 @@ export const DashboardScreen: React.FC<DashboardProps> = ({
     const UPDATE_INTERVAL_MS = 50;
 
     const startHold = () => {
+        // Prevent native browser key-repeat from spawning multiple timers
+        if (holdTimerRef.current) return;
+
         // Only allow holding if machine is active to prevent confusion
         const isActive = status !== 'Ready' && status !== 'TopBrewer Disconnected' && status !== 'Machine Error';
         if (!isActive) return;
@@ -203,6 +206,18 @@ export const DashboardScreen: React.FC<DashboardProps> = ({
                                     onTouchStart={(e: React.TouchEvent<HTMLButtonElement>) => { e.preventDefault(); startHold(); }}
                                     onTouchEnd={stopHold}
                                     onTouchCancel={stopHold}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            startHold();
+                                        }
+                                    }}
+                                    onKeyUp={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            stopHold();
+                                        }
+                                    }}
                                 >
                                     {/* Progress Background */}
                                     {isMachineActive && (
