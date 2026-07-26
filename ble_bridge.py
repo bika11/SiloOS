@@ -12,6 +12,7 @@ from bluez_peripheral.util import get_message_bus, Adapter
 from bluez_peripheral.advert import Advertisement
 from bleak import BleakClient
 import binascii
+import secrets
 import subprocess # For hard resets
 import uuid
 from dose_controller import PiDoseController, set_audit_fn, send_cancel_to_topbrewer
@@ -163,7 +164,7 @@ async def websocket_handler(request):
     global tare_offset, active_controller
     # Security Check: Auth Token in Query Param
     client_token = request.query.get("auth")
-    if AUTH_TOKEN and client_token != AUTH_TOKEN:
+    if AUTH_TOKEN and (client_token is None or not secrets.compare_digest(client_token, AUTH_TOKEN)):
         logger.warning(f"Connection Refused: Invalid Auth Token from {request.remote}")
         return web.Response(status=401, text="Unauthorized")
 
