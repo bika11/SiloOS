@@ -22,6 +22,8 @@ export const Stepper: React.FC<StepperProps> = ({
     decimalPlaces = 3
 }) => {
     const [isPressing, setIsPressing] = useState<'plus' | 'minus' | null>(null);
+    const isPressingRef = useRef(isPressing);
+    useEffect(() => { isPressingRef.current = isPressing; }, [isPressing]);
     const valueRef = useRef(value);
     const timerRef = useRef<any>(null);
     const speedRef = useRef<number>(200);
@@ -44,6 +46,8 @@ export const Stepper: React.FC<StepperProps> = ({
     }, [min, max, step, onChange, decimalPlaces]);
 
     const startRepeating = (direction: 'plus' | 'minus') => {
+        if (isPressingRef.current === direction) return;
+
         updateValue(direction);
         setIsPressing(direction);
 
@@ -92,7 +96,20 @@ export const Stepper: React.FC<StepperProps> = ({
                     onMouseLeave={stopRepeating}
                     onTouchStart={(e) => { e.preventDefault(); startRepeating('minus'); }}
                     onTouchEnd={stopRepeating}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            startRepeating('minus');
+                        }
+                    }}
+                    onKeyUp={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            stopRepeating();
+                        }
+                    }}
                     disabled={value <= min}
+                    aria-label={`Decrease ${label}`}
                 >
                     -
                 </button>
@@ -103,7 +120,20 @@ export const Stepper: React.FC<StepperProps> = ({
                     onMouseLeave={stopRepeating}
                     onTouchStart={(e) => { e.preventDefault(); startRepeating('plus'); }}
                     onTouchEnd={stopRepeating}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            startRepeating('plus');
+                        }
+                    }}
+                    onKeyUp={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            stopRepeating();
+                        }
+                    }}
                     disabled={value >= max}
+                    aria-label={`Increase ${label}`}
                 >
                     +
                 </button>
