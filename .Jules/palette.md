@@ -1,0 +1,3 @@
+## 2026-08-01 - Keyboard Accessibility for Hold-To-Repeat Interactions
+**Learning:** Custom UI components with hold-to-repeat functionality that rely only on onMouseDown and onTouchStart break keyboard accessibility, as they cannot be activated using the Enter or Space keys. Furthermore, standard key events trigger multiple times when held, unlike mouse events.
+**Action:** Always pair mouse/touch handlers with onKeyDown and onKeyUp handlers for 'Enter' and ' ' (Space) keys. Explicitly guard the onKeyDown handler with a check against current state (e.g. !isHolding or !isPressing) to prevent native browser key-repeat from spawning duplicate timers.
