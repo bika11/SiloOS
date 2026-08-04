@@ -1,0 +1,3 @@
+## 2026-08-04 - High-frequency render loops require memoizing derived state
+**Learning:** The DashboardScreen component uses a 50ms timer (20 renders/sec) for the emergency stop button hold state. Any derived state recalculations (like filtering a menu based on hidden recipes, an O(N*M) operation) performed inline will block the main thread 20 times per second during interaction, causing severe stuttering and degrading perceived UI responsiveness.
+**Action:** When a component has high-frequency state updates (e.g., animation timers, hold interactions), always trace the render path and use `useMemo` to shield expensive derived state calculations (like array filtering or mapping) from the rapid render cycle.
