@@ -4,6 +4,7 @@ import logging
 import os
 import time
 import serial
+import secrets
 from logging.handlers import RotatingFileHandler
 from aiohttp import web
 from bluez_peripheral.gatt.service import Service
@@ -53,7 +54,7 @@ class Config:
             "laumas_baud": 115200,
             "ws_port": 8765,
             "topbrewer_mac": "88:6B:0F:BC:00:A1",
-            "auth_token": "silo-secret",
+            "auth_token": None,
             "tare_offset": 0.0,
             "settings": {
                 "theme": "dark",
@@ -98,7 +99,19 @@ LAUMAS_PORT = config.laumas_port
 LAUMAS_BAUD = config.laumas_baud
 WS_PORT     = config.ws_port
 TOPBREWER_MAC = config.topbrewer_mac
-AUTH_TOKEN  = config.auth_token
+
+# Load token from .env file manually since python-dotenv is not guaranteed to be installed
+if os.path.exists(".env"):
+    with open(".env") as f:
+        for line in f:
+            if line.startswith("WS_AUTH_TOKEN="):
+                os.environ["WS_AUTH_TOKEN"] = line.strip().split("=", 1)[1]
+
+AUTH_TOKEN = os.environ.get("WS_AUTH_TOKEN") or config.auth_token
+
+if not AUTH_TOKEN:
+    logger.error("CRITICAL: No AUTH_TOKEN provided in .env or config.json. Refusing to start insecurely.")
+    exit(1)
 
 # --- TOPBREWER UUIDS ---
 TOPBREWER_SERVICE_UUID = "c0ffee00-2624-46ff-9311-4d7083160300"
@@ -163,7 +176,7 @@ async def websocket_handler(request):
     global tare_offset, active_controller
     # Security Check: Auth Token in Query Param
     client_token = request.query.get("auth")
-    if AUTH_TOKEN and client_token != AUTH_TOKEN:
+    if client_token is None or not secrets.compare_digest(client_token, AUTH_TOKEN):
         logger.warning(f"Connection Refused: Invalid Auth Token from {request.remote}")
         return web.Response(status=401, text="Unauthorized")
 
