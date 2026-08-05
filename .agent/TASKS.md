@@ -31,13 +31,6 @@
 - **Acceptance Criteria**: `.gitignore` updated, git stops tracking key files
 - **Related Issue**: ISS-002
 
-### TASK-003: Externalize auth token
-- **Priority**: P0
-- **Agent**: hardware + frontend
-- **Status**: open
-- **Description**: Move hardcoded `silo-secret` token to environment variables. Create `.env.example` for the dashboard. Update `SiloManager.ts` to read from `import.meta.env.VITE_WS_AUTH_TOKEN`. Update `config.json` docs.
-- **Acceptance Criteria**: No hardcoded tokens in source, `.env.example` exists, app still authenticates
-- **Related Issue**: ISS-003
 
 ---
 
@@ -134,6 +127,12 @@
 ---
 
 ## Completed
+
+### TASK-003: Externalize auth token ✅
+- Completed $(date +%Y-%m-%d) by security agent (Sentinel)
+- Moved hardcoded `silo-secret` to environment variables and removed default fallback.
+- Generated secure `config.json` token via `setup.sh` and `dashboard/.env`.
+- Fixed timing attack vulnerability in token comparison using `secrets.compare_digest`.
 
 ### TASK-000: Fix SFWU relay address ✅
 - Completed 2026-02-12 by protocol agent (Claude Code)

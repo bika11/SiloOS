@@ -29,7 +29,22 @@ echo "?? Configuring Bluetooth permissions..."
 sudo usermod -aG bluetooth $USER
 sudo usermod -aG dialout $USER
 
-# 5. Create Configuration Template
+# 5. Create Configuration Template and Environment
+if [ ! -f .env ] || [ ! -f dashboard/.env ]; then
+    echo "?? Generating secure auth token..."
+    AUTH_TOKEN=$(python3 -c "import secrets; print(secrets.token_hex(16))")
+
+    echo "?? Configuring backend environment..."
+    cat <<EOF > .env
+WS_AUTH_TOKEN=${AUTH_TOKEN}
+EOF
+
+    echo "?? Configuring dashboard environment..."
+    cat <<EOF > dashboard/.env
+VITE_WS_AUTH_TOKEN=${AUTH_TOKEN}
+EOF
+fi
+
 if [ ! -f config.json ]; then
     echo "?? Creating default config.json..."
     cat <<EOF > config.json
@@ -38,7 +53,7 @@ if [ ! -f config.json ]; then
   "laumas_port": "/dev/ttyUSB0",
   "laumas_baud": 115200,
   "ws_port": 8765,
-  "auth_token": "silo-secret",
+  "auth_token": "",
   "settings": {
     "theme": "dark",
     "hidden_recipes": []
