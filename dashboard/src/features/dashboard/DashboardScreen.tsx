@@ -117,6 +117,7 @@ export const DashboardScreen: React.FC<DashboardProps> = ({
         // Only allow holding if machine is active to prevent confusion
         const isActive = status !== 'Ready' && status !== 'TopBrewer Disconnected' && status !== 'Machine Error';
         if (!isActive) return;
+        if (holdTimerRef.current) return;
 
         setIsHolding(true);
         progressRef.current = 0;
@@ -203,6 +204,17 @@ export const DashboardScreen: React.FC<DashboardProps> = ({
                                     onTouchStart={(e: React.TouchEvent<HTMLButtonElement>) => { e.preventDefault(); startHold(); }}
                                     onTouchEnd={stopHold}
                                     onTouchCancel={stopHold}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            startHold();
+                                        }
+                                    }}
+                                    onKeyUp={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            stopHold();
+                                        }
+                                    }}
                                 >
                                     {/* Progress Background */}
                                     {isMachineActive && (
