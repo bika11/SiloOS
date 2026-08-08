@@ -89,8 +89,10 @@ export class SiloManager {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const host = window.location.hostname;
 
+        // SECURITY: Using environment variables prevents hardcoded credentials in source code.
+        // The fallback 'CHANGE_ME' requires users to explicitly set a secure token.
         // Use environment variable if available, otherwise fallback to default
-        const authToken = (import.meta as any).env?.VITE_WS_AUTH_TOKEN || 'silo-secret';
+        const authToken = (import.meta as any).env?.VITE_WS_AUTH_TOKEN || 'CHANGE_ME';
 
         this.url = url || `${protocol}//${host}:8765/?auth=${authToken}`;
 

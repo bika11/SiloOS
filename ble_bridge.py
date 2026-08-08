@@ -53,7 +53,7 @@ class Config:
             "laumas_baud": 115200,
             "ws_port": 8765,
             "topbrewer_mac": "88:6B:0F:BC:00:A1",
-            "auth_token": "silo-secret",
+            "auth_token": "CHANGE_ME",  # SECURITY: Placeholder requires manual secure setup
             "tare_offset": 0.0,
             "settings": {
                 "theme": "dark",
