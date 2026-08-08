@@ -24,7 +24,7 @@ If you are setting up a fresh Raspberry Pi (OS Lite 64-bit recommended):
 
 1.  **Clone the Repo**: `git clone <repo_url> SiloOS`
 2.  **Run Installer**: `cd SiloOS && sudo ./setup.sh`
-3.  **Configure**: Edit `config.json` with your machine's MAC address.
+3.  **Configure**: Edit `config.json` with your machine's MAC address and set a secure `auth_token`. Create `dashboard/.env` based on `dashboard/.env.example` with the matching token.
 4.  **Start Dashboard**: `cd dashboard && npm run dev -- --host`
 
 ## Manual Setup Components
