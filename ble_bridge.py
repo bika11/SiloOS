@@ -14,6 +14,7 @@ from bleak import BleakClient
 import binascii
 import subprocess # For hard resets
 import uuid
+import secrets
 from dose_controller import PiDoseController, set_audit_fn, send_cancel_to_topbrewer
 
 # --- LOGGING SETUP ---
@@ -53,7 +54,7 @@ class Config:
             "laumas_baud": 115200,
             "ws_port": 8765,
             "topbrewer_mac": "88:6B:0F:BC:00:A1",
-            "auth_token": "silo-secret",
+            "auth_token": "CHANGE_ME",
             "tare_offset": 0.0,
             "settings": {
                 "theme": "dark",
@@ -163,7 +164,7 @@ async def websocket_handler(request):
     global tare_offset, active_controller
     # Security Check: Auth Token in Query Param
     client_token = request.query.get("auth")
-    if AUTH_TOKEN and client_token != AUTH_TOKEN:
+    if AUTH_TOKEN and (client_token is None or not secrets.compare_digest(client_token, AUTH_TOKEN)):
         logger.warning(f"Connection Refused: Invalid Auth Token from {request.remote}")
         return web.Response(status=401, text="Unauthorized")
 
