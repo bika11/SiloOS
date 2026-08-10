@@ -82,10 +82,10 @@ export class RecipeRunner {
         this.cumulativeActualKg = 0;
         this.stepResults = [];
 
-        this.runNextStep();
+        void this.runNextStep();
     }
 
-    private runNextStep(): void {
+    private async runNextStep(): Promise<void> {
         if (this.currentStepIndex >= this.recipe.steps.length) {
             this.complete();
             return;
@@ -130,8 +130,18 @@ export class RecipeRunner {
             }
         };
 
-        // 1. Request dose from Pi
+        // 1. Request dose from Pi and WAIT for accept/reject.
+        // SAFETY: never send the hardware order until the Pi has ARMED a
+        // controller. If it rejects (hopper too full, target out of range), the
+        // step must NOT dispense — otherwise the machine pours uncontrolled and
+        // overflows. This is what caused a 40 kg hopper + 100 kg sequence to overfill.
         this.siloManager.send({ type: 'dose_request', siloId, targetKg: effectiveTargetKg });
+        const ack = await this.siloManager.awaitDoseAck(siloId);
+        if (this.state === 'aborted' || this.state === 'done') return; // aborted while waiting
+        if (!ack.ok) {
+            this.abort(`Step ${this.currentStepIndex + 1} ("${siloId}") rejected: ${ack.reason}`);
+            return; // do NOT dispense
+        }
 
         // 2. Create PiDoseProxy
         this.currentController = new PiDoseProxy(siloId, effectiveTargetKg, this.siloManager);
@@ -148,7 +158,7 @@ export class RecipeRunner {
         };
         this.siloManager.addDoseUpdateListener(this.doseUpdateHandler);
 
-        // 4. Send Hardware Start
+        // 4. Send Hardware Start (only after the Pi accepted the dose)
         this.sendHardwareStart(step.menuId, effectiveTargetKg, siloId);
     }
 
@@ -202,7 +212,7 @@ export class RecipeRunner {
             setTimeout(() => {
                 if (this.state === 'settling') {
                     this.state = 'running';
-                    this.runNextStep();
+                    void this.runNextStep();
                 }
             }, 3000);
         } else {

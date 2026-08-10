@@ -272,8 +272,19 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
                 logger.info('Customizer', `Requesting Pi dose: silo="${siloId}" target=${doseTargetKg.toFixed(3)}kg topUp=#${topUpN}`);
                 siloManager.send({ type: 'dose_request', siloId, targetKg: doseTargetKg });
 
-                // Wait briefly for Pi to ack (tare + arm controller)
-                await new Promise(resolve => setTimeout(resolve, 100));
+                // SAFETY: wait for the Pi to ACCEPT the dose before sending the
+                // hardware order. If it rejects (e.g. hopper too full, target out
+                // of range), we must NOT dispense — otherwise the machine pours
+                // uncontrolled with no weight cutoff and overflows.
+                const ack = await siloManager.awaitDoseAck(siloId);
+                if (!ack.ok) {
+                    logger.warn('Customizer', `Dose not started — Pi rejected: ${ack.reason}`);
+                    setRejectMsg(ack.reason || 'Dose rejected by bridge');
+                    setTimeout(() => setRejectMsg(null), 6000);
+                    activeSiloIdRef.current = null;
+                    if (deadManTimerRef.current) clearTimeout(deadManTimerRef.current);
+                    return; // do not dispense
+                }
 
                 // 2. Calculate scaled recipe for top-ups
                 const scalingFactor = doseTargetKg / targetKg;

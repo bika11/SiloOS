@@ -91,11 +91,11 @@ class Config:
                 "hopper_abort_kg": 130.0,  # hard abort if a dose reaches this weight
                 "max_target_kg": 130.0,    # reject any dose_request above this
                 "max_dispense_s": 600.0,   # absolute wall-clock ceiling per dose
-                # Drop frames whose Modbus CRC16 fails. Kept OFF until a live
-                # register dump (tools/scale_registers.py) confirms real frames
-                # pass CRC — enabling it prematurely on a non-standard framing
-                # would block ALL weight readings.
-                "enforce_scale_crc": False
+                # Drop frames whose Modbus CRC16 fails. Confirmed safe via a live
+                # register dump (0/8 frames bad CRC, standard Modbus RTU), so this
+                # is ON. Set false in config.json only if the transmitter framing
+                # ever changes and starts failing CRC.
+                "enforce_scale_crc": True
             }
         }
         self.load()
@@ -140,7 +140,7 @@ _SAFETY = config.data.get("safety", {})
 HOPPER_ABORT_KG = float(_SAFETY.get("hopper_abort_kg", 130.0))
 MAX_TARGET_KG   = float(_SAFETY.get("max_target_kg", 130.0))
 MAX_DISPENSE_S  = float(_SAFETY.get("max_dispense_s", 600.0))
-ENFORCE_SCALE_CRC = bool(_SAFETY.get("enforce_scale_crc", False))
+ENFORCE_SCALE_CRC = bool(_SAFETY.get("enforce_scale_crc", True))
 
 # --- SCALE FRAME DECODING ---
 SCALE_DIVISOR = 10.0             # raw uint16 -> kg (0.1 kg resolution); confirm with 0b
@@ -170,6 +170,7 @@ topbrewer_client = None
 active_doses = {}  # Per-silo dispensing tracker: siloId -> {start_time, start_weight, target_kg, client}
 active_controller = None  # PiDoseController — one active dose at a time
 pending_safety_cancel = False  # a dose was live when BLE dropped → cancel on reconnect
+_last_overflow_cancel = 0.0  # monotonic time of last overflow-guard cancel (throttle)
 
 # Bridge audit function to dose_controller module
 set_audit_fn(audit)
@@ -470,8 +471,29 @@ async def broadcast_websocket(weight):
     await broadcast_relay({"weight": weight, "net": weight - tare_offset})
 
 def _feed_dose_controller(weight):
-    """Forward weight to active Pi dose controller. Called from serial thread via call_soon_threadsafe."""
-    global active_controller
+    """Forward weight to active Pi dose controller. Called on the event loop
+    thread (via call_soon_threadsafe) for EVERY scale frame."""
+    global active_controller, _last_overflow_cancel
+
+    # --- ABSOLUTE OVERFLOW GUARD (defense-in-depth) ---
+    # Independent of any dose controller: if the gross hopper weight reaches the
+    # cap, command the machine to STOP no matter what is (or isn't) driving it.
+    # This catches an uncontrolled dispense (e.g. a client that ignored a
+    # dose_rejected) that would otherwise have no weight cutoff.
+    if weight >= HOPPER_ABORT_KG:
+        now = time.monotonic()
+        if now - _last_overflow_cancel > 5.0:
+            _last_overflow_cancel = now
+            logger.error(f"OVERFLOW GUARD: hopper at {weight:.1f}kg (cap {HOPPER_ABORT_KG}) — cancelling machine")
+            audit("overflow_guard", weight=weight, cap=HOPPER_ABORT_KG)
+            if topbrewer_client:
+                asyncio.ensure_future(send_cancel_to_topbrewer(topbrewer_client))
+            asyncio.ensure_future(broadcast_relay({
+                "type": "dose_error",
+                "siloId": active_controller.silo_id if active_controller else "*",
+                "error": f"OVERFLOW: hopper at {weight:.1f} kg — machine stopped",
+            }))
+
     if active_controller and active_controller.state in ('running', 'stopping', 'settling'):
         active_controller.on_weight(weight)
         # Clean up finished controllers

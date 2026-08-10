@@ -399,6 +399,39 @@ export class SiloManager {
         });
     }
 
+    /**
+     * Wait for the Pi to ACCEPT (dose_ack) or REJECT (dose_rejected) a dose
+     * request for a given silo. Callers MUST await this before sending the
+     * hardware order — otherwise a rejected dose (e.g. hopper too full) still
+     * dispenses uncontrolled and overflows.
+     */
+    awaitDoseAck(siloId: string, timeoutMs: number = 5000):
+        Promise<{ ok: boolean; tareG?: number; targetKg?: number; reason?: string }> {
+        return new Promise((resolve) => {
+            let done = false;
+            const onAck = (id: string, tareG: number, targetKg: number) => {
+                if (id === siloId) finish({ ok: true, tareG, targetKg });
+            };
+            const onRej = (id: string, reason: string) => {
+                if (id === siloId) finish({ ok: false, reason });
+            };
+            const timer = setTimeout(
+                () => finish({ ok: false, reason: 'No response from bridge (timeout)' }),
+                timeoutMs
+            );
+            const finish = (r: { ok: boolean; tareG?: number; targetKg?: number; reason?: string }) => {
+                if (done) return;
+                done = true;
+                clearTimeout(timer);
+                this.removeDoseAckListener(onAck);
+                this.removeDoseRejectedListener(onRej);
+                resolve(r);
+            };
+            this.addDoseAckListener(onAck);
+            this.addDoseRejectedListener(onRej);
+        });
+    }
+
     async remoteRead(uuid: string): Promise<Uint8Array> {
         return new Promise((resolve, reject) => {
             const timeout = setTimeout(() => {

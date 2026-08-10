@@ -91,6 +91,8 @@ export const ScaleReadout: React.FC<ScaleReadoutProps> = ({ scaleManager, siloMa
     const effectiveWeight = connState === 'connected' ? booKooWeight : (isSiloConnected ? siloWeight : 0);
     const isAnyConnected = connState === 'connected' || isSiloConnected;
     const activeLabel = connState === 'connected' ? 'BooKoo BLE' : (isSiloConnected ? 'SiloOS Bridge' : 'Scales Offline');
+    // The BooKoo BLE scale reports grams; the Laumas bridge reports kg.
+    const weightUnit = connState === 'connected' ? 'g' : 'kg';
 
     return (
         <div className={`scale-readout ${isAnyConnected ? 'connected' : ''} ${isPulsing ? 'pulse' : ''}`}>
@@ -100,7 +102,7 @@ export const ScaleReadout: React.FC<ScaleReadoutProps> = ({ scaleManager, siloMa
                     {isAnyConnected ? (
                         <>
                             <span className="weight-value">{effectiveWeight.toFixed(1)}</span>
-                            <span className="weight-unit">g</span>
+                            <span className="weight-unit">{weightUnit}</span>
                         </>
                     ) : (
                         <span className="weight-placeholder">Scales Offline</span>
