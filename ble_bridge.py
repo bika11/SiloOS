@@ -28,6 +28,7 @@ except Exception:
 from bleak import BleakClient, BleakScanner
 import binascii
 import subprocess # For hard resets
+import shutil # For cross-platform executable lookup (bluetoothctl)
 import uuid
 from dose_controller import PiDoseController, set_audit_fn, send_cancel_to_topbrewer
 
@@ -508,8 +509,11 @@ async def run_topbrewer_client():
     global topbrewer_client, active_controller, pending_safety_cancel
     while True:
         try:
-            # FORCED RESET: On Linux, clear system-level bluetooth connection if needed
-            if subprocess.run(["where", "bluetoothctl"], capture_output=True).returncode == 0:
+            # FORCED RESET: On Linux, clear system-level bluetooth connection if needed.
+            # Use shutil.which (cross-platform) — the old `where` is a Windows-only
+            # command that throws FileNotFoundError on the Pi, which killed the
+            # entire TopBrewer connect loop every 4 s (machine never connected).
+            if shutil.which("bluetoothctl"):
                 try:
                     subprocess.run(["bluetoothctl", "disconnect", TOPBREWER_MAC], capture_output=True, timeout=5)
                 except: pass
