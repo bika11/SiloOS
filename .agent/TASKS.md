@@ -26,7 +26,7 @@
 ### TASK-002: Remove SSH key from repository
 - **Priority**: P0
 - **Agent**: qa
-- **Status**: open
+- **Status**: done ✅ (2026-08-10)
 - **Description**: Add `siloos_key` and `siloos_key.pub` to `.gitignore`. These files should remain on disk but not be tracked. Rotate the key on the Pi if repo has been shared.
 - **Acceptance Criteria**: `.gitignore` updated, git stops tracking key files
 - **Related Issue**: ISS-002
@@ -34,7 +34,7 @@
 ### TASK-003: Externalize auth token
 - **Priority**: P0
 - **Agent**: hardware + frontend
-- **Status**: open
+- **Status**: done ✅ (2026-08-10)
 - **Description**: Move hardcoded `silo-secret` token to environment variables. Create `.env.example` for the dashboard. Update `SiloManager.ts` to read from `import.meta.env.VITE_WS_AUTH_TOKEN`. Update `config.json` docs.
 - **Acceptance Criteria**: No hardcoded tokens in source, `.env.example` exists, app still authenticates
 - **Related Issue**: ISS-003
