@@ -74,16 +74,24 @@ def build_sfwu_reset_packet() -> bytes:
     return header + crc
 
 
-async def send_cancel_to_topbrewer(ble_client):
+async def send_cancel_to_topbrewer(ble_client) -> bool:
     """
     Send stop + reset to TopBrewer via BLE.
     Matches cancelOrder() in TopBrewerConnection.ts:
       1. Write "stop" to START_SESSION characteristic
       2. Write SFWU COFFEE_RESET to SET_ORDER characteristic
+
+    Returns True only if BOTH writes succeeded. On any failure it returns False
+    so the caller can surface the error and retry (e.g. on BLE reconnect) instead
+    of assuming the machine has stopped. SAFETY-CRITICAL: a swallowed failure here
+    means the machine may keep dispensing while we believe it stopped.
     """
+    stop_ok = False
+    reset_ok = False
     try:
         await ble_client.write_gatt_char(START_SESSION_UUID, b"stop")
         logger.info("Pi DoseCtrl: Sent 'stop' to START_SESSION")
+        stop_ok = True
     except Exception as e:
         logger.error(f"Pi DoseCtrl: Failed to write 'stop': {e}")
         audit("pi_cancel_stop_error", error=str(e))
@@ -92,9 +100,12 @@ async def send_cancel_to_topbrewer(ble_client):
         reset_pkt = build_sfwu_reset_packet()
         await ble_client.write_gatt_char(SET_ORDER_UUID, reset_pkt)
         logger.info("Pi DoseCtrl: Sent COFFEE_RESET to SET_ORDER")
+        reset_ok = True
     except Exception as e:
         logger.error(f"Pi DoseCtrl: Failed to write COFFEE_RESET: {e}")
         audit("pi_cancel_reset_error", error=str(e))
+
+    return stop_ok and reset_ok
 
 
 # ============================================================
@@ -105,9 +116,28 @@ PROFILES_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "silo_p
 
 DEFAULT_PROFILE = {
     "flow_rate_kg_per_s": 0.05,  # 50 g/s — cautious start
-    "valve_delay_s": 0.5,
+    "valve_delay_s": 0.5,        # derived (overshoot_kg / flow); kept for display/safety timer
+    "overshoot_kg": 0.025,       # learned coast-down material — the PRIMARY control quantity
     "total_doses": 0,
 }
+
+# Scale quantum used for step-change flow detection (P4). This should track the
+# transmitter's real reportable resolution (confirm with tools/scale_registers.py);
+# 0.1 kg matches the current parser.
+SCALE_QUANTA_KG = 0.1
+
+# Median window for spike rejection on the weight that drives the stop decisions.
+# A single spurious frame is out-voted; kept small to minimise latency.
+DEBOUNCE_WINDOW = 3
+
+
+def _median(values):
+    s = sorted(values)
+    n = len(s)
+    if n == 0:
+        return 0.0
+    mid = n // 2
+    return s[mid] if n % 2 else (s[mid - 1] + s[mid]) / 2.0
 
 
 def load_profile(silo_id: str) -> dict:
@@ -118,7 +148,11 @@ def load_profile(silo_id: str) -> dict:
         if (p and isinstance(p.get("flow_rate_kg_per_s"), (int, float))
                 and isinstance(p.get("valve_delay_s"), (int, float))
                 and isinstance(p.get("total_doses"), int)):
-            return dict(p)  # Copy
+            p = dict(p)  # Copy
+            # Backfill overshoot_kg for older profiles saved before direct-overshoot learning.
+            if not isinstance(p.get("overshoot_kg"), (int, float)):
+                p["overshoot_kg"] = p["flow_rate_kg_per_s"] * p["valve_delay_s"]
+            return p
     except Exception:
         pass
     return dict(DEFAULT_PROFILE)
@@ -158,8 +192,14 @@ class PiDoseController:
     # Settling: 2 seconds of no new weight = settled
     SETTLE_TIMEOUT_S = 2.0
 
+    # Safety watchdog: if no scale frame reaches the controller for this long
+    # while a dose is live, force-cancel (the scale feed has died — going blind).
+    SCALE_STALE_S = 1.5
+
     def __init__(self, silo_id: str, target_kg: float, tare_weight: float,
-                 ble_client, broadcast_fn, loop):
+                 ble_client, broadcast_fn, loop,
+                 max_dispense_s: float = None, max_weight_kg: float = None,
+                 get_ble_client=None):
         """
         Args:
             silo_id: Drink/silo identifier (for profile lookup)
@@ -168,6 +208,12 @@ class PiDoseController:
             ble_client: BleakClient for sending cancel (can be None)
             broadcast_fn: async fn(dict) to broadcast to all WebSocket clients
             loop: asyncio event loop
+            max_dispense_s: absolute wall-clock ceiling per dose (hard abort)
+            max_weight_kg: absolute dispensed-weight cap (hard abort, e.g. hopper
+                overflow weight) — independent of the requested target
+            get_ble_client: optional callable returning the CURRENT live BLE client,
+                used for cancel so a reconnect after a drop targets the live link
+                instead of a stale reference captured at construction time
         """
         self.silo_id = silo_id
         self.target_kg = target_kg
@@ -175,6 +221,9 @@ class PiDoseController:
         self.ble_client = ble_client
         self.broadcast_fn = broadcast_fn
         self.loop = loop
+        self.max_dispense_s = max_dispense_s
+        self.max_weight_kg = max_weight_kg
+        self._get_ble_client = get_ble_client
         self.profile = load_profile(silo_id)
 
         self.state = 'armed'
@@ -184,10 +233,23 @@ class PiDoseController:
         self.samples = []  # [(monotonic_time, dispensed_weight)]
         self.last_activity_time = 0.0
         self.last_known_weight = 0.0
+        self.last_weight_time = 0.0   # monotonic time of the last scale frame
+        self.cancel_failed = False    # set True if a cancel BLE write did not succeed
+        self.dispensed_at_stop = 0.0  # dispensed weight when the stop signal was sent
+        self._raw_window = []         # recent raw dispensed values for median debounce
+
+        # P4: step-change flow detection — measures true flow during the active
+        # rising phase (between real quantum steps), unbiased by the settle window.
+        self.last_quantized_kg = 0.0
+        self.last_step_time = 0.0
+        self.step_flow_rate = 0.0
 
         self._preemptive_handle = None
         self._settle_handle = None
         self._safety_handle = None
+        self._max_time_handle = None
+        self._watchdog_handle = None
+        self.effective_target = target_kg  # target minus learned coast-down (set in start)
 
         logger.info(
             f"Pi DoseCtrl: Armed silo=\"{silo_id}\" target={target_kg:.3f} "
@@ -207,18 +269,36 @@ class PiDoseController:
         Sets the preemptive stop timer.
         """
         if self.state != 'armed':
-            logger.warn(f"Pi DoseCtrl: Cannot start from state '{self.state}'")
+            logger.warning(f"Pi DoseCtrl: Cannot start from state '{self.state}'")
             return
 
         self.start_time = time.monotonic()
         self.last_activity_time = self.start_time
+        self.last_weight_time = self.start_time
         self.last_known_weight = self.last_dispensed
+        self.last_quantized_kg = self.last_dispensed
+        self.last_step_time = 0.0
+        self.step_flow_rate = 0.0
         self.state = 'running'
 
-        # Preemptive timer — exact same formula as TypeScript DoseController
-        overshoot = self.profile['flow_rate_kg_per_s'] * self.profile['valve_delay_s']
+        # Effective target = target minus the learned coast-down material. We use
+        # the directly-learned overshoot_kg (NOT flow*valve_delay) so the flow
+        # estimate never enters the control path — this avoids amplifying flow
+        # noise into the stop point, which otherwise makes doses oscillate.
+        overshoot = self.profile.get(
+            'overshoot_kg',
+            self.profile['flow_rate_kg_per_s'] * self.profile['valve_delay_s'])
         effective_target = max(0.005, self.target_kg - overshoot)
-        seconds_until_stop = max(0.1, effective_target / self.profile['flow_rate_kg_per_s'])
+        self.effective_target = effective_target
+
+        # The weight-based stop at effective_target is the PRIMARY cutoff (it is
+        # flow-independent and robust). The preemptive timer is a conservative
+        # BACKSTOP set at 1.5x the expected fill time — it must NOT race and
+        # pre-empt the weight-stop (an early fire from a noisy flow estimate would
+        # corrupt the dose). It only catches a dose running far longer than
+        # expected; the scale-stale watchdog and MAX_DISPENSE_S sit above it.
+        expected_s = self.target_kg / max(self.profile['flow_rate_kg_per_s'], 1e-3)
+        seconds_until_stop = max(0.5, expected_s * 1.5)
 
         logger.info(
             f"Pi DoseCtrl: RUNNING target={self.target_kg:.3f} "
@@ -230,6 +310,17 @@ class PiDoseController:
 
         self._preemptive_handle = self.loop.call_later(
             seconds_until_stop, self._preemptive_fire
+        )
+
+        # --- Absolute safety backstops (independent of the learned profile) ---
+        # Hard wall-clock ceiling: nothing may dispense longer than this.
+        if self.max_dispense_s:
+            self._max_time_handle = self.loop.call_later(
+                self.max_dispense_s, self._max_time_fire
+            )
+        # Scale-feed watchdog: force-cancel if the weight stream goes silent.
+        self._watchdog_handle = self.loop.call_later(
+            self.SCALE_STALE_S, self._watchdog_tick
         )
 
         # Broadcast initial state
@@ -244,22 +335,62 @@ class PiDoseController:
             return
 
         now = time.monotonic()
-        dispensed = max(0, weight - self.tare_weight)
+        self.last_weight_time = now  # feed the scale-stale watchdog (every frame)
+
+        # Median debounce: a single spurious frame is out-voted so it can't trip
+        # the hard stop or the max-weight cap. Small window keeps latency minimal.
+        raw = max(0, weight - self.tare_weight)
+        self._raw_window.append(raw)
+        if len(self._raw_window) > DEBOUNCE_WINDOW:
+            self._raw_window = self._raw_window[-DEBOUNCE_WINDOW:]
+        dispensed = _median(self._raw_window)
         self.last_dispensed = dispensed
 
         self.samples.append((now, dispensed))
         if len(self.samples) > 20:
             self.samples = self.samples[-20:]
 
+        # --- Absolute max-weight cap (any live state) ---
+        # Last-ditch overflow guard on the GROSS scale reading (dispensed + tare),
+        # so it protects even when dosing onto a partially-full hopper. Independent
+        # of the requested target; fires even during stopping/settling (e.g. a
+        # valve that failed to close).
+        gross = dispensed + self.tare_weight
+        if self.max_weight_kg and gross >= self.max_weight_kg:
+            logger.warning(
+                f"Pi DoseCtrl: MAX-WEIGHT abort at gross {gross:.3f} "
+                f"(cap {self.max_weight_kg:.3f}, dispensed {dispensed:.3f})"
+            )
+            audit("pi_max_weight", silo_id=self.silo_id, dispensed=dispensed,
+                  gross=gross, cap=self.max_weight_kg)
+            self._force_abort("max_weight")
+            return
+
         # --- Running: weight-based safety stop ---
         if self.state == 'running':
-            # Hard stop if already past target
-            if dispensed >= self.target_kg:
-                logger.warning(
-                    f"Pi DoseCtrl: Weight-based hard stop at {dispensed:.3f}"
+            # P4: step-change flow detection — when the (debounced) weight jumps
+            # by a full scale quantum, compute flow from the exact 0.1 kg step and
+            # the time since the last step. Measured ONLY during the active rising
+            # phase, so it is not diluted by the post-stop settle window.
+            step_delta = abs(dispensed - self.last_quantized_kg)
+            if step_delta >= SCALE_QUANTA_KG * 0.9:
+                if self.last_step_time > 0:
+                    step_time_s = now - self.last_step_time
+                    if step_time_s > 0.05:  # ignore implausibly fast steps
+                        self.step_flow_rate = SCALE_QUANTA_KG / step_time_s
+                self.last_quantized_kg = dispensed
+                self.last_step_time = now
+
+            # Weight-based stop at the effective target (target minus learned
+            # coast-down). Stopping here and letting the valve coast lands us on
+            # the real target. Robust to flow-estimate error (see start()).
+            if dispensed >= self.effective_target:
+                logger.info(
+                    f"Pi DoseCtrl: Weight-based stop at {dispensed:.3f} "
+                    f"(effective target {self.effective_target:.3f})"
                 )
                 audit("pi_hard_stop", silo_id=self.silo_id, dispensed=dispensed,
-                      target=self.target_kg)
+                      target=self.target_kg, effective_target=self.effective_target)
                 self._send_stop()
                 return
 
@@ -311,6 +442,58 @@ class PiDoseController:
     # PRIVATE
     # --------------------------------------------------------
 
+    def _max_time_fire(self):
+        """Absolute wall-clock ceiling reached — hard abort."""
+        if self.state in ('done', 'aborted'):
+            return
+        logger.warning(
+            f"Pi DoseCtrl: MAX-TIME abort after {self.max_dispense_s:.0f}s "
+            f"at dispensed={self.last_dispensed:.3f}"
+        )
+        audit("pi_max_time", silo_id=self.silo_id,
+              max_dispense_s=self.max_dispense_s, dispensed=self.last_dispensed)
+        self._force_abort("max_time")
+
+    def _watchdog_tick(self):
+        """Scale-feed watchdog — abort if no weight frame has arrived recently."""
+        if self.state in ('done', 'aborted'):
+            return
+        idle = time.monotonic() - self.last_weight_time
+        if idle >= self.SCALE_STALE_S:
+            logger.warning(
+                f"Pi DoseCtrl: SCALE-STALE abort — no weight for {idle:.1f}s "
+                f"at dispensed={self.last_dispensed:.3f}"
+            )
+            audit("pi_scale_stale", silo_id=self.silo_id, idle_s=round(idle, 2),
+                  dispensed=self.last_dispensed)
+            self._force_abort("scale_stale")
+        else:
+            # Re-arm for the remaining window.
+            self._watchdog_handle = self.loop.call_later(
+                self.SCALE_STALE_S - idle, self._watchdog_tick
+            )
+
+    def _force_abort(self, reason: str):
+        """
+        Hard safety abort (distinct from the graceful stop path): cancel all
+        timers, command the machine to stop, mark aborted, and tell clients.
+        Used by the absolute ceilings and the scale-stale watchdog.
+        """
+        if self.state in ('done', 'aborted'):
+            return
+        self._cancel_timers()
+        self.stop_time = time.monotonic()
+        self.state = 'aborted'
+        audit("pi_force_abort", silo_id=self.silo_id, reason=reason,
+              dispensed=self.last_dispensed)
+        asyncio.ensure_future(self._do_cancel())
+        asyncio.ensure_future(self.broadcast_fn({
+            "type": "dose_update",
+            "siloId": self.silo_id,
+            "state": "aborted",
+            "reason": reason,
+        }))
+
     def _preemptive_fire(self):
         """Preemptive timer fired. Send stop."""
         if self.state != 'running':
@@ -328,6 +511,7 @@ class PiDoseController:
             return
         self._cancel_timers()
         self.stop_time = time.monotonic()
+        self.dispensed_at_stop = self.last_dispensed  # material dispensed BEFORE coast-down
         self.state = 'stopping'
 
         logger.info(f"Pi DoseCtrl: Stop command at dispensed={self.last_dispensed:.3f}")
@@ -344,14 +528,41 @@ class PiDoseController:
         asyncio.ensure_future(self._broadcast_update())
 
     async def _do_cancel(self):
-        """Actually send BLE cancel commands."""
-        if self.ble_client:
-            try:
-                await send_cancel_to_topbrewer(self.ble_client)
-                audit("pi_cancel_sent", silo_id=self.silo_id)
-            except Exception as e:
-                logger.error(f"Pi DoseCtrl: Cancel failed: {e}")
-                audit("pi_cancel_failed", silo_id=self.silo_id, error=str(e))
+        """
+        Send BLE cancel commands to the machine. Uses the CURRENT live client
+        (via get_ble_client) if available, so a cancel after a BLE drop targets
+        the reconnected link rather than a stale reference. A failure is
+        surfaced (audit + dose_error broadcast) and flagged so it can be retried
+        on reconnect — never silently treated as a successful stop.
+        """
+        client = self._get_ble_client() if self._get_ble_client else self.ble_client
+        if not client:
+            self.cancel_failed = True
+            logger.error("Pi DoseCtrl: Cancel FAILED — no live BLE client")
+            audit("pi_cancel_no_client", silo_id=self.silo_id)
+            await self.broadcast_fn({
+                "type": "dose_error",
+                "siloId": self.silo_id,
+                "error": "cancel could not be sent — machine link is down",
+            })
+            return
+        try:
+            ok = await send_cancel_to_topbrewer(client)
+        except Exception as e:
+            ok = False
+            logger.error(f"Pi DoseCtrl: Cancel raised: {e}")
+        if ok:
+            self.cancel_failed = False
+            audit("pi_cancel_sent", silo_id=self.silo_id)
+        else:
+            self.cancel_failed = True
+            logger.error("Pi DoseCtrl: Cancel write did NOT confirm — machine may still be dispensing")
+            audit("pi_cancel_failed", silo_id=self.silo_id)
+            await self.broadcast_fn({
+                "type": "dose_error",
+                "siloId": self.silo_id,
+                "error": "STOP command not confirmed — verify the machine has stopped",
+            })
 
     def _schedule_settle(self):
         """Reset settle timer — wait for stable reading."""
@@ -378,7 +589,18 @@ class PiDoseController:
         duration_s = time.monotonic() - self.start_time
         actual = self.last_dispensed
         overshoot = actual - self.target_kg
-        flow_rate = (actual / duration_s) if duration_s > 0.1 else self.profile['flow_rate_kg_per_s']
+
+        # Flow rate: prefer the active-phase step-flow (P4), which is measured
+        # only while rising and is NOT diluted by the settle window. Fall back to
+        # the material dispensed up to the stop signal over the rising duration —
+        # still unbiased. Only as a last resort use the coarse total-duration ratio.
+        rising_s = (self.stop_time - self.start_time) if self.stop_time else duration_s
+        if self.step_flow_rate > 0:
+            flow_rate = self.step_flow_rate
+        elif rising_s > 0.1 and self.dispensed_at_stop > 0.001:
+            flow_rate = self.dispensed_at_stop / rising_s
+        else:
+            flow_rate = self.profile['flow_rate_kg_per_s']
 
         result = {
             "targetKg": self.target_kg,
@@ -408,34 +630,53 @@ class PiDoseController:
         }))
 
     def _learn(self, actual, duration_s, flow_rate):
-        """Exponential Moving Average learning. Exact port of DoseController.learn()."""
+        """
+        Adaptive EMA learning (P2). Flow rate comes from the active-rising phase
+        (see _complete). Valve delay is derived DIRECTLY from the coast-down
+        material — the weight gained AFTER the stop signal — rather than the old
+        algebraic form that divided by a settle-inflated duration. This removes
+        the systematic under-flow / inflated-delay bias so doses converge.
+        """
         if actual < 0.001 or duration_s < 0.1:
             return  # Skip bogus doses
 
-        alpha = 1.0 if self.profile['total_doses'] == 0 else 0.3
+        # P2: adaptive alpha — aggressive when the profile is young, smooth later.
+        doses = self.profile['total_doses']
+        alpha = 1.0 if doses == 0 else (0.7 if doses < 3 else (0.4 if doses < 10 else 0.2))
 
-        # Flow rate learning
+        # Flow rate learning (used only for the preemptive timer + display).
         self.profile['flow_rate_kg_per_s'] = (
             (1 - alpha) * self.profile['flow_rate_kg_per_s'] + alpha * flow_rate
         )
 
-        # Valve delay learning: overshoot = flowRate * valveDelay
-        stop_at_s = self.stop_time - self.start_time if self.stop_time else duration_s
-        material_after_stop = actual - (flow_rate * stop_at_s)
-        if flow_rate > 0.001:
-            observed_delay = material_after_stop / flow_rate
-            new_delay = (1 - alpha) * self.profile['valve_delay_s'] + alpha * observed_delay
-            self.profile['valve_delay_s'] = max(0, new_delay)
+        # PRIMARY control: integral feedback on the net output error. If we
+        # overshot by X, raise overshoot_kg by (a fraction of) X so next time we
+        # stop that much earlier — and vice versa. This is negative feedback on
+        # the ACTUAL result, so it converges whether the weight-stop or the
+        # preemptive timer fired, and regardless of flow-estimate error. (Learning
+        # the coast material from actual-dispensed_at_stop instead spirals when the
+        # timer fires early, mis-reading the gap as coast.)
+        error = actual - self.target_kg
+        prev = self.profile.get('overshoot_kg',
+                                self.profile['flow_rate_kg_per_s'] * self.profile['valve_delay_s'])
+        new_overshoot = prev + alpha * error
+        self.profile['overshoot_kg'] = max(0.0, min(new_overshoot, self.target_kg * 0.9))
+
+        # Keep valve_delay_s as a derived, human-readable value (overshoot / flow).
+        if self.profile['flow_rate_kg_per_s'] > 0.001:
+            self.profile['valve_delay_s'] = self.profile['overshoot_kg'] / self.profile['flow_rate_kg_per_s']
 
         self.profile['total_doses'] += 1
         save_profile(self.silo_id, self.profile)
 
         logger.info(
             f"Pi DoseCtrl: Learned flow={self.profile['flow_rate_kg_per_s']:.3f}/s "
+            f"overshoot={self.profile['overshoot_kg']:.3f}kg "
             f"delay={self.profile['valve_delay_s']:.2f}s doses={self.profile['total_doses']}"
         )
         audit("pi_profile_learned", silo_id=self.silo_id,
               flow_rate=self.profile['flow_rate_kg_per_s'],
+              overshoot_kg=self.profile['overshoot_kg'],
               valve_delay=self.profile['valve_delay_s'],
               total_doses=self.profile['total_doses'])
 
@@ -465,9 +706,13 @@ class PiDoseController:
         })
 
     def _cancel_timers(self):
-        for handle in (self._preemptive_handle, self._settle_handle, self._safety_handle):
+        for handle in (self._preemptive_handle, self._settle_handle,
+                       self._safety_handle, self._max_time_handle,
+                       self._watchdog_handle):
             if handle:
                 handle.cancel()
         self._preemptive_handle = None
         self._settle_handle = None
         self._safety_handle = None
+        self._max_time_handle = None
+        self._watchdog_handle = None

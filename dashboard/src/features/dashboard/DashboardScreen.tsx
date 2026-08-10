@@ -56,6 +56,24 @@ export const DashboardScreen: React.FC<DashboardProps> = ({
     const holdTimerRef = useRef<number | null>(null);
     const progressRef = useRef<number>(0);
 
+    // Track an active Pi-authority (gravimetric) dose. These run via siloManager,
+    // NOT the TopBrewer brew-status machine, so the status text stays "Ready" —
+    // yet the machine IS dispensing. E-STOP must be live during this window.
+    const [doseActive, setDoseActive] = useState(false);
+    useEffect(() => {
+        const onAck = () => setDoseActive(true);
+        const onUpdate = (msg: { state: string }) => {
+            if (['armed', 'running', 'stopping', 'settling'].includes(msg.state)) setDoseActive(true);
+            else if (msg.state === 'done' || msg.state === 'aborted') setDoseActive(false);
+        };
+        siloManager.addDoseAckListener(onAck);
+        siloManager.addDoseUpdateListener(onUpdate);
+        return () => {
+            siloManager.removeDoseAckListener(onAck);
+            siloManager.removeDoseUpdateListener(onUpdate);
+        };
+    }, [siloManager]);
+
     useEffect(() => {
         if (!connection) {
             setStatus('TopBrewer Disconnected');
@@ -114,8 +132,8 @@ export const DashboardScreen: React.FC<DashboardProps> = ({
     const UPDATE_INTERVAL_MS = 50;
 
     const startHold = () => {
-        // Only allow holding if machine is active to prevent confusion
-        const isActive = status !== 'Ready' && status !== 'TopBrewer Disconnected' && status !== 'Machine Error';
+        // Allow holding if the machine is active OR a gravimetric dose is live.
+        const isActive = doseActive || (status !== 'Ready' && status !== 'TopBrewer Disconnected' && status !== 'Machine Error');
         if (!isActive) return;
 
         setIsHolding(true);
@@ -170,7 +188,7 @@ export const DashboardScreen: React.FC<DashboardProps> = ({
         logger.debug('Dashboard', `Visible Items: ${visibleItems.length}/${menuItems.length} (Hidden IDs: ${hiddenRecipes?.join(',')})`);
     }
 
-    const isMachineActive = status !== 'Ready' && status !== 'TopBrewer Disconnected' && status !== 'Machine Error';
+    const isMachineActive = doseActive || (status !== 'Ready' && status !== 'TopBrewer Disconnected' && status !== 'Machine Error');
 
     return (
         <div className="dashboard-content">

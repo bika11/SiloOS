@@ -42,6 +42,9 @@ export class SiloManager {
     private profiles: Record<string, any> = {};
     private recipes: Record<string, Recipe> = {};
 
+    // Latest scale feed status from the bridge ('ok' | 'stale').
+    private scaleStatus: 'ok' | 'stale' = 'ok';
+
     // Callbacks for the RemoteBLEAdapter
     private listeners: {
         settings: ((s: any) => void)[];
@@ -52,7 +55,28 @@ export class SiloManager {
         doseAck: ((siloId: string, tareG: number, targetKg: number) => void)[];
         doseUpdate: ((msg: PiDoseMessage) => void)[];
         doseRejected: ((siloId: string, reason: string) => void)[];
-    } = { settings: [], status: [], notifications: [], sfwu: [], recipes: [], doseAck: [], doseUpdate: [], doseRejected: [] };
+        // Additive listeners — use these instead of overwriting `events`, which
+        // is a single-slot bus that different components clobber (dropping e.g.
+        // the emergency-abort handler). Multiple consumers can subscribe safely.
+        weight: ((weight: number) => void)[];
+        connection: ((connected: boolean) => void)[];
+        scaleStatus: ((status: 'ok' | 'stale') => void)[];
+        doseError: ((siloId: string, error: string) => void)[];
+        globalAbort: ((reason: string) => void)[];
+    } = { settings: [], status: [], notifications: [], sfwu: [], recipes: [], doseAck: [], doseUpdate: [], doseRejected: [], weight: [], connection: [], scaleStatus: [], doseError: [], globalAbort: [] };
+
+    public addGlobalAbortListener(cb: (reason: string) => void) { this.listeners.globalAbort.push(cb); }
+    public removeGlobalAbortListener(cb: (reason: string) => void) { this.listeners.globalAbort = this.listeners.globalAbort.filter(l => l !== cb); }
+
+    public addWeightListener(cb: (weight: number) => void) { this.listeners.weight.push(cb); }
+    public removeWeightListener(cb: (weight: number) => void) { this.listeners.weight = this.listeners.weight.filter(l => l !== cb); }
+    public addConnectionListener(cb: (connected: boolean) => void) { this.listeners.connection.push(cb); }
+    public removeConnectionListener(cb: (connected: boolean) => void) { this.listeners.connection = this.listeners.connection.filter(l => l !== cb); }
+    public addScaleStatusListener(cb: (status: 'ok' | 'stale') => void) { this.listeners.scaleStatus.push(cb); }
+    public removeScaleStatusListener(cb: (status: 'ok' | 'stale') => void) { this.listeners.scaleStatus = this.listeners.scaleStatus.filter(l => l !== cb); }
+    public addDoseErrorListener(cb: (siloId: string, error: string) => void) { this.listeners.doseError.push(cb); }
+    public removeDoseErrorListener(cb: (siloId: string, error: string) => void) { this.listeners.doseError = this.listeners.doseError.filter(l => l !== cb); }
+    public getScaleStatus(): 'ok' | 'stale' { return this.scaleStatus; }
 
     public addRecipesListener(cb: (r: Record<string, Recipe>) => void) { this.listeners.recipes.push(cb); }
     public removeRecipesListener(cb: (r: Record<string, Recipe>) => void) { this.listeners.recipes = this.listeners.recipes.filter(l => l !== cb); }
@@ -121,6 +145,7 @@ export class SiloManager {
                 logger.info('SiloManager', 'Connected to SiloOS Bridge');
                 this.isConnected = true;
                 this.events.onConnectionChange?.(true);
+                this.listeners.connection.forEach(l => l(true));
             };
 
             this.socket.onmessage = (event) => {
@@ -132,6 +157,7 @@ export class SiloManager {
                         if (typeof data.weight === 'number') {
                             this.lastWeight = data.weight;
                             this.events.onWeightUpdate?.(data.weight);
+                            this.listeners.weight.forEach(l => l(data.weight));
                         }
                         if (typeof data.tare_offset === 'number') {
                             this.tareOffset = data.tare_offset;
@@ -156,6 +182,7 @@ export class SiloManager {
                     if (typeof data.weight === 'number' && data.type !== 'sync') {
                         this.lastWeight = data.weight;
                         this.events.onWeightUpdate?.(data.weight);
+                        this.listeners.weight.forEach(l => l(data.weight));
                     }
                     if (typeof data.net === 'number') {
                         this.lastNetWeight = data.net;
@@ -233,6 +260,18 @@ export class SiloManager {
                         this.events.onDoseRejected?.(data.siloId, data.reason);
                         this.listeners.doseRejected.forEach(l => l(data.siloId, data.reason));
                     }
+                    // Scale feed status from the bridge (Phase 1b): 'stale' means
+                    // the serial feed died — surface it so the UI can warn and a
+                    // live dose shows "signal lost".
+                    if (data.type === 'scale_status' && (data.status === 'ok' || data.status === 'stale')) {
+                        this.scaleStatus = data.status;
+                        this.listeners.scaleStatus.forEach(l => l(data.status));
+                    }
+                    // A cancel/stop that could not be confirmed (Phase 1c).
+                    if (data.type === 'dose_error') {
+                        logger.error('SiloManager', `Dose error for ${data.siloId}: ${data.error}`);
+                        this.listeners.doseError.forEach(l => l(data.siloId, data.error));
+                    }
 
                 } catch (err) {
                     logger.error('SiloManager', 'Failed to parse bridge data', err);
@@ -258,6 +297,7 @@ export class SiloManager {
             logger.warn('SiloManager', 'Disconnected from SiloOS Bridge');
             this.isConnected = false;
             this.events.onConnectionChange?.(false);
+            this.listeners.connection.forEach(l => l(false));
         }
 
         this.socket = null;
@@ -306,10 +346,12 @@ export class SiloManager {
     /**
      * Send data to bridge
      */
-    send(data: any): void {
+    send(data: any): boolean {
         if (this.socket && this.isConnected) {
             this.socket.send(JSON.stringify(data));
+            return true;
         }
+        return false;
     }
 
     /**
@@ -452,6 +494,9 @@ export class SiloManager {
     public abortAll(reason: string = 'Emergency Stop') {
         logger.warn('SiloManager', `Broadcasting global abort: ${reason}`);
         this.events.onGlobalAbort?.(reason);
+        // Additive listeners — every subscriber is notified (a single-slot handler
+        // could be clobbered by another component and silently drop the abort).
+        this.listeners.globalAbort.forEach(l => l(reason));
     }
 
     /**

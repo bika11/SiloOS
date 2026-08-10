@@ -56,21 +56,22 @@ export const ScaleReadout: React.FC<ScaleReadoutProps> = ({ scaleManager, siloMa
 
         const handleError = (err: Error) => logger.error('ScaleUI', 'Scale error', err);
 
-        // Attach events
+        // BooKoo scale manager has a single dedicated consumer (this component).
         scaleManager['events'] = {
             onWeightUpdate: handleBooKooWeight,
             onConnectionStateChange: handleBooKooConn,
             onError: handleError,
         };
 
-        siloManager['events'] = {
-            onWeightUpdate: handleSiloWeight,
-            onConnectionChange: handleSiloConn,
-        };
+        // SiloManager is a SHARED singleton — use the additive listener API so we
+        // don't wipe other consumers' handlers (e.g. the emergency global-abort).
+        siloManager.addWeightListener(handleSiloWeight);
+        siloManager.addConnectionListener(handleSiloConn);
 
         return () => {
             scaleManager['events'] = {};
-            siloManager['events'] = {};
+            siloManager.removeWeightListener(handleSiloWeight);
+            siloManager.removeConnectionListener(handleSiloConn);
             clearTimeout(pulseTimeout);
         };
     }, [scaleManager, siloManager]);

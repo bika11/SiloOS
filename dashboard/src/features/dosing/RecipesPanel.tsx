@@ -42,21 +42,13 @@ export const RecipesPanel: React.FC<RecipesPanelProps> = ({
 
         siloManager.addRecipesListener(handleRecipesChange);
 
-        // Add global abort listener to events object safely
-        const prevAbort = siloManager['events']?.onGlobalAbort;
-        siloManager['events'] = {
-            ...siloManager['events'],
-            onGlobalAbort: (reason) => {
-                handleGlobalAbort(reason);
-                prevAbort?.(reason);
-            }
-        };
+        // Additive global-abort listener — no longer clobbers the shared `events`
+        // bus (which could drop another component's abort handler).
+        siloManager.addGlobalAbortListener(handleGlobalAbort);
 
         return () => {
             siloManager.removeRecipesListener(handleRecipesChange);
-            if (siloManager['events']) {
-                siloManager['events'].onGlobalAbort = prevAbort;
-            }
+            siloManager.removeGlobalAbortListener(handleGlobalAbort);
         };
     }, [siloManager]);
 

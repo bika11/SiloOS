@@ -35,11 +35,15 @@ export const BrewMonitor: React.FC<BrewMonitorProps> = ({ controller, onClose })
     });
     const [result, setResult] = useState<DoseResult | null>(null);
     const [isPulsing, setIsPulsing] = useState(false);
+    const [signalLost, setSignalLost] = useState(false);
     const pulseTimeout = useRef<ReturnType<typeof setTimeout>>();
+    const lastUpdateRef = useRef<number>(Date.now());
 
     // Wire DoseController events into React state
     useEffect(() => {
         const handleUpdate = (u: DoseUpdate) => {
+            lastUpdateRef.current = Date.now();
+            setSignalLost(false);
             setUpdate(u);
             setIsPulsing(true);
             clearTimeout(pulseTimeout.current);
@@ -47,11 +51,13 @@ export const BrewMonitor: React.FC<BrewMonitorProps> = ({ controller, onClose })
         };
 
         const handleComplete = (r: DoseResult) => {
+            lastUpdateRef.current = Date.now();
             setResult(r);
             setUpdate(prev => ({ ...prev, state: 'done' }));
         };
 
         const handleAbort = (_reason: string) => {
+            lastUpdateRef.current = Date.now();
             setUpdate(prev => ({ ...prev, state: 'aborted' }));
         };
 
@@ -66,6 +72,21 @@ export const BrewMonitor: React.FC<BrewMonitorProps> = ({ controller, onClose })
             clearTimeout(pulseTimeout.current);
         };
     }, [controller]);
+
+    // Live-pour watchdog: if updates stop arriving mid-dose, the Pi has gone
+    // quiet — flip to a loud "signal lost" state instead of freezing on the last
+    // weight while still saying "Dispensing…".
+    useEffect(() => {
+        const active = update.state === 'running' || update.state === 'stopping' || update.state === 'settling';
+        if (!active) {
+            setSignalLost(false);
+            return;
+        }
+        const id = setInterval(() => {
+            if (Date.now() - lastUpdateRef.current > 2500) setSignalLost(true);
+        }, 500);
+        return () => clearInterval(id);
+    }, [update.state]);
 
     const handleAbort = useCallback(() => {
         controller.abort('User pressed abort');
@@ -90,8 +111,10 @@ export const BrewMonitor: React.FC<BrewMonitorProps> = ({ controller, onClose })
     return (
         <div className="brew-monitor-overlay">
             {/* Status Label */}
-            <div className={`brew-monitor-status ${stateClass}`}>
-                {STATE_LABEL_MAP[update.state] || update.state}
+            <div className={`brew-monitor-status ${signalLost && !isDone ? 'aborted' : stateClass}`}>
+                {signalLost && !isDone
+                    ? '⚠ SIGNAL LOST — CLOSING VALVE'
+                    : (STATE_LABEL_MAP[update.state] || update.state)}
             </div>
 
             {/* Circular Progress Ring */}
@@ -160,11 +183,22 @@ export const BrewMonitor: React.FC<BrewMonitorProps> = ({ controller, onClose })
             <div className="brew-monitor-actions">
                 {!isDone && (
                     <Button
-                        variant="secondary"
+                        variant="primary"
                         className="btn-abort"
                         onClick={handleAbort}
+                        style={{
+                            backgroundColor: '#c0121b',
+                            color: '#fff',
+                            fontSize: '1.5rem',
+                            fontWeight: 800,
+                            letterSpacing: '0.05em',
+                            padding: '1.25rem 3rem',
+                            minWidth: '220px',
+                            border: '2px solid #7a0b12',
+                            boxShadow: '0 4px 18px rgba(192,18,27,0.5)',
+                        }}
                     >
-                        ABORT
+                        ■ STOP
                     </Button>
                 )}
                 {isDone && (

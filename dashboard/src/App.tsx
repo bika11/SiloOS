@@ -53,6 +53,22 @@ function App() {
   const [appState, setAppState] = useState<'discovery' | 'dashboard' | 'settings'>('dashboard');
   const [menuItems, setMenuItems] = useState<ParsedMenuItem[]>([]);
   const [settings, setSettings] = useState(siloManager.getSettings());
+  const [bridgeConnected, setBridgeConnected] = useState(siloManager.isBridgeConnected());
+  const [scaleStale, setScaleStale] = useState(siloManager.getScaleStatus() === 'stale');
+
+  // Subscribe the app shell to live connection + scale-feed changes so the
+  // status indicator and banners react in real time (the old code read the
+  // connection flag once at render and could show "online" long after a drop).
+  useEffect(() => {
+    const onConn = (c: boolean) => setBridgeConnected(c);
+    const onScale = (s: 'ok' | 'stale') => setScaleStale(s === 'stale');
+    siloManager.addConnectionListener(onConn);
+    siloManager.addScaleStatusListener(onScale);
+    return () => {
+      siloManager.removeConnectionListener(onConn);
+      siloManager.removeScaleStatusListener(onScale);
+    };
+  }, [siloManager]);
 
   useEffect(() => {
     // SiloOS Dashboard Specialization: Auto-connect to native gateway
@@ -119,8 +135,6 @@ function App() {
     setAppState('discovery');
   };
 
-  const isBridgeConnected = siloManager.isBridgeConnected();
-
   return (
     <ErrorBoundary>
       <div className={`app-container ${settings.theme}-theme`}>
@@ -130,13 +144,36 @@ function App() {
 
         {(appState === 'dashboard' || appState === 'settings') && (
           <div className="screen dashboard-screen">
+            {!bridgeConnected && (
+              <div
+                role="alert"
+                style={{
+                  background: '#c0121b', color: '#fff', fontWeight: 800,
+                  textAlign: 'center', padding: '0.6rem 1rem', letterSpacing: '0.04em',
+                }}
+              >
+                ⚠ BRIDGE OFFLINE — reconnecting…
+              </div>
+            )}
+            {bridgeConnected && scaleStale && (
+              <div
+                role="alert"
+                style={{
+                  background: '#b8860b', color: '#fff', fontWeight: 800,
+                  textAlign: 'center', padding: '0.6rem 1rem', letterSpacing: '0.04em',
+                }}
+              >
+                ⚠ SCALE SIGNAL LOST — dosing is unsafe until it returns
+              </div>
+            )}
             <header className="header">
               <div className="flex items-center gap-3">
                 <h1>SiloOS Live Dashboard</h1>
                 <div
-                  className={`status-led ${isBridgeConnected ? 'online' : 'offline'}`}
-                  title={isBridgeConnected ? 'Bridge Online' : 'Bridge Offline'}
-                  aria-hidden="true"
+                  className={`status-led ${bridgeConnected ? 'online' : 'offline'}`}
+                  title={bridgeConnected ? 'Bridge Online' : 'Bridge Offline'}
+                  role="status"
+                  aria-label={bridgeConnected ? 'Bridge online' : 'Bridge offline'}
                 ></div>
               </div>
               <div className="flex gap-2">

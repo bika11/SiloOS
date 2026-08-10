@@ -38,12 +38,20 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
 }) => {
     const [details, setDetails] = useState<MenuDetails | null>(null);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState(false);
+    const [retryCount, setRetryCount] = useState(0);
     const [isSynchronizing, setIsSynchronizing] = useState(true);
+    const detailsReceivedRef = useRef(false);
+
+    // Gravimetric hard cap (kg). Matches the stepper max and stays under the
+    // Pi's server-side reject limit — kills the old 200 "kg" default foot-gun.
+    const GRAV_MAX_KG = 120;
     const [customValues, setCustomValues] = useState<Record<string, number>>({});
     const [customVolume, setCustomVolume] = useState<number>(0);
     const [isGravimetric, setIsGravimetric] = useState(true); // GLOVE RULE: Default to true
     const [doseController, setDoseController] = useState<DoseControllerLike | null>(null);
     const [cups, setCups] = useState(1);
+    const [rejectMsg, setRejectMsg] = useState<string | null>(null);
 
     const activeSiloIdRef = useRef<string | null>(null);
     const deadManTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -59,6 +67,7 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
     useEffect(() => {
         const handleDetails = (data: MenuDetails) => {
             if (data.menuItemId === drink.id) {
+                detailsReceivedRef.current = true;
                 setDetails(data);
 
                 // Pi-Side Persistence: Load from SiloManager instead of localStorage
@@ -84,7 +93,8 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
                 if (savedVol) {
                     setCustomVolume(parseFloat(savedVol));
                 } else {
-                    setCustomVolume(data.globalNom || 200);
+                    // Sensible bean default; NEVER the old 200 foot-gun.
+                    setCustomVolume(Math.min(data.globalNom || 2, GRAV_MAX_KG));
                 }
 
                 setLoading(false);
@@ -92,11 +102,29 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
             }
         };
 
+        detailsReceivedRef.current = false;
+        setLoadError(false);
         connection.events.onDrinkDetailsReceived = handleDetails;
-        connection.requestDrinkDetails(drink.id).catch(() => setLoading(false));
 
-        return () => { connection.events.onDrinkDetailsReceived = undefined; };
-    }, [drink, connection, PREF_KEY_VALS, PREF_KEY_VOLUME, siloManager]);
+        // requestDrinkDetails resolves `false` (does NOT reject) when the bridge
+        // is down, so .catch never fires — the old code hung on "Zeroing Scale…"
+        // forever. Guard with an explicit timeout → error + retry.
+        Promise.resolve(connection.requestDrinkDetails(drink.id)).catch(() => {
+            setLoading(false);
+            setLoadError(true);
+        });
+        const loadTimeout = setTimeout(() => {
+            if (!detailsReceivedRef.current) {
+                setLoading(false);
+                setLoadError(true);
+            }
+        }, 6000);
+
+        return () => {
+            connection.events.onDrinkDetailsReceived = undefined;
+            clearTimeout(loadTimeout);
+        };
+    }, [drink, connection, PREF_KEY_VALS, PREF_KEY_VOLUME, siloManager, retryCount]);
 
     // Handle incoming updates from other clients
     useEffect(() => {
@@ -148,21 +176,22 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
             }
         };
 
-        const prevAbort = siloManager['events']?.onGlobalAbort;
-        siloManager['events'] = {
-            ...siloManager['events'],
-            onGlobalAbort: (reason) => {
-                handleGlobalAbort(reason);
-                prevAbort?.(reason);
-            }
-        };
-
+        siloManager.addGlobalAbortListener(handleGlobalAbort);
         return () => {
-            if (siloManager['events']) {
-                siloManager['events'].onGlobalAbort = prevAbort;
-            }
+            siloManager.removeGlobalAbortListener(handleGlobalAbort);
         };
     }, [siloManager, connection]);
+
+    // Surface dose rejections (e.g. another order already dispensing, hopper too
+    // full, target out of range) instead of silently doing nothing.
+    useEffect(() => {
+        const onRejected = (_siloId: string, reason: string) => {
+            setRejectMsg(reason || 'Machine busy — another order is dispensing');
+            setTimeout(() => setRejectMsg(null), 6000);
+        };
+        siloManager.addDoseRejectedListener(onRejected);
+        return () => siloManager.removeDoseRejectedListener(onRejected);
+    }, [siloManager]);
 
     // Wire Pi dose_update messages to active PiDoseProxy
     useEffect(() => {
@@ -226,8 +255,17 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
             const TOP_UP_TOLERANCE_KG = 0.1; // 100g tolerance (scale resolution)
 
             // CRITICAL: 1 App Unit (ml) = 1 Physical Kg. No division by 1000.
-            const targetKg = customVolume;
+            // Clamp to the hard cap so a stray large value can never be requested
+            // (the Pi also rejects >130 kg server-side as a second guard).
+            const targetKg = Math.min(Math.max(0, customVolume), GRAV_MAX_KG);
             const nominalKg = details.globalNom || 1;
+
+            // Confirmation before dispensing — the one irreversible action here.
+            // Echo the exact target + unit so the operator can catch a wrong value
+            // before beans start pouring into the hopper.
+            if (!window.confirm(`Dispense ${targetKg.toFixed(2)} kg into the hopper on the scale?`)) {
+                return;
+            }
 
             const runDose = async (doseTargetKg: number, topUpN: number) => {
                 // 1. Request dose from Pi (Pi tares at current scale weight)
@@ -314,6 +352,28 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
         }
     };
 
+    if (loadError) {
+        return (
+            <div className="customizer-overlay text-amber uppercase font-mono bg-black/80 flex items-center justify-center">
+                <div className="text-center p-8 glass rounded-xl border border-amber/20">
+                    <p className="mb-2">Couldn't load recipe</p>
+                    <p className="mb-4 text-zinc-400 text-xs normal-case">
+                        The bridge didn't respond. Check that it's online and retry.
+                    </p>
+                    <div className="flex gap-3 justify-center">
+                        <Button variant="secondary" onClick={onClose}>Back</Button>
+                        <Button
+                            variant="primary"
+                            onClick={() => { setLoadError(false); setLoading(true); setRetryCount(c => c + 1); }}
+                        >
+                            Retry
+                        </Button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     if (loading || isSynchronizing) {
         return (
             <ScaleLoadingScreen
@@ -339,7 +399,7 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
 
     const recipeUnit = details.ingredients[0]?.variants[0]?.unit || 'ml';
     const sliderMin = isGravimetric ? 0.1 : (details.globalMin || 10);
-    const sliderMax = isGravimetric ? 120 : (details.globalMax || 500);
+    const sliderMax = isGravimetric ? GRAV_MAX_KG : (details.globalMax || 500);
     const sliderStep = isGravimetric ? 0.1 : ((details.globalMax || 500) - (details.globalMin || 10)) > 100 ? 1 : 0.5;
 
     return (
@@ -357,6 +417,17 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
             )}
 
             <Card className="customizer-card">
+                {rejectMsg && (
+                    <div
+                        role="alert"
+                        style={{
+                            background: '#b8860b', color: '#fff', fontWeight: 700,
+                            textAlign: 'center', padding: '0.6rem 1rem',
+                        }}
+                    >
+                        ⚠ {rejectMsg}
+                    </div>
+                )}
                 <header className="customizer-header">
                     <div className="drink-info-left">
                         <h2 className="drink-title">{details.name || drink.name}</h2>
