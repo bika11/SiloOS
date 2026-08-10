@@ -28,7 +28,7 @@ export const Button: React.FC<ButtonProps> = ({
     // For now, consistent size is better.
 
     // Combine classes
-    const combinedClassName = `${baseClass} ${variantClass} ${className}`.trim();
+    const combinedClassName = `${baseClass} ${variantClass} focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 ${className}`.trim();
 
     return (
         <button
