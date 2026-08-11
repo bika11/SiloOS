@@ -39,6 +39,10 @@ SiloOS is a BLE gateway system connecting a Scanomat TopBrewer coffee machine to
 - When "not connecting", start with the `siloos-pi-recovery` skill and `.agent/RCA-2026-08-10-not-connecting.md`.
 
 ## Dosing Safety Architecture (green-coffee bean dispensing)
+> **Full maintainer handover: [`docs/DOSING_SAFETY.md`](docs/DOSING_SAFETY.md)** — read that first if
+> you're new to the project (architecture, safety layers, learning, deploy/rollback, test checklist,
+> change log, deferred work).
+
 This is repurposed coffee hardware that now dispenses **green coffee beans by weight** into a
 **fixed hopper** (~kg doses; ±100 g acceptable). Overrun = beans overflow onto the machine/floor.
 The gravimetric control loop lives on the Pi in `dose_controller.py` (`PiDoseController`) — the

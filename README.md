@@ -1,5 +1,11 @@
 # SiloOS - Native BLE Coffee Gateway
 
+> **Current use:** this is repurposed TopBrewer hardware that now **dispenses green (unroasted)
+> coffee beans by weight** into a fixed hopper (not brewing drinks). For the dosing safety &
+> accuracy design, operations, deploy/rollback, and test procedures, see
+> **[`docs/DOSING_SAFETY.md`](docs/DOSING_SAFETY.md)** (maintainer handover) and `CLAUDE.md`.
+> Note: the Pi is a **Raspberry Pi 4** (the "Pi 3B" in the diagram below is stale).
+
 SiloOS is a production-ready hardware bridge that connects a Scanomat TopBrewer coffee machine to a high-precision Laumas TLS485 scale and a modern React PWA. 
 
 By moving the Bluetooth logic from the browser to a Raspberry Pi "Brain", we achieve significantly improved reliability, better range, and multi-device support.
@@ -52,7 +58,7 @@ The dashboard is always available at these addresses:
 | Address | When to use |
 |---------|-------------|
 | `http://siloos.local:5173/` | Any device on the same Wi-Fi (auto-discovery) |
-| `http://10.0.124.90:5173/` | Same Wi-Fi (static IP, won't change) |
+| `http://siloos.local:5173/` | Same Wi-Fi (static IP, won't change) |
 | `http://100.120.122.115:5173/` | From anywhere via Tailscale |
 
 > [!TIP]
@@ -78,6 +84,6 @@ Connections to the bridge require a security token defined in `config.json`. The
 To sync changes from a development laptop to the Pi, use the `/sync-project` workflow:
 ```bash
 # From laptop
-scp -i ./siloos_key ./ble_bridge.py siloos@10.0.124.90:/home/siloos/ble_bridge.py
-ssh -i ./siloos_key siloos@10.0.124.90 "sudo systemctl restart silo-bridge"
+scp -i ./siloos_key ./ble_bridge.py siloos@siloos.local:/home/siloos/ble_bridge.py
+ssh -i ./siloos_key siloos@siloos.local "sudo systemctl restart silo-bridge"
 ```
