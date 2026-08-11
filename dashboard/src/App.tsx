@@ -3,6 +3,7 @@ import { TopBrewerConnection } from './bluetooth';
 import { DiscoveryScreen } from './features/discovery/DiscoveryScreen';
 import { DashboardScreen } from './features/dashboard/DashboardScreen';
 import { SettingsScreen } from './features/settings/SettingsScreen';
+import { ConsoleShell } from './features/console/ConsoleShell';
 import { ScaleManager } from './bluetooth/ScaleManager';
 import { SiloManager } from './bluetooth/SiloManager';
 import { logger } from './utils/logger';
@@ -50,7 +51,7 @@ function App() {
     return sm;
   });
   const [isSupported, setIsSupported] = useState(true);
-  const [appState, setAppState] = useState<'discovery' | 'dashboard' | 'settings'>('dashboard');
+  const [appState, setAppState] = useState<'discovery' | 'dashboard' | 'settings' | 'console'>('dashboard');
   const [menuItems, setMenuItems] = useState<ParsedMenuItem[]>([]);
   const [settings, setSettings] = useState(siloManager.getSettings());
   const [bridgeConnected, setBridgeConnected] = useState(siloManager.isBridgeConnected());
@@ -142,6 +143,16 @@ function App() {
           <DiscoveryScreen onConnect={handleConnect} isSupported={isSupported} />
         )}
 
+        {appState === 'console' && (
+          <ConsoleShell
+            connection={connection}
+            scaleManager={scaleManager}
+            siloManager={siloManager}
+            menuItems={menuItems.filter((item) => !(settings.hidden_recipes || []).includes(item.id))}
+            onExitToClassic={() => setAppState('dashboard')}
+          />
+        )}
+
         {(appState === 'dashboard' || appState === 'settings') && (
           <div className="screen dashboard-screen">
             {!bridgeConnected && (
@@ -177,6 +188,13 @@ function App() {
                 ></div>
               </div>
               <div className="flex gap-2">
+                <button
+                  className="btn-secondary"
+                  aria-label="Open new Console UI"
+                  onClick={() => setAppState('console')}
+                >
+                  Console
+                </button>
                 <button
                   className="btn-secondary"
                   aria-label={appState === 'settings' ? 'Back to Dashboard' : 'Open Settings'}

@@ -1,0 +1,56 @@
+/* SiloOS Console — layout scaffolding for the Amokka console.
+   Component-level styling is inline (token-driven) per the design; this file
+   holds only page-level scaffolding, anchor offsets, and motion prefs. */
+
+.console-root {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--font-brand);
+  font-weight: 300;
+  -webkit-font-smoothing: antialiased;
+  overflow-y: auto;
+  height: 100vh;
+}
+
+.console-root a {
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: color var(--dur-quick) var(--ease);
+}
+.console-root a:hover { color: var(--text-secondary); }
+.console-root ::selection { background: var(--border-color); }
+
+.console-inner {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 var(--space-screen-x) 120px;
+}
+
+.console-section {
+  /* offset so anchor jumps clear the sticky header */
+  scroll-margin-top: 120px;
+}
+
+.console-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* A bordered grid whose cells are separated by 1px hairline seams (no gaps). */
+.console-grid-seam {
+  display: grid;
+  gap: 1px;
+  background: var(--border-color);
+  border: 1px solid var(--border-color);
+  border-top: none;
+}
+.console-grid-seam > * { background: var(--bg); }
+
+@media (prefers-reduced-motion: reduce) {
+  .console-root a,
+  .console-root button { transition: none !important; }
+}
