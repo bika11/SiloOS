@@ -249,20 +249,30 @@ Off-machine regression (run after any `dose_controller.py` change): `python3 too
 
 ---
 
-## 12. Deferred / known caveats (next maintainer TODO)
+## 12. Phase 4/5 + security (DONE) and remaining caveats
 
-- **Multi-device (Phase 4):** per-drink prefs are global and broadcast (two tablets editing the same
-  drink stomp each other live); active doses are keyed by drink **name**, not a unique order id, so
-  concurrent orders of the same drink can cross-wire feedback/inventory. Recommend: keep
-  customization local until saved; key doses by a unique order/session id end-to-end.
-- **Phase 5 polish:** auto-top-up briefly flashes "Complete" between top-ups (show "Topping up N of
-  M"); `ScaleLoadingScreen`'s "Stability Confirmed" is a hardcoded 1.5 s timer, not a real
-  stability measurement.
-- **Unit display:** direct/blend/inventory panels historically showed the same weight as g / kg-1dp
-  / kg-2dp / kg-3dp. ScaleReadout is now kg; a single shared `formatWeight` util across all panels
-  is still worth doing.
-- **`config.json` hygiene:** `auth_token` is `silo-secret` (hardcoded) and the SSH key is in the
-  repo — pre-existing security debt, out of scope here but worth addressing.
-- **Hopper cap is duplicated** in Python (`config.json`) and TS (`GRAV_MAX_KG`,
-  `RecipeRunner.HOPPER_CAP_KG`); a future improvement is to broadcast it from the Pi so there's one
-  source of truth.
+**Done (branch `phase4-5-security`):**
+- **Multi-device (Phase 4):** doses now carry a unique **`orderId`** (client → `dose_request`; Pi
+  echoes it on ack/update/rejected/error) so two tablets ordering the same silo don't cross-wire —
+  profile learning still keys on silo name. Customization is **local-until-saved**: no live
+  broadcast on every slider move, no live-apply of other clients' edits; prefs persist on brew.
+- **Phase 5 polish:** shared `utils/formatWeight` (`formatKg`/`kgValue`, 1-dp default = honest 0.1 kg
+  resolution) applied to the panels; BrewMonitor shows **"Topping up N of M"**; the loading screen's
+  "Stability Confirmed" is now a **real** poll-until-steady gate (max-wait fallback), not a 1.5 s timer.
+- **Security:** `config.json` and `siloos_key`/`.pub` are **untracked** (git rm --cached; files stay
+  on disk) and gitignored; `config.example.json` added; the bridge reads the auth token from
+  **`SILOOS_AUTH_TOKEN` env** first, then `config.json`, then the `silo-secret` dev default — so a
+  strong token can be injected without committing it.
+
+**Still open (manual / operational):**
+- **Rotate the SSH key** — `siloos_key` remains in git **history** and on `origin` (GitHub). Full
+  remediation: generate a new keypair, add the new pubkey to the Pi's `~/.ssh/authorized_keys`,
+  swap the local key, remove the old key from the Pi, and consider a history rewrite. Not automated
+  here (CLAUDE.md forbids modifying `siloos_key`, and to avoid lockout).
+- **Rotate the auth-token VALUE** — the mechanism is in place but the running token may still be
+  `silo-secret`. To rotate: set a strong token in the Pi's `config.json` `auth_token` (or
+  `SILOOS_AUTH_TOKEN` in the `scale_bridge` unit) **and** `VITE_WS_AUTH_TOKEN=<same>` in
+  `dashboard/.env`, restart both services, then **reload every tablet** (they 401 with the old token
+  until reloaded). Roll back to `silo-secret` if a client can't reconnect.
+- **Hopper cap duplicated** in Python (`config.json`) and TS (`GRAV_MAX_KG`,
+  `RecipeRunner.HOPPER_CAP_KG`); consider broadcasting it from the Pi for one source of truth.
