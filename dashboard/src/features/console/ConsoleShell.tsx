@@ -12,7 +12,7 @@ import type { SiloManager } from '../../bluetooth/SiloManager';
 import type { ParsedMenuItem } from '../../entities/Menu';
 import { logger } from '../../utils/logger';
 import { StatusDot } from '../../components/amokka';
-import { useConnectionStatus, useHopperWeight, useLiveDose, useScaleFeed, useSettings } from './useConsoleData';
+import { useConnectionStatus, useDoseHistory, useDoseParams, useHopperWeight, useLearnedProfiles, useLiveDose, useScaleFeed, useSettings } from './useConsoleData';
 import { useSilos } from './siloModel';
 import { useDoseRunner } from './useDoseRunner';
 import { LiveSection } from './sections/LiveSection';
@@ -49,6 +49,9 @@ export function ConsoleShell({ connection, siloManager, menuItems, onExitToClass
   const hopperWeight = useHopperWeight(siloManager);
   const dose = useLiveDose(siloManager);
   const settings = useSettings(siloManager);
+  const learnedProfiles = useLearnedProfiles(siloManager);
+  const doseParams = useDoseParams(siloManager);
+  const doseHistory = useDoseHistory(siloManager);
   const hidden = (settings.hidden_recipes as number[]) ?? [];
   const hiddenKey = hidden.join(',');
   const visibleItems = useMemo(
@@ -57,7 +60,7 @@ export function ConsoleShell({ connection, siloManager, menuItems, onExitToClass
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [menuItems, hiddenKey],
   );
-  const silos = useSilos(siloManager, visibleItems);
+  const silos = useSilos(siloManager, visibleItems, learnedProfiles);
   const runner = useDoseRunner(siloManager, connection);
 
   const live = dose.active || runner.busy;
@@ -197,9 +200,9 @@ export function ConsoleShell({ connection, siloManager, menuItems, onExitToClass
 
         <RecipesSection siloManager={siloManager} silos={silos} runner={runner} />
 
-        <PerformanceSection silos={silos} />
+        <PerformanceSection silos={silos} history={doseHistory} />
 
-        <PrecisionSection siloManager={siloManager} silos={silos} />
+        <PrecisionSection siloManager={siloManager} silos={silos} doseParams={doseParams} />
 
         <SettingsSection siloManager={siloManager} menuItems={menuItems} settings={settings} />
       </div>

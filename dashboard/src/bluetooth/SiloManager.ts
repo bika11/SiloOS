@@ -43,6 +43,12 @@ export class SiloManager {
     private profiles: Record<string, any> = {};
     private recipes: Record<string, Recipe> = {};
 
+    // Console Phase 5 (additive): safety backstops, learned profiles (the real
+    // silo_profiles.json source), and the dose-history summary from the bridge.
+    private doseParams: Record<string, number | boolean> | null = null;
+    private learnedProfiles: Record<string, any> = {};
+    private doseHistory: any = null;
+
     // Latest scale feed status from the bridge ('ok' | 'stale').
     private scaleStatus: 'ok' | 'stale' = 'ok';
 
@@ -64,7 +70,34 @@ export class SiloManager {
         scaleStatus: ((status: 'ok' | 'stale') => void)[];
         doseError: ((siloId: string, error: string) => void)[];
         globalAbort: ((reason: string) => void)[];
-    } = { settings: [], status: [], notifications: [], sfwu: [], recipes: [], doseAck: [], doseUpdate: [], doseRejected: [], weight: [], connection: [], scaleStatus: [], doseError: [], globalAbort: [] };
+        // Console Phase 5 (additive)
+        doseParams: ((params: Record<string, number | boolean>) => void)[];
+        doseParamsRejected: ((reason: string) => void)[];
+        learnedProfiles: ((profiles: Record<string, any>) => void)[];
+        doseHistory: ((history: any) => void)[];
+    } = { settings: [], status: [], notifications: [], sfwu: [], recipes: [], doseAck: [], doseUpdate: [], doseRejected: [], weight: [], connection: [], scaleStatus: [], doseError: [], globalAbort: [], doseParams: [], doseParamsRejected: [], learnedProfiles: [], doseHistory: [] };
+
+    // --- Console Phase 5 accessors + listeners (additive) ---
+    public getDoseParams(): Record<string, number | boolean> | null { return this.doseParams; }
+    public getLearnedProfiles(): Record<string, any> { return this.learnedProfiles; }
+    public getDoseHistory(): any { return this.doseHistory; }
+    public addDoseParamsListener(cb: (p: Record<string, number | boolean>) => void) { this.listeners.doseParams.push(cb); }
+    public removeDoseParamsListener(cb: (p: Record<string, number | boolean>) => void) { this.listeners.doseParams = this.listeners.doseParams.filter(l => l !== cb); }
+    public addDoseParamsRejectedListener(cb: (reason: string) => void) { this.listeners.doseParamsRejected.push(cb); }
+    public removeDoseParamsRejectedListener(cb: (reason: string) => void) { this.listeners.doseParamsRejected = this.listeners.doseParamsRejected.filter(l => l !== cb); }
+    public addLearnedProfilesListener(cb: (p: Record<string, any>) => void) { this.listeners.learnedProfiles.push(cb); }
+    public removeLearnedProfilesListener(cb: (p: Record<string, any>) => void) { this.listeners.learnedProfiles = this.listeners.learnedProfiles.filter(l => l !== cb); }
+    public addDoseHistoryListener(cb: (h: any) => void) { this.listeners.doseHistory.push(cb); }
+    public removeDoseHistoryListener(cb: (h: any) => void) { this.listeners.doseHistory = this.listeners.doseHistory.filter(l => l !== cb); }
+
+    /** Request a validated safety-param update on the bridge (persists to config.json). */
+    public updateDoseParams(params: Record<string, number | boolean>): void {
+        this.send({ type: 'update_dose_params', params });
+    }
+    /** Reset a silo's learned profile (silo_profiles.json) on the bridge. */
+    public relearnSilo(siloId: string): void {
+        this.send({ type: 'relearn_silo', siloId });
+    }
 
     public addGlobalAbortListener(cb: (reason: string) => void) { this.listeners.globalAbort.push(cb); }
     public removeGlobalAbortListener(cb: (reason: string) => void) { this.listeners.globalAbort = this.listeners.globalAbort.filter(l => l !== cb); }
@@ -177,6 +210,19 @@ export class SiloManager {
                             this.recipes = data.recipes;
                             this.listeners.recipes.forEach(l => l(data.recipes));
                         }
+                        // Console Phase 5 additive fields
+                        if (data.safety) {
+                            this.doseParams = data.safety;
+                            this.listeners.doseParams.forEach(l => l(data.safety));
+                        }
+                        if (data.learned_profiles) {
+                            this.learnedProfiles = data.learned_profiles;
+                            this.listeners.learnedProfiles.forEach(l => l(data.learned_profiles));
+                        }
+                        if (data.dose_history) {
+                            this.doseHistory = data.dose_history;
+                            this.listeners.doseHistory.forEach(l => l(data.dose_history));
+                        }
                     }
 
                     // 2. Weight handling
@@ -204,6 +250,28 @@ export class SiloManager {
                     if (data.type === 'recipes_update') {
                         this.recipes = data.recipes;
                         this.listeners.recipes.forEach(l => l(data.recipes));
+                    }
+                    // Console Phase 5 additive updates
+                    if (data.type === 'dose_params_update' && data.params) {
+                        this.doseParams = data.params;
+                        this.listeners.doseParams.forEach(l => l(data.params));
+                    }
+                    if (data.type === 'dose_params_rejected') {
+                        this.listeners.doseParamsRejected.forEach(l => l(data.reason || 'Rejected'));
+                    }
+                    if (data.type === 'learned_profiles_update' && data.learned_profiles) {
+                        this.learnedProfiles = data.learned_profiles;
+                        this.listeners.learnedProfiles.forEach(l => l(data.learned_profiles));
+                    }
+                    if (data.type === 'dose_history_update') {
+                        if (data.history) {
+                            this.doseHistory = data.history;
+                            this.listeners.doseHistory.forEach(l => l(data.history));
+                        }
+                        if (data.learned_profiles) {
+                            this.learnedProfiles = data.learned_profiles;
+                            this.listeners.learnedProfiles.forEach(l => l(data.learned_profiles));
+                        }
                     }
 
                     // 4. Machine connection status handling

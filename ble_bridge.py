@@ -30,7 +30,12 @@ import binascii
 import subprocess # For hard resets
 import shutil # For cross-platform executable lookup (bluetoothctl)
 import uuid
-from dose_controller import PiDoseController, set_audit_fn, send_cancel_to_topbrewer
+from dose_controller import (
+    PiDoseController, set_audit_fn, send_cancel_to_topbrewer,
+    save_profile as _save_profile, DEFAULT_PROFILE as _DEFAULT_PROFILE,
+    PROFILES_FILE as _PROFILES_FILE,
+)
+import dose_history  # Console Phase 5: additive, isolated dose-history store
 
 # --- LOGGING SETUP ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -144,6 +149,96 @@ MAX_TARGET_KG   = float(_SAFETY.get("max_target_kg", 130.0))
 MAX_DISPENSE_S  = float(_SAFETY.get("max_dispense_s", 600.0))
 ENFORCE_SCALE_CRC = bool(_SAFETY.get("enforce_scale_crc", True))
 
+
+# --- CONSOLE PHASE 5 HELPERS (additive; do NOT alter the control loop) ---
+def _safety_public():
+    """Current absolute safety backstops, for the Console Precision section."""
+    return {
+        "hopper_abort_kg": HOPPER_ABORT_KG,
+        "max_target_kg": MAX_TARGET_KG,
+        "max_dispense_s": MAX_DISPENSE_S,
+        "enforce_scale_crc": ENFORCE_SCALE_CRC,
+    }
+
+
+def _learned_profiles():
+    """Authoritative learned profiles (silo_profiles.json, written by the dose
+    controller) translated to the camelCase the dashboard expects. This is the
+    real source the loop uses — config.profiles is a separate legacy store."""
+    out = {}
+    try:
+        with open(_PROFILES_FILE, "r") as f:
+            raw = json.load(f)
+        for silo, p in raw.items():
+            out[silo] = {
+                "flowRateKgPerS": p.get("flow_rate_kg_per_s", 0.0),
+                "valveDelayS": p.get("valve_delay_s", 0.0),
+                "overshootKg": p.get("overshoot_kg"),
+                "totalDoses": p.get("total_doses", 0),
+                "recentOvershootsKg": [],
+            }
+    except Exception:
+        pass
+    return out
+
+
+def update_safety_params(new: dict):
+    """Validated, clamped update of the absolute safety backstops. Persists to
+    config.json and updates the module globals so the NEXT dose uses them. Does
+    NOT change the control-loop algorithm; callers refuse it while a dose is live."""
+    global HOPPER_ABORT_KG, MAX_TARGET_KG, MAX_DISPENSE_S, ENFORCE_SCALE_CRC
+
+    def clamp(v, lo, hi, cur):
+        try:
+            v = float(v)
+        except (TypeError, ValueError):
+            return cur
+        return max(lo, min(hi, v))
+
+    if "hopper_abort_kg" in new:
+        HOPPER_ABORT_KG = clamp(new["hopper_abort_kg"], 10.0, 300.0, HOPPER_ABORT_KG)
+    if "max_target_kg" in new:
+        MAX_TARGET_KG = clamp(new["max_target_kg"], 1.0, 300.0, MAX_TARGET_KG)
+    if "max_dispense_s" in new:
+        MAX_DISPENSE_S = clamp(new["max_dispense_s"], 30.0, 3600.0, MAX_DISPENSE_S)
+    if "enforce_scale_crc" in new:
+        ENFORCE_SCALE_CRC = bool(new["enforce_scale_crc"])
+    config.data["safety"] = _safety_public()
+    config.save()
+    logger.info(f"Safety params updated: {_safety_public()}")
+
+
+def _maybe_record_history(msg):
+    """Record completed/aborted doses to the additive history store and push an
+    update. Called for every broadcast; no-op unless it is a final dose_update."""
+    try:
+        if not isinstance(msg, dict) or msg.get("type") != "dose_update":
+            return
+        state = msg.get("state")
+        if state == "done" and msg.get("result"):
+            r = msg["result"]
+            dose_history.record(
+                silo=msg.get("siloId", "?"),
+                target_kg=r.get("targetKg"), actual_kg=r.get("actualKg"),
+                error_kg=r.get("overshootKg"), duration_ms=r.get("durationMs"),
+                source="dose", aborted=False,
+            )
+            asyncio.ensure_future(broadcast_relay({
+                "type": "dose_history_update",
+                "history": dose_history.summary(),
+                "learned_profiles": _learned_profiles(),
+            }))
+        elif state == "aborted":
+            dose_history.record(silo=msg.get("siloId", "?"), aborted=True,
+                                reason=msg.get("reason"))
+            asyncio.ensure_future(broadcast_relay({
+                "type": "dose_history_update",
+                "history": dose_history.summary(),
+            }))
+    except Exception:
+        pass  # history must NEVER affect dosing
+
+
 # --- SCALE FRAME DECODING ---
 SCALE_DIVISOR = 10.0             # raw uint16 -> kg (0.1 kg resolution); confirm with 0b
 SCALE_MAX_PLAUSIBLE_KG = 300.0   # reject frames decoding above this (garbage / high word)
@@ -211,6 +306,7 @@ def create_bookoo_packet(weight_float):
     return bytes(packet)
 
 async def broadcast_relay(msg_dict):
+    _maybe_record_history(msg_dict)  # additive: capture final dose states (even with no clients)
     if not connected_websockets: return
     data = json.dumps(msg_dict)
     for ws in set(connected_websockets):
@@ -260,7 +356,11 @@ async def websocket_handler(request):
             "settings": config.settings,
             "preferences": config.preferences,
             "profiles": config.profiles,
-            "recipes": config.recipes
+            "recipes": config.recipes,
+            # Console Phase 5 additions (additive keys; legacy clients ignore them):
+            "learned_profiles": _learned_profiles(),
+            "safety": _safety_public(),
+            "dose_history": dose_history.summary()
         }))
         
         # Send machine status
@@ -324,6 +424,30 @@ async def websocket_handler(request):
                         config.data["recipes"] = data.get("recipes", {})
                         config.save()
                         await broadcast_relay({"type": "recipes_update", "recipes": config.recipes})
+
+                    # Console Phase 5: edit the absolute safety backstops. Refused
+                    # while a dose is live; server-side clamps stay authoritative.
+                    elif data.get("type") == "update_dose_params":
+                        if active_controller and active_controller.state in ('armed', 'running', 'stopping', 'settling'):
+                            await ws.send_str(json.dumps({
+                                "type": "dose_params_rejected",
+                                "reason": "A dose is active — stop it before changing safety limits"
+                            }))
+                        else:
+                            update_safety_params(data.get("params", {}))
+                            audit("dose_params_update", params=_safety_public(),
+                                  client=str(request.remote))
+                            await broadcast_relay({"type": "dose_params_update", "params": _safety_public()})
+
+                    # Console Phase 5: reset a silo's LEARNED profile (silo_profiles.json
+                    # — the real source the loop reads), not the legacy config.profiles.
+                    elif data.get("type") == "relearn_silo":
+                        silo_id = data.get("siloId")
+                        if silo_id:
+                            _save_profile(silo_id, dict(_DEFAULT_PROFILE))
+                            audit("relearn_silo", silo_id=silo_id, client=str(request.remote))
+                            await broadcast_relay({"type": "learned_profiles_update",
+                                                   "learned_profiles": _learned_profiles()})
 
                     # 4. Handle Machine Commands (Relay to BLE)
                     elif data.get("type") == "write" and topbrewer_client:
@@ -614,6 +738,7 @@ async def run_topbrewer_client():
             await asyncio.sleep(4)
 
 async def main():
+    dose_history.init()  # Console Phase 5: additive dose-history store
     service = None
     if HAVE_BLUEZ:
         try:

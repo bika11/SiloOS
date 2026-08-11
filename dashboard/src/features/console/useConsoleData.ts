@@ -21,6 +21,39 @@ export function useSettings(siloManager: SiloManager) {
   return settings;
 }
 
+/** Learned per-silo profiles (silo_profiles.json via the bridge) — the real source. */
+export function useLearnedProfiles(siloManager: SiloManager) {
+  const [profiles, setProfiles] = useState<Record<string, any>>(siloManager.getLearnedProfiles());
+  useEffect(() => {
+    const on = (p: Record<string, any>) => setProfiles(p);
+    siloManager.addLearnedProfilesListener(on);
+    return () => siloManager.removeLearnedProfilesListener(on);
+  }, [siloManager]);
+  return profiles;
+}
+
+/** Absolute safety backstops (config.json → safety) from the bridge. */
+export function useDoseParams(siloManager: SiloManager) {
+  const [params, setParams] = useState<Record<string, number | boolean> | null>(siloManager.getDoseParams());
+  useEffect(() => {
+    const on = (p: Record<string, number | boolean>) => setParams(p);
+    siloManager.addDoseParamsListener(on);
+    return () => siloManager.removeDoseParamsListener(on);
+  }, [siloManager]);
+  return params;
+}
+
+/** Dose-history summary for the Performance section. */
+export function useDoseHistory(siloManager: SiloManager) {
+  const [history, setHistory] = useState<any>(siloManager.getDoseHistory());
+  useEffect(() => {
+    const on = (h: any) => setHistory(h);
+    siloManager.addDoseHistoryListener(on);
+    return () => siloManager.removeDoseHistoryListener(on);
+  }, [siloManager]);
+  return history;
+}
+
 /** Bridge + machine connection flags. */
 export function useConnectionStatus(siloManager: SiloManager) {
   const [bridgeConnected, setBridgeConnected] = useState(siloManager.isBridgeConnected());

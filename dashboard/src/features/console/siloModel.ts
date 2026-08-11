@@ -53,33 +53,25 @@ export function buildSilos(
 }
 
 /**
- * Read-only silo list, refreshed on a light poll (preferences/profiles are
- * synced into SiloManager by the bridge; there's no push listener for either,
- * matching the existing SiloInventory 2 s poll).
+ * Read-only silo list. Inventory is light-polled (no push listener, matching the
+ * existing SiloInventory 2 s poll); `profiles` are passed in from the bridge's
+ * authoritative learned-profile stream (useLearnedProfiles).
  */
-export function useSilos(siloManager: SiloManager, menuItems: ParsedMenuItem[]): ConsoleSilo[] {
-  const [silos, setSilos] = useState<ConsoleSilo[]>(() =>
-    buildSilos(
-      menuItems,
-      siloManager.getPreferences().inventory || {},
-      siloManager.getProfiles() as Record<string, SiloProfile>,
-    ),
+export function useSilos(
+  siloManager: SiloManager,
+  menuItems: ParsedMenuItem[],
+  profiles: Record<string, SiloProfile>,
+): ConsoleSilo[] {
+  const [inventory, setInventory] = useState<Record<string, SiloInventoryState>>(
+    () => siloManager.getPreferences().inventory || {},
   );
 
   useEffect(() => {
-    const refresh = () => {
-      setSilos(
-        buildSilos(
-          menuItems,
-          siloManager.getPreferences().inventory || {},
-          siloManager.getProfiles() as Record<string, SiloProfile>,
-        ),
-      );
-    };
+    const refresh = () => setInventory(siloManager.getPreferences().inventory || {});
     refresh();
     const id = setInterval(refresh, 2000);
     return () => clearInterval(id);
-  }, [siloManager, menuItems]);
+  }, [siloManager]);
 
-  return silos;
+  return buildSilos(menuItems, inventory, profiles);
 }
