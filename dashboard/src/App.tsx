@@ -149,7 +149,7 @@ function App() {
             connection={connection}
             scaleManager={scaleManager}
             siloManager={siloManager}
-            menuItems={menuItems.filter((item) => !(settings.hidden_recipes || []).includes(item.id))}
+            menuItems={menuItems}
             onExitToClassic={() => setAppState('dashboard')}
           />
         )}

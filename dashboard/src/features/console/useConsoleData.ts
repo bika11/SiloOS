@@ -10,6 +10,17 @@
 import { useEffect, useState } from 'react';
 import type { SiloManager, PiDoseMessage } from '../../bluetooth/SiloManager';
 
+/** Live settings object from the bridge (theme, hidden_recipes, …). */
+export function useSettings(siloManager: SiloManager) {
+  const [settings, setSettings] = useState<Record<string, unknown>>(siloManager.getSettings());
+  useEffect(() => {
+    const onSettings = (s: Record<string, unknown>) => setSettings(s);
+    siloManager.addSettingsListener(onSettings);
+    return () => siloManager.removeSettingsListener(onSettings);
+  }, [siloManager]);
+  return settings;
+}
+
 /** Bridge + machine connection flags. */
 export function useConnectionStatus(siloManager: SiloManager) {
   const [bridgeConnected, setBridgeConnected] = useState(siloManager.isBridgeConnected());

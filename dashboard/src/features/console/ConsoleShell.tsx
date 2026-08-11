@@ -5,14 +5,14 @@
  * Control note: the E-stop reuses the existing abort path (siloManager.abortAll
  * + connection.cancelOrder) — the same one DashboardScreen uses. No new control.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { TopBrewerConnection } from '../../bluetooth';
 import type { ScaleManager } from '../../bluetooth/ScaleManager';
 import type { SiloManager } from '../../bluetooth/SiloManager';
 import type { ParsedMenuItem } from '../../entities/Menu';
 import { logger } from '../../utils/logger';
 import { StatusDot } from '../../components/amokka';
-import { useConnectionStatus, useHopperWeight, useLiveDose, useScaleFeed } from './useConsoleData';
+import { useConnectionStatus, useHopperWeight, useLiveDose, useScaleFeed, useSettings } from './useConsoleData';
 import { useSilos } from './siloModel';
 import { useDoseRunner } from './useDoseRunner';
 import { LiveSection } from './sections/LiveSection';
@@ -20,7 +20,7 @@ import { SilosSection } from './sections/SilosSection';
 import { RecipesSection } from './sections/RecipesSection';
 import { PerformanceSection } from './sections/PerformanceSection';
 import { PrecisionSection } from './sections/PrecisionSection';
-import { SectionHead, SectionPlaceholder } from './sectionParts';
+import { SettingsSection } from './sections/SettingsSection';
 import './console.css';
 
 interface ConsoleShellProps {
@@ -48,7 +48,16 @@ export function ConsoleShell({ connection, siloManager, menuItems, onExitToClass
   const scaleStatus = useScaleFeed(siloManager);
   const hopperWeight = useHopperWeight(siloManager);
   const dose = useLiveDose(siloManager);
-  const silos = useSilos(siloManager, menuItems);
+  const settings = useSettings(siloManager);
+  const hidden = (settings.hidden_recipes as number[]) ?? [];
+  const hiddenKey = hidden.join(',');
+  const visibleItems = useMemo(
+    () => menuItems.filter((i) => !hidden.includes(i.id)),
+    // hiddenKey captures hidden contents; menuItems identity is stable per menu sync
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [menuItems, hiddenKey],
+  );
+  const silos = useSilos(siloManager, visibleItems);
   const runner = useDoseRunner(siloManager, connection);
 
   const live = dose.active || runner.busy;
@@ -192,10 +201,7 @@ export function ConsoleShell({ connection, siloManager, menuItems, onExitToClass
 
         <PrecisionSection siloManager={siloManager} silos={silos} />
 
-        <section id="settings" className="console-section" style={{ paddingTop: 72 }}>
-          <SectionHead title="Settings" />
-          <SectionPlaceholder note="Bridge info, behaviour toggles, recipe visibility — Phase 6." />
-        </section>
+        <SettingsSection siloManager={siloManager} menuItems={menuItems} settings={settings} />
       </div>
     </div>
   );
