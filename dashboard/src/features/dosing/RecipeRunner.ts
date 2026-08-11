@@ -72,8 +72,13 @@ export class RecipeRunner {
     /** Hopper capacity (kg) — mirrors the Pi's safety.hopper_abort_kg. */
     private static readonly HOPPER_CAP_KG = 130;
 
-    public start(): void {
-        if (this.state === 'running') return;
+    /**
+     * Begin the sequence. Returns synchronously whether it actually started, so
+     * the caller can show a message and avoid locking the UI when the blend is
+     * refused up front (the abort happens before event handlers are wired).
+     */
+    public start(): { started: boolean; reason?: string } {
+        if (this.state === 'running') return { started: false, reason: 'Sequence already running' };
 
         // Upfront overflow check: refuse the WHOLE blend before dispensing anything
         // if it can't fit given what's already in the hopper. The Pi's per-step
@@ -81,12 +86,11 @@ export class RecipeRunner {
         // clean early block instead of dispensing partway then rejecting mid-sequence.
         const currentKg = this.siloManager.getWeight() || 0;
         if (currentKg + this.totalTargetKg > RecipeRunner.HOPPER_CAP_KG) {
-            const reason = `Blend won't fit — hopper ${currentKg.toFixed(1)}kg + ${this.totalTargetKg.toFixed(1)}kg ` +
-                `exceeds ${RecipeRunner.HOPPER_CAP_KG}kg cap. Empty the hopper first.`;
+            const reason = `Blend won't fit — hopper ${currentKg.toFixed(1)} kg + ${this.totalTargetKg.toFixed(1)} kg ` +
+                `exceeds ${RecipeRunner.HOPPER_CAP_KG} kg cap. Empty the hopper first.`;
             logger.warn('RecipeRunner', reason);
             this.state = 'aborted';
-            this.events.onAbort?.(reason);
-            return;
+            return { started: false, reason };
         }
 
         logger.info('RecipeRunner',
@@ -100,6 +104,7 @@ export class RecipeRunner {
         this.stepResults = [];
 
         void this.runNextStep();
+        return { started: true };
     }
 
     private async runNextStep(): Promise<void> {

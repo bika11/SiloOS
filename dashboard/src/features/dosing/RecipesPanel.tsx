@@ -25,6 +25,8 @@ export const RecipesPanel: React.FC<RecipesPanelProps> = ({
     const [editingRecipe, setEditingRecipe] = useState<Recipe | undefined>();
     const [activeRunner, setActiveRunner] = useState<RecipeRunner | null>(null);
     const [runnerUpdate, setRunnerUpdate] = useState<RecipeUpdate | null>(null);
+    const [sequenceMsg, setSequenceMsg] = useState<string | null>(null);
+    const [abortReason, setAbortReason] = useState<string | null>(null);
 
     // Sync recipes from Pi and listen for global aborts
     useEffect(() => {
@@ -69,11 +71,13 @@ export const RecipesPanel: React.FC<RecipesPanelProps> = ({
                 setRunnerUpdate(null);
             }, 5000);
         };
-        activeRunner.events.onAbort = () => {
+        activeRunner.events.onAbort = (reason: string) => {
+            setAbortReason(reason || 'Sequence aborted');
             setTimeout(() => {
                 setActiveRunner(null);
                 setRunnerUpdate(null);
-            }, 3000);
+                setAbortReason(null);
+            }, 4000);
         };
 
         return () => {
@@ -102,8 +106,16 @@ export const RecipesPanel: React.FC<RecipesPanelProps> = ({
         if (activeRunner || !connection) return;
 
         const runner = new RecipeRunner(recipe, siloManager, connection);
+        // start() reports synchronously if it refused (e.g. blend won't fit). In
+        // that case do NOT set activeRunner — otherwise the buttons stay greyed
+        // with no overlay until a reload. Just show the reason.
+        const result = runner.start();
+        if (!result.started) {
+            setSequenceMsg(result.reason || 'Sequence could not start');
+            setTimeout(() => setSequenceMsg(null), 8000);
+            return;
+        }
         setActiveRunner(runner);
-        runner.start();
     };
 
     // --- Editor Overlay ---
@@ -215,6 +227,9 @@ export const RecipesPanel: React.FC<RecipesPanelProps> = ({
                     <span className={`text-xs font-mono uppercase tracking-widest ${isFinished ? '' : 'animate-pulse'} ${isDone ? 'text-green-500' : isAborted ? 'text-red-500' : isSettling ? 'text-blue-400' : 'text-amber'}`}>
                         {isDone ? '✓ Blend Complete' : isAborted ? '✕ Aborted' : isSettling ? 'Settling — switching silo...' : 'Dispensing...'}
                     </span>
+                    {isAborted && abortReason && (
+                        <div className="text-[11px] font-mono text-red-400 mt-1 normal-case">{abortReason}</div>
+                    )}
                 </div>
             </Card>
         );
@@ -223,6 +238,18 @@ export const RecipesPanel: React.FC<RecipesPanelProps> = ({
     // --- Recipe List ---
     return (
         <div className="mt-6">
+            {sequenceMsg && (
+                <div
+                    role="alert"
+                    style={{
+                        background: '#b8860b', color: '#fff', fontWeight: 700,
+                        textAlign: 'center', padding: '0.7rem 1rem', borderRadius: '0.5rem',
+                        marginBottom: '1rem',
+                    }}
+                >
+                    ⚠ {sequenceMsg}
+                </div>
+            )}
             <div className="flex justify-between items-center mb-4 mt-8">
                 <h3 className="text-xs font-mono text-zinc-500 uppercase tracking-widest">
                     Custom Blends
