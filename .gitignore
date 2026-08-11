@@ -17,3 +17,6 @@ topbrewer_logs_*.txt
 
 # Dashboard build artifacts if any
 dashboard/dist/
+
+# Runtime config (contains auth_token) — keep local, use config.example.json as template
+config.json

@@ -1,0 +1,19 @@
+{
+  "_comment": "Copy to config.json and fill in real values. config.json is gitignored (contains auth_token). The bridge also accepts SILOOS_AUTH_TOKEN as an env override.",
+  "topbrewer_mac": "AA:BB:CC:DD:EE:FF",
+  "laumas_port": "/dev/serial/by-id/usb-FTDI_USB-RS485_Cable_XXXXXXXX-if00-port0",
+  "laumas_baud": 115200,
+  "ws_port": 8765,
+  "auth_token": "CHANGE-ME-to-a-long-random-token",
+  "tare_offset": 0.0,
+  "safety": {
+    "hopper_abort_kg": 130.0,
+    "max_target_kg": 130.0,
+    "max_dispense_s": 600.0,
+    "enforce_scale_crc": true
+  },
+  "settings": { "theme": "dark", "hidden_recipes": [] },
+  "preferences": {},
+  "profiles": {},
+  "recipes": {}
+}

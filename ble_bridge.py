@@ -133,7 +133,9 @@ LAUMAS_PORT = config.laumas_port
 LAUMAS_BAUD = config.laumas_baud
 WS_PORT     = config.ws_port
 TOPBREWER_MAC = config.topbrewer_mac
-AUTH_TOKEN  = config.auth_token
+# Auth token precedence: SILOOS_AUTH_TOKEN env var (preferred — inject via systemd,
+# never committed) > config.json auth_token > built-in 'silo-secret' dev default.
+AUTH_TOKEN  = os.environ.get("SILOOS_AUTH_TOKEN") or config.auth_token
 
 # --- SAFETY LIMITS (absolute spill/overflow backstops) ---
 _SAFETY = config.data.get("safety", {})
