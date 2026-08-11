@@ -16,6 +16,10 @@ import { useConnectionStatus, useHopperWeight, useLiveDose, useScaleFeed } from 
 import { useSilos } from './siloModel';
 import { useDoseRunner } from './useDoseRunner';
 import { LiveSection } from './sections/LiveSection';
+import { SilosSection } from './sections/SilosSection';
+import { RecipesSection } from './sections/RecipesSection';
+import { PerformanceSection } from './sections/PerformanceSection';
+import { PrecisionSection } from './sections/PrecisionSection';
 import { SectionHead, SectionPlaceholder } from './sectionParts';
 import './console.css';
 
@@ -180,25 +184,13 @@ export function ConsoleShell({ connection, siloManager, menuItems, onExitToClass
           runner={runner}
         />
 
-        <section id="silos" className="console-section" style={{ paddingTop: 72 }}>
-          <SectionHead title="Silos & green bean inventory" />
-          <SectionPlaceholder note="Silo inventory & learned profiles — Phase 2." />
-        </section>
+        <SilosSection siloManager={siloManager} silos={silos} />
 
-        <section id="recipes" className="console-section" style={{ paddingTop: 72 }}>
-          <SectionHead title="Blend recipes" />
-          <SectionPlaceholder note="Blend recipes (silo-blend view over the existing model) — Phase 3." />
-        </section>
+        <RecipesSection siloManager={siloManager} silos={silos} runner={runner} />
 
-        <section id="performance" className="console-section" style={{ paddingTop: 72 }}>
-          <SectionHead title="Performance" />
-          <SectionPlaceholder note="Dispensed totals, accuracy log, error distribution — Phase 4/5 (needs bridge history)." />
-        </section>
+        <PerformanceSection silos={silos} />
 
-        <section id="precision" className="console-section" style={{ paddingTop: 72 }}>
-          <SectionHead title="Precision & learning" />
-          <SectionPlaceholder note="Control parameters & learned profiles — Phase 4 (read-only) / Phase 5 (write-back)." />
-        </section>
+        <PrecisionSection siloManager={siloManager} silos={silos} />
 
         <section id="settings" className="console-section" style={{ paddingTop: 72 }}>
           <SectionHead title="Settings" />
