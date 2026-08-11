@@ -346,6 +346,8 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
                     const shortfall = result.targetKg - result.actualKg;
                     if (shortfall > TOP_UP_TOLERANCE_KG && topUpN < MAX_TOP_UPS) {
                         logger.info('Customizer', `Auto top-up #${topUpN + 1}: shortfall=${shortfall.toFixed(3)}kg`);
+                        // Console Phase 7: additive telemetry for the top-up-corrections metric.
+                        siloManager.sendTelemetry({ type: 'topup_event', siloId, shortfallKg: shortfall });
                         runDose(shortfall, topUpN + 1).catch(err =>
                             logger.error('Customizer', 'Top-up failed', err)
                         );

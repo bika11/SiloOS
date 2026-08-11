@@ -45,10 +45,31 @@ def init():
                 )"""
             )
             c.execute("CREATE INDEX IF NOT EXISTS idx_doses_ts ON doses(ts)")
+            c.execute(
+                """CREATE TABLE IF NOT EXISTS topups (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ts REAL NOT NULL,
+                    silo TEXT,
+                    shortfall_kg REAL
+                )"""
+            )
             c.commit()
         _ready = True
     except Exception:
         _ready = False
+
+
+def record_topup(silo=None, shortfall_kg=None, ts=None):
+    """Append a scaled-top-up correction event. Guarded — never raises."""
+    try:
+        if not _ready:
+            init()
+        with _lock, contextlib.closing(_connect()) as c:
+            c.execute("INSERT INTO topups (ts, silo, shortfall_kg) VALUES (?, ?, ?)",
+                      (ts or time.time(), silo, shortfall_kg))
+            c.commit()
+    except Exception:
+        pass
 
 
 def record(silo, target_kg=None, actual_kg=None, error_kg=None,
@@ -79,6 +100,8 @@ def _empty_summary():
         "recentBySilo": {},
         "abortCount": 0,
         "totalDoses": 0,
+        "topUpCount": 0,
+        "topUpMeanShortfall": 0,
     }
 
 
@@ -165,6 +188,12 @@ def summary(recent=12, tol_kg=0.1):
                 "strftime('%s','now','-6 days')")
             total_done = scalar(f"SELECT COUNT(*) FROM doses WHERE {done_where}")
 
+            tu = c.execute(
+                "SELECT COUNT(*), COALESCE(AVG(shortfall_kg),0) FROM topups "
+                "WHERE ts >= strftime('%s','now','-6 days')").fetchone()
+            topup_count = (tu[0] if tu else 0) or 0
+            topup_mean = round((tu[1] if tu else 0) or 0, 3)
+
             return {
                 "kpis": {
                     "todayKg": today_kg, "todayCount": today_n,
@@ -178,6 +207,8 @@ def summary(recent=12, tol_kg=0.1):
                 "recentBySilo": recent_by_silo,
                 "abortCount": abort_count,
                 "totalDoses": total_done,
+                "topUpCount": topup_count,
+                "topUpMeanShortfall": topup_mean,
             }
     except Exception:
         return _empty_summary()

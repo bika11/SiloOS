@@ -48,6 +48,7 @@ export class SiloManager {
     private doseParams: Record<string, number | boolean> | null = null;
     private learnedProfiles: Record<string, any> = {};
     private doseHistory: any = null;
+    private bridgeStats: any = null;
 
     // Latest scale feed status from the bridge ('ok' | 'stale').
     private scaleStatus: 'ok' | 'stale' = 'ok';
@@ -75,12 +76,16 @@ export class SiloManager {
         doseParamsRejected: ((reason: string) => void)[];
         learnedProfiles: ((profiles: Record<string, any>) => void)[];
         doseHistory: ((history: any) => void)[];
-    } = { settings: [], status: [], notifications: [], sfwu: [], recipes: [], doseAck: [], doseUpdate: [], doseRejected: [], weight: [], connection: [], scaleStatus: [], doseError: [], globalAbort: [], doseParams: [], doseParamsRejected: [], learnedProfiles: [], doseHistory: [] };
+        bridgeStats: ((stats: any) => void)[];
+    } = { settings: [], status: [], notifications: [], sfwu: [], recipes: [], doseAck: [], doseUpdate: [], doseRejected: [], weight: [], connection: [], scaleStatus: [], doseError: [], globalAbort: [], doseParams: [], doseParamsRejected: [], learnedProfiles: [], doseHistory: [], bridgeStats: [] };
 
     // --- Console Phase 5 accessors + listeners (additive) ---
     public getDoseParams(): Record<string, number | boolean> | null { return this.doseParams; }
     public getLearnedProfiles(): Record<string, any> { return this.learnedProfiles; }
     public getDoseHistory(): any { return this.doseHistory; }
+    public getBridgeStats(): any { return this.bridgeStats; }
+    public addBridgeStatsListener(cb: (s: any) => void) { this.listeners.bridgeStats.push(cb); }
+    public removeBridgeStatsListener(cb: (s: any) => void) { this.listeners.bridgeStats = this.listeners.bridgeStats.filter(l => l !== cb); }
     public addDoseParamsListener(cb: (p: Record<string, number | boolean>) => void) { this.listeners.doseParams.push(cb); }
     public removeDoseParamsListener(cb: (p: Record<string, number | boolean>) => void) { this.listeners.doseParams = this.listeners.doseParams.filter(l => l !== cb); }
     public addDoseParamsRejectedListener(cb: (reason: string) => void) { this.listeners.doseParamsRejected.push(cb); }
@@ -223,6 +228,10 @@ export class SiloManager {
                             this.doseHistory = data.dose_history;
                             this.listeners.doseHistory.forEach(l => l(data.dose_history));
                         }
+                        if (data.bridge_stats) {
+                            this.bridgeStats = data.bridge_stats;
+                            this.listeners.bridgeStats.forEach(l => l(data.bridge_stats));
+                        }
                     }
 
                     // 2. Weight handling
@@ -262,6 +271,10 @@ export class SiloManager {
                     if (data.type === 'learned_profiles_update' && data.learned_profiles) {
                         this.learnedProfiles = data.learned_profiles;
                         this.listeners.learnedProfiles.forEach(l => l(data.learned_profiles));
+                    }
+                    if (data.type === 'bridge_stats_update' && data.bridge_stats) {
+                        this.bridgeStats = data.bridge_stats;
+                        this.listeners.bridgeStats.forEach(l => l(data.bridge_stats));
                     }
                     if (data.type === 'dose_history_update') {
                         if (data.history) {

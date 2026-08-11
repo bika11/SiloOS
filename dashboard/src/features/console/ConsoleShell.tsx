@@ -12,7 +12,7 @@ import type { SiloManager } from '../../bluetooth/SiloManager';
 import type { ParsedMenuItem } from '../../entities/Menu';
 import { logger } from '../../utils/logger';
 import { StatusDot } from '../../components/amokka';
-import { useConnectionStatus, useDoseHistory, useDoseParams, useHopperWeight, useLearnedProfiles, useLiveDose, useScaleFeed, useSettings } from './useConsoleData';
+import { useBridgeStats, useConnectionStatus, useDoseHistory, useDoseParams, useHopperWeight, useLearnedProfiles, useLiveDose, useScaleFeed, useSettings } from './useConsoleData';
 import { useSilos } from './siloModel';
 import { useDoseRunner } from './useDoseRunner';
 import { LiveSection } from './sections/LiveSection';
@@ -52,6 +52,7 @@ export function ConsoleShell({ connection, siloManager, menuItems, onExitToClass
   const learnedProfiles = useLearnedProfiles(siloManager);
   const doseParams = useDoseParams(siloManager);
   const doseHistory = useDoseHistory(siloManager);
+  const bridgeStats = useBridgeStats(siloManager);
   const hidden = (settings.hidden_recipes as number[]) ?? [];
   const hiddenKey = hidden.join(',');
   const visibleItems = useMemo(
@@ -206,7 +207,7 @@ export function ConsoleShell({ connection, siloManager, menuItems, onExitToClass
 
         <RecipesSection siloManager={siloManager} silos={silos} runner={runner} />
 
-        <PerformanceSection siloManager={siloManager} silos={silos} history={doseHistory} />
+        <PerformanceSection siloManager={siloManager} silos={silos} history={doseHistory} bridgeStats={bridgeStats} />
 
         <PrecisionSection siloManager={siloManager} silos={silos} doseParams={doseParams} />
 

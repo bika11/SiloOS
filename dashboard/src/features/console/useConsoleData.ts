@@ -43,6 +43,17 @@ export function useDoseParams(siloManager: SiloManager) {
   return params;
 }
 
+/** Bridge telemetry (uptime/reconnects/dropped-frames/tare) for Performance. */
+export function useBridgeStats(siloManager: SiloManager) {
+  const [stats, setStats] = useState<any>(siloManager.getBridgeStats());
+  useEffect(() => {
+    const on = (s: any) => setStats(s);
+    siloManager.addBridgeStatsListener(on);
+    return () => siloManager.removeBridgeStatsListener(on);
+  }, [siloManager]);
+  return stats;
+}
+
 /** Dose-history summary for the Performance section. */
 export function useDoseHistory(siloManager: SiloManager) {
   const [history, setHistory] = useState<any>(siloManager.getDoseHistory());

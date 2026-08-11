@@ -20,12 +20,35 @@ interface History {
   recentBySilo: Record<string, number[]>;
   abortCount: number;
   totalDoses: number;
+  topUpCount: number;
+  topUpMeanShortfall: number;
+}
+
+interface BridgeStats {
+  startTs: number;
+  reconnects: number;
+  framesTotal: number;
+  framesDropped: number;
+  dropRatePct: number;
+  lastTareTs: number;
+  tareOffset: number;
+  tareSeries: number[];
 }
 
 interface PerformanceSectionProps {
   siloManager: SiloManager;
   silos: ConsoleSilo[];
   history: History | null;
+  bridgeStats: BridgeStats | null;
+}
+
+function fmtUptime(startTs: number): string {
+  if (!startTs) return '—';
+  const s = Math.max(0, Date.now() / 1000 - startTs);
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  return d > 0 ? `${d} d ${h} h` : `${h} h ${m} m`;
 }
 
 const fmt = (n: number | null | undefined, dp = 1) => (n == null ? '—' : n.toFixed(dp));
@@ -47,7 +70,7 @@ function Kpi({ label, value, unit, note }: { label: string; value: string; unit?
   );
 }
 
-export function PerformanceSection({ siloManager, silos, history }: PerformanceSectionProps) {
+export function PerformanceSection({ siloManager, silos, history, bridgeStats }: PerformanceSectionProps) {
   const [recipes, setRecipes] = useState<Record<string, Recipe>>(siloManager.getRecipes());
   useEffect(() => {
     const on = (r: Record<string, Recipe>) => setRecipes(r);
@@ -196,8 +219,42 @@ export function PerformanceSection({ siloManager, silos, history }: PerformanceS
               </div>
             ))}
           </div>
-          <div style={{ marginTop: 20, fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-            Bridge stats, top-up corrections and predictive stop lead-time land in the next backend batch.
+        </div>
+      </div>
+
+      {/* Bridge stats + top-up corrections + tare */}
+      <div className="console-grid-seam" style={{ gridTemplateColumns: '1fr 1fr 1fr', borderTop: 'none' }}>
+        <div style={{ padding: '30px 28px' }}>
+          <Label>Bridge</Label>
+          <div style={{ marginTop: 14 }}>
+            <InfoRow label="Uptime" value={bridgeStats ? fmtUptime(bridgeStats.startTs) : '—'} />
+            <InfoRow label="BLE reconnects" value={bridgeStats ? String(bridgeStats.reconnects) : '—'} />
+            <InfoRow label="Scale frames dropped" value={bridgeStats ? `${bridgeStats.dropRatePct} %` : '—'} divider={false} />
+          </div>
+        </div>
+
+        <div style={{ padding: '30px 28px' }}>
+          <Label>Top-up corrections</Label>
+          <div style={{ marginTop: 14 }}>
+            <InfoRow label="Triggered this week" value={history ? String(history.topUpCount) : '—'} />
+            <InfoRow label="Mean shortfall recovered" value={history && history.topUpCount > 0 ? `${history.topUpMeanShortfall.toFixed(3)} kg` : '—'} />
+            <InfoRow label="Aborted doses (7 d)" value={String(history?.abortCount ?? 0)} divider={false} />
+          </div>
+        </div>
+
+        <div style={{ padding: '30px 28px' }}>
+          <Label>Scale tare</Label>
+          <div style={{ marginTop: 14 }}>
+            <InfoRow label="Last tare" value={bridgeStats?.lastTareTs ? new Date(bridgeStats.lastTareTs * 1000).toLocaleString() : '—'} />
+            <InfoRow label="Current offset" value={bridgeStats ? `${bridgeStats.tareOffset.toFixed(2)} kg` : '—'} divider={false} />
+          </div>
+          {bridgeStats && bridgeStats.tareSeries.length > 1 && (
+            <div style={{ marginTop: 16 }}>
+              <Sparkline points={bridgeStats.tareSeries} width={320} height={34} />
+            </div>
+          )}
+          <div style={{ marginTop: 16, fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+            Predictive stop lead-time lands with the control-params batch.
           </div>
         </div>
       </div>

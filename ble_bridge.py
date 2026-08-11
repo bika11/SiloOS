@@ -182,6 +182,32 @@ def _learned_profiles():
     return out
 
 
+def _bridge_stats():
+    """Additive bridge telemetry for the Console Performance section. Read-only
+    counters; the client computes uptime from startTs so no periodic push needed."""
+    total = _frames_total
+    dropped = _frames_dropped
+    return {
+        "startTs": _bridge_start_ts,
+        "reconnects": max(0, _ble_connects - 1),
+        "framesTotal": total,
+        "framesDropped": dropped,
+        "dropRatePct": round(100.0 * dropped / total, 3) if total else 0,
+        "lastTareTs": _last_tare_ts,
+        "tareOffset": tare_offset,
+        "tareSeries": [t["offset"] for t in _tare_history][-20:],
+    }
+
+
+def _record_tare(offset):
+    """Append a tare event for the drift/tare telemetry (additive)."""
+    global _last_tare_ts
+    _last_tare_ts = time.time()
+    _tare_history.append({"ts": _last_tare_ts, "offset": offset})
+    if len(_tare_history) > 50:
+        del _tare_history[:len(_tare_history) - 50]
+
+
 def update_safety_params(new: dict):
     """Validated, clamped update of the absolute safety backstops. Persists to
     config.json and updates the module globals so the NEXT dose uses them. Does
@@ -268,6 +294,14 @@ active_doses = {}  # Per-silo dispensing tracker: siloId -> {start_time, start_w
 active_controller = None  # PiDoseController — one active dose at a time
 pending_safety_cancel = False  # a dose was live when BLE dropped → cancel on reconnect
 _last_overflow_cancel = 0.0  # monotonic time of last overflow-guard cancel (throttle)
+
+# --- CONSOLE PHASE 7 (Batch B): additive bridge telemetry counters ---
+_bridge_start_ts = time.time()  # process start (for uptime; client computes uptime = now - startTs)
+_ble_connects = 0               # successful BLE connects (reconnects = connects - 1)
+_frames_total = 0               # scale frames seen (good + dropped)
+_frames_dropped = 0             # scale frames rejected (CRC/range)
+_tare_history = []              # recent tare offsets: [{"ts":.., "offset":..}]
+_last_tare_ts = 0.0
 
 # Bridge audit function to dose_controller module
 set_audit_fn(audit)
@@ -360,7 +394,8 @@ async def websocket_handler(request):
             # Console Phase 5 additions (additive keys; legacy clients ignore them):
             "learned_profiles": _learned_profiles(),
             "safety": _safety_public(),
-            "dose_history": dose_history.summary()
+            "dose_history": dose_history.summary(),
+            "bridge_stats": _bridge_stats()
         }))
         
         # Send machine status
@@ -399,10 +434,12 @@ async def websocket_handler(request):
                             audit("tare", prev_offset=prev_tare, new_offset=tare_offset,
                                   weight=current_weight, client=str(request.remote),
                                   active_doses=list(active_doses.keys()))
+                            _record_tare(tare_offset)
                             await broadcast_relay({
                                 "type": "tare_ack",
                                 "offset": tare_offset
                             })
+                            await broadcast_relay({"type": "bridge_stats_update", "bridge_stats": _bridge_stats()})
 
                     # 3. Handle Persistence Updates (Settings, Prefs, Profiles)
                     elif data.get("type") == "update_settings":
@@ -448,6 +485,14 @@ async def websocket_handler(request):
                             audit("relearn_silo", silo_id=silo_id, client=str(request.remote))
                             await broadcast_relay({"type": "learned_profiles_update",
                                                    "learned_profiles": _learned_profiles()})
+
+                    # Console Phase 7: client reports a scaled top-up correction (additive
+                    # telemetry from the existing auto-top-up path; never affects control).
+                    elif data.get("type") == "topup_event":
+                        dose_history.record_topup(silo=data.get("siloId"),
+                                                  shortfall_kg=data.get("shortfallKg"))
+                        await broadcast_relay({"type": "dose_history_update",
+                                               "history": dose_history.summary()})
 
                     # 4. Handle Machine Commands (Relay to BLE)
                     elif data.get("type") == "write" and topbrewer_client:
@@ -661,7 +706,7 @@ def _handle_ble_drop_mid_dose():
 
 
 async def run_topbrewer_client():
-    global topbrewer_client, active_controller, pending_safety_cancel
+    global topbrewer_client, active_controller, pending_safety_cancel, _ble_connects
     while True:
         try:
             # FORCED RESET: On Linux, clear system-level bluetooth connection if needed.
@@ -696,6 +741,7 @@ async def run_topbrewer_client():
             logger.info(f"Connecting to {device.name or 'TopBrewer'} ({device.address})...")
             async with BleakClient(device, timeout=15.0) as client:
                 topbrewer_client = client
+                _ble_connects += 1
                 logger.info(f"Connected to {device.name or 'TopBrewer'} via BLE")
 
                 # SAFETY: if a dose was live when the link dropped (or is somehow
@@ -718,6 +764,7 @@ async def run_topbrewer_client():
 
                 # Broadcast status change immediately to all connected PWAs
                 await broadcast_relay({"type": "status", "connected": True})
+                await broadcast_relay({"type": "bridge_stats_update", "bridge_stats": _bridge_stats()})
 
                 await client.start_notify(SFWU_CHANNEL, machine_notification_handler)
                 await client.start_notify(BREW_STATUS, machine_notification_handler)
@@ -783,7 +830,7 @@ async def main():
     loop = asyncio.get_running_loop()
     
     def read_serial_loop():
-        global current_weight
+        global current_weight, _frames_total, _frames_dropped
         backoff = 1
         while True:
             try:
@@ -805,6 +852,8 @@ async def main():
                                 if not crc_ok:
                                     audit("scale_crc_fail")
                                     if ENFORCE_SCALE_CRC:
+                                        _frames_total += 1
+                                        _frames_dropped += 1
                                         i += 1  # treat as a false header match; keep scanning
                                         continue
                                 raw_val = (buffer[i+11] << 8) | buffer[i+12]
@@ -812,11 +861,14 @@ async def main():
                                 # Range check — reject implausible values (garbage / high word).
                                 if new_weight < 0 or new_weight > SCALE_MAX_PLAUSIBLE_KG:
                                     audit("scale_range_reject", weight=new_weight)
+                                    _frames_total += 1
+                                    _frames_dropped += 1
                                     del buffer[:i+15]
                                     i = 0
                                     continue
                                 changed = abs(new_weight - current_weight) > 0.01
                                 current_weight = new_weight
+                                _frames_total += 1
                                 # Feed the dose controller on EVERY frame (not only on
                                 # change). Its stall detector and scale-stale watchdog
                                 # need a true per-frame heartbeat; the >0.01 gate below
