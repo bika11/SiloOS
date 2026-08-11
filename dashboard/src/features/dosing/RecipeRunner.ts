@@ -138,6 +138,7 @@ export class RecipeRunner {
         );
 
         const siloId = step.menuName || `drink_${step.menuId}`;
+        const orderId = this.siloManager.newOrderId();
 
         const doseEvents = {
             onUpdate: (u: DoseUpdate) => {
@@ -157,8 +158,8 @@ export class RecipeRunner {
         // controller. If it rejects (hopper too full, target out of range), the
         // step must NOT dispense — otherwise the machine pours uncontrolled and
         // overflows. This is what caused a 40 kg hopper + 100 kg sequence to overfill.
-        this.siloManager.send({ type: 'dose_request', siloId, targetKg: effectiveTargetKg });
-        const ack = await this.siloManager.awaitDoseAck(siloId);
+        this.siloManager.send({ type: 'dose_request', siloId, orderId, targetKg: effectiveTargetKg });
+        const ack = await this.siloManager.awaitDoseAck(orderId);
         if (this.state === 'aborted' || this.state === 'done') return; // aborted while waiting
         if (!ack.ok) {
             this.abort(`Step ${this.currentStepIndex + 1} ("${siloId}") rejected: ${ack.reason}`);
@@ -169,19 +170,21 @@ export class RecipeRunner {
         this.currentController = new PiDoseProxy(siloId, effectiveTargetKg, this.siloManager);
         this.currentController.events = doseEvents;
 
-        // 3. Listen to Pi dose updates
+        // 3. Listen to Pi dose updates — route by unique orderId so a concurrent
+        // dose of the same silo elsewhere can't drive this step.
         if (this.doseUpdateHandler) {
             this.siloManager.removeDoseUpdateListener(this.doseUpdateHandler);
         }
         this.doseUpdateHandler = (msg: PiDoseMessage) => {
-            if (this.currentController && msg.siloId === siloId) {
+            const mine = msg.orderId ? msg.orderId === orderId : msg.siloId === siloId;
+            if (this.currentController && mine) {
                 this.currentController.handlePiMessage(msg);
             }
         };
         this.siloManager.addDoseUpdateListener(this.doseUpdateHandler);
 
         // 4. Send Hardware Start (only after the Pi accepted the dose)
-        this.sendHardwareStart(step.menuId, effectiveTargetKg, siloId);
+        this.sendHardwareStart(step.menuId, effectiveTargetKg, siloId, orderId);
     }
 
     /**
@@ -189,7 +192,7 @@ export class RecipeRunner {
      * Uses the same proven flow as DrinkCustomizer:
      *   sendCustomOrder() → DoseController monitors → cancelOrder() on stop
      */
-    private async sendHardwareStart(menuId: number, targetKg: number, siloId: string): Promise<void> {
+    private async sendHardwareStart(menuId: number, targetKg: number, siloId: string, orderId: string): Promise<void> {
         try {
             // Calculate cups needed: enough so the machine doesn't run out
             // before DoseController sends the stop signal. +2 buffer for safety.
@@ -206,7 +209,7 @@ export class RecipeRunner {
             logger.info('RecipeRunner', `Hardware START sent: menuId=${menuId}, cups=${cups}`);
 
             // Tell Pi the order is sent
-            this.siloManager.send({ type: 'dose_started', siloId });
+            this.siloManager.send({ type: 'dose_started', siloId, orderId });
 
         } catch (err) {
             logger.error('RecipeRunner', `Failed to send hardware command: ${err}`);

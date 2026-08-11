@@ -56,6 +56,7 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
     const [topUpInfo, setTopUpInfo] = useState<{ n: number; max: number } | null>(null);
 
     const activeSiloIdRef = useRef<string | null>(null);
+    const activeOrderIdRef = useRef<string | null>(null);
     const deadManTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     // FIX 2: Track which ingredient sliders the user actually touched.
     // Only modified ingredients are sent in the order — untouched ones are omitted
@@ -170,9 +171,10 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
         const handleGlobalAbort = (reason: string) => {
             if (activeSiloIdRef.current) {
                 logger.warn('Customizer', `Global abort received: ${reason}`);
-                siloManager.sendTelemetry({ type: 'dose_abort', siloId: activeSiloIdRef.current, reason });
+                siloManager.sendTelemetry({ type: 'dose_abort', siloId: activeSiloIdRef.current, orderId: activeOrderIdRef.current, reason });
                 connection.cancelOrder();
                 activeSiloIdRef.current = null;
+                activeOrderIdRef.current = null;
                 if (deadManTimerRef.current) clearTimeout(deadManTimerRef.current);
             }
         };
@@ -186,7 +188,10 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
     // Surface dose rejections (e.g. another order already dispensing, hopper too
     // full, target out of range) instead of silently doing nothing.
     useEffect(() => {
-        const onRejected = (_siloId: string, reason: string) => {
+        const onRejected = (_siloId: string, reason: string, orderId?: string) => {
+            // Only surface rejections for THIS tab's order (another tablet's
+            // rejection shouldn't flash a banner here).
+            if (orderId && orderId !== activeOrderIdRef.current) return;
             setRejectMsg(reason || 'Machine busy — another order is dispensing');
             setTimeout(() => setRejectMsg(null), 6000);
         };
@@ -200,14 +205,20 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
 
         const proxy = doseController as PiDoseProxy;
         const handleDoseUpdate = (msg: PiDoseMessage) => {
-            if (msg.siloId === activeSiloIdRef.current) {
+            // Route by unique orderId so a concurrent order of the same silo from
+            // another tablet doesn't drive this monitor. Fall back to siloId only
+            // if the bridge didn't send an orderId (older build).
+            const mine = msg.orderId
+                ? msg.orderId === activeOrderIdRef.current
+                : msg.siloId === activeSiloIdRef.current;
+            if (mine) {
                 proxy.handlePiMessage(msg);
                 // Reset dead-man's switch on every update
                 if (deadManTimerRef.current) clearTimeout(deadManTimerRef.current);
                 deadManTimerRef.current = setTimeout(() => {
                     if (activeSiloIdRef.current) {
                         logger.warn('Customizer', 'Dead-man switch: Pi silent for 5s — sending emergency cancel');
-                        siloManager.sendTelemetry({ type: 'dose_abort', siloId: activeSiloIdRef.current, reason: 'Dead-man switch: Pi silent' });
+                        siloManager.sendTelemetry({ type: 'dose_abort', siloId: activeSiloIdRef.current, orderId: activeOrderIdRef.current, reason: 'Dead-man switch: Pi silent' });
                         connection.cancelOrder();
                     }
                 }, 5000);
@@ -274,20 +285,24 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
 
             const runDose = async (doseTargetKg: number, topUpN: number) => {
                 setTopUpInfo({ n: topUpN, max: MAX_TOP_UPS });
+                const orderId = siloManager.newOrderId();
+                activeOrderIdRef.current = orderId;
                 // 1. Request dose from Pi (Pi tares at current scale weight)
-                logger.info('Customizer', `Requesting Pi dose: silo="${siloId}" target=${doseTargetKg.toFixed(3)}kg topUp=#${topUpN}`);
-                siloManager.send({ type: 'dose_request', siloId, targetKg: doseTargetKg });
+                logger.info('Customizer', `Requesting Pi dose: silo="${siloId}" order=${orderId} target=${doseTargetKg.toFixed(3)}kg topUp=#${topUpN}`);
+                siloManager.send({ type: 'dose_request', siloId, orderId, targetKg: doseTargetKg });
 
                 // SAFETY: wait for the Pi to ACCEPT the dose before sending the
                 // hardware order. If it rejects (e.g. hopper too full, target out
                 // of range), we must NOT dispense — otherwise the machine pours
                 // uncontrolled with no weight cutoff and overflows.
-                const ack = await siloManager.awaitDoseAck(siloId);
+                const ack = await siloManager.awaitDoseAck(orderId);
                 if (!ack.ok) {
                     logger.warn('Customizer', `Dose not started — Pi rejected: ${ack.reason}`);
                     setRejectMsg(ack.reason || 'Dose rejected by bridge');
                     setTimeout(() => setRejectMsg(null), 6000);
                     activeSiloIdRef.current = null;
+                    activeOrderIdRef.current = null;
+                    setTopUpInfo(null);
                     if (deadManTimerRef.current) clearTimeout(deadManTimerRef.current);
                     return; // do not dispense
                 }
@@ -314,7 +329,7 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
                 });
 
                 // 4. Tell Pi the order is sent → Pi starts preemptive timer
-                siloManager.send({ type: 'dose_started', siloId });
+                siloManager.send({ type: 'dose_started', siloId, orderId });
 
                 // 5. Create PiDoseProxy (drives BrewMonitor via Pi dose_update messages)
                 const proxy = new PiDoseProxy(siloId, doseTargetKg, siloManager);
@@ -326,6 +341,7 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
                         `Dose #${topUpN} complete: ${result.actualKg.toFixed(3)}kg / ${result.targetKg.toFixed(3)}kg`
                     );
                     activeSiloIdRef.current = null;
+                    activeOrderIdRef.current = null;
                     if (deadManTimerRef.current) clearTimeout(deadManTimerRef.current);
 
                     const shortfall = result.targetKg - result.actualKg;
@@ -343,6 +359,7 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
                 proxy.events.onAbort = (reason) => {
                     logger.warn('Customizer', `Dose aborted: ${reason}`);
                     activeSiloIdRef.current = null;
+                    activeOrderIdRef.current = null;
                     setTopUpInfo(null);
                     if (deadManTimerRef.current) clearTimeout(deadManTimerRef.current);
                 };
@@ -430,6 +447,7 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
                     topUp={topUpInfo ?? undefined}
                     onClose={() => {
                         activeSiloIdRef.current = null;
+                        activeOrderIdRef.current = null;
                         if (deadManTimerRef.current) clearTimeout(deadManTimerRef.current);
                         setTopUpInfo(null);
                         setDoseController(null);

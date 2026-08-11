@@ -199,7 +199,7 @@ class PiDoseController:
     def __init__(self, silo_id: str, target_kg: float, tare_weight: float,
                  ble_client, broadcast_fn, loop,
                  max_dispense_s: float = None, max_weight_kg: float = None,
-                 get_ble_client=None):
+                 get_ble_client=None, order_id: str = None):
         """
         Args:
             silo_id: Drink/silo identifier (for profile lookup)
@@ -216,6 +216,9 @@ class PiDoseController:
                 instead of a stale reference captured at construction time
         """
         self.silo_id = silo_id
+        # Unique per-dose id for client-side routing (profile learning still keys
+        # on silo_id; this only disambiguates which client/order a broadcast is for).
+        self.order_id = order_id
         self.target_kg = target_kg
         self.tare_weight = tare_weight
         self.ble_client = ble_client
@@ -434,6 +437,7 @@ class PiDoseController:
         asyncio.ensure_future(self.broadcast_fn({
             "type": "dose_update",
             "siloId": self.silo_id,
+            "orderId": self.order_id,
             "state": "aborted",
             "reason": reason,
         }))
@@ -490,6 +494,7 @@ class PiDoseController:
         asyncio.ensure_future(self.broadcast_fn({
             "type": "dose_update",
             "siloId": self.silo_id,
+            "orderId": self.order_id,
             "state": "aborted",
             "reason": reason,
         }))
@@ -543,6 +548,7 @@ class PiDoseController:
             await self.broadcast_fn({
                 "type": "dose_error",
                 "siloId": self.silo_id,
+                "orderId": self.order_id,
                 "error": "cancel could not be sent — machine link is down",
             })
             return
@@ -561,6 +567,7 @@ class PiDoseController:
             await self.broadcast_fn({
                 "type": "dose_error",
                 "siloId": self.silo_id,
+                "orderId": self.order_id,
                 "error": "STOP command not confirmed — verify the machine has stopped",
             })
 
@@ -625,6 +632,7 @@ class PiDoseController:
         asyncio.ensure_future(self.broadcast_fn({
             "type": "dose_update",
             "siloId": self.silo_id,
+            "orderId": self.order_id,
             "state": "done",
             "result": result,
         }))
@@ -698,6 +706,7 @@ class PiDoseController:
         await self.broadcast_fn({
             "type": "dose_update",
             "siloId": self.silo_id,
+            "orderId": self.order_id,
             "state": self.state,
             "dispensedKg": round(self.last_dispensed, 4),
             "targetKg": self.target_kg,

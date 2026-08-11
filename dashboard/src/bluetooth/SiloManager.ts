@@ -3,6 +3,7 @@ import type { Recipe } from '../features/dosing/Recipe';
 
 export interface PiDoseMessage {
     siloId: string;
+    orderId?: string;
     state: string;
     dispensedKg?: number;
     targetKg?: number;
@@ -52,9 +53,9 @@ export class SiloManager {
         notifications: ((uuid: string, data: Uint8Array) => void)[];
         sfwu: ((packet: string) => void)[];
         recipes: ((r: Record<string, Recipe>) => void)[];
-        doseAck: ((siloId: string, tareG: number, targetKg: number) => void)[];
+        doseAck: ((siloId: string, tareG: number, targetKg: number, orderId?: string) => void)[];
         doseUpdate: ((msg: PiDoseMessage) => void)[];
-        doseRejected: ((siloId: string, reason: string) => void)[];
+        doseRejected: ((siloId: string, reason: string, orderId?: string) => void)[];
         // Additive listeners — use these instead of overwriting `events`, which
         // is a single-slot bus that different components clobber (dropping e.g.
         // the emergency-abort handler). Multiple consumers can subscribe safely.
@@ -78,6 +79,9 @@ export class SiloManager {
     public removeDoseErrorListener(cb: (siloId: string, error: string) => void) { this.listeners.doseError = this.listeners.doseError.filter(l => l !== cb); }
     public getScaleStatus(): 'ok' | 'stale' { return this.scaleStatus; }
 
+    /** Unique id for a single dose, used to route ack/updates to the right client. */
+    public newOrderId(): string { return `ord-${Date.now()}-${Math.floor(Math.random() * 1e6)}`; }
+
     public addRecipesListener(cb: (r: Record<string, Recipe>) => void) { this.listeners.recipes.push(cb); }
     public removeRecipesListener(cb: (r: Record<string, Recipe>) => void) { this.listeners.recipes = this.listeners.recipes.filter(l => l !== cb); }
 
@@ -90,12 +94,12 @@ export class SiloManager {
     public addSfwuListener(cb: (packet: string) => void) { this.listeners.sfwu.push(cb); }
     public removeSfwuListener(cb: (packet: string) => void) { this.listeners.sfwu = this.listeners.sfwu.filter(l => l !== cb); }
 
-    public addDoseAckListener(cb: (siloId: string, tareG: number, targetKg: number) => void) { this.listeners.doseAck.push(cb); }
-    public removeDoseAckListener(cb: (siloId: string, tareG: number, targetKg: number) => void) { this.listeners.doseAck = this.listeners.doseAck.filter(l => l !== cb); }
+    public addDoseAckListener(cb: (siloId: string, tareG: number, targetKg: number, orderId?: string) => void) { this.listeners.doseAck.push(cb); }
+    public removeDoseAckListener(cb: (siloId: string, tareG: number, targetKg: number, orderId?: string) => void) { this.listeners.doseAck = this.listeners.doseAck.filter(l => l !== cb); }
     public addDoseUpdateListener(cb: (msg: PiDoseMessage) => void) { this.listeners.doseUpdate.push(cb); }
     public removeDoseUpdateListener(cb: (msg: PiDoseMessage) => void) { this.listeners.doseUpdate = this.listeners.doseUpdate.filter(l => l !== cb); }
-    public addDoseRejectedListener(cb: (siloId: string, reason: string) => void) { this.listeners.doseRejected.push(cb); }
-    public removeDoseRejectedListener(cb: (siloId: string, reason: string) => void) { this.listeners.doseRejected = this.listeners.doseRejected.filter(l => l !== cb); }
+    public addDoseRejectedListener(cb: (siloId: string, reason: string, orderId?: string) => void) { this.listeners.doseRejected.push(cb); }
+    public removeDoseRejectedListener(cb: (siloId: string, reason: string, orderId?: string) => void) { this.listeners.doseRejected = this.listeners.doseRejected.filter(l => l !== cb); }
 
     // RemoteBLEAdapter compatibility properties
     public onStatusUpdate?: (connected: boolean) => void;
@@ -247,7 +251,7 @@ export class SiloManager {
                     // 6. Pi Dose Control messages
                     if (data.type === 'dose_ack') {
                         this.events.onDoseAck?.(data.siloId, data.tareG, data.targetKg);
-                        this.listeners.doseAck.forEach(l => l(data.siloId, data.tareG, data.targetKg));
+                        this.listeners.doseAck.forEach(l => l(data.siloId, data.tareG, data.targetKg, data.orderId));
                     }
                     if (data.type === 'dose_update') {
                         if (data.state === 'done' && data.result) {
@@ -258,7 +262,7 @@ export class SiloManager {
                     }
                     if (data.type === 'dose_rejected') {
                         this.events.onDoseRejected?.(data.siloId, data.reason);
-                        this.listeners.doseRejected.forEach(l => l(data.siloId, data.reason));
+                        this.listeners.doseRejected.forEach(l => l(data.siloId, data.reason, data.orderId));
                     }
                     // Scale feed status from the bridge (Phase 1b): 'stale' means
                     // the serial feed died — surface it so the UI can warn and a
@@ -400,20 +404,21 @@ export class SiloManager {
     }
 
     /**
-     * Wait for the Pi to ACCEPT (dose_ack) or REJECT (dose_rejected) a dose
-     * request for a given silo. Callers MUST await this before sending the
-     * hardware order — otherwise a rejected dose (e.g. hopper too full) still
-     * dispenses uncontrolled and overflows.
+     * Wait for the Pi to ACCEPT (dose_ack) or REJECT (dose_rejected) a specific
+     * dose, matched by its unique orderId (so two tablets ordering the same silo
+     * don't cross-wire). Callers MUST await this before sending the hardware
+     * order — otherwise a rejected dose (e.g. hopper too full) still dispenses
+     * uncontrolled and overflows.
      */
-    awaitDoseAck(siloId: string, timeoutMs: number = 5000):
+    awaitDoseAck(orderId: string, timeoutMs: number = 5000):
         Promise<{ ok: boolean; tareG?: number; targetKg?: number; reason?: string }> {
         return new Promise((resolve) => {
             let done = false;
-            const onAck = (id: string, tareG: number, targetKg: number) => {
-                if (id === siloId) finish({ ok: true, tareG, targetKg });
+            const onAck = (_siloId: string, tareG: number, targetKg: number, id?: string) => {
+                if (id === orderId) finish({ ok: true, tareG, targetKg });
             };
-            const onRej = (id: string, reason: string) => {
-                if (id === siloId) finish({ ok: false, reason });
+            const onRej = (_siloId: string, reason: string, id?: string) => {
+                if (id === orderId) finish({ ok: false, reason });
             };
             const timer = setTimeout(
                 () => finish({ ok: false, reason: 'No response from bridge (timeout)' }),

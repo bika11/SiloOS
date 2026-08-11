@@ -345,6 +345,7 @@ async def websocket_handler(request):
                     elif data.get("type") == "dose_request":
                         silo_id = data.get("siloId", "unknown")
                         target_kg = data.get("targetKg", 0)
+                        order_id = data.get("orderId")  # unique per-dose id for client routing
 
                         # Reject if another dose is already running
                         if active_controller and active_controller.state in ('armed', 'running', 'stopping', 'settling'):
@@ -356,6 +357,7 @@ async def websocket_handler(request):
                             await ws.send_str(json.dumps({
                                 "type": "dose_rejected",
                                 "siloId": silo_id,
+                                "orderId": order_id,
                                 "reason": f"Dose already active for '{active_controller.silo_id}'"
                             }))
                         # Reject implausible / dangerous targets (server-side guard,
@@ -368,6 +370,7 @@ async def websocket_handler(request):
                             await ws.send_str(json.dumps({
                                 "type": "dose_rejected",
                                 "siloId": silo_id,
+                                "orderId": order_id,
                                 "reason": f"Target {target_kg} kg out of range (0–{MAX_TARGET_KG:g} kg)"
                             }))
                         # Hopper-ready gate: refuse to dose on top of existing
@@ -382,6 +385,7 @@ async def websocket_handler(request):
                             await ws.send_str(json.dumps({
                                 "type": "dose_rejected",
                                 "siloId": silo_id,
+                                "orderId": order_id,
                                 "reason": f"Hopper too full ({current_weight:.1f} kg) — empty it before dosing {target_kg} kg"
                             }))
                         else:
@@ -396,6 +400,7 @@ async def websocket_handler(request):
                                 await ws.send_str(json.dumps({
                                     "type": "dose_rejected",
                                     "siloId": silo_id,
+                                    "orderId": order_id,
                                     "reason": "Scale not settled — wait for it to stabilise and retry"
                                 }))
                             else:
@@ -410,6 +415,7 @@ async def websocket_handler(request):
                                     max_dispense_s=MAX_DISPENSE_S,
                                     max_weight_kg=HOPPER_ABORT_KG,
                                     get_ble_client=lambda: topbrewer_client,
+                                    order_id=order_id,
                                 )
                                 active_doses[silo_id] = {
                                     "start_time": time.time(),
@@ -422,6 +428,7 @@ async def websocket_handler(request):
                                 await broadcast_relay({
                                     "type": "dose_ack",
                                     "siloId": silo_id,
+                                    "orderId": order_id,
                                     "tareG": tare_at,
                                     "targetKg": target_kg,
                                 })
