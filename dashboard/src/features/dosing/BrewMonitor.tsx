@@ -40,7 +40,7 @@ export const BrewMonitor: React.FC<BrewMonitorProps> = ({ controller, onClose, t
     const [result, setResult] = useState<DoseResult | null>(null);
     const [isPulsing, setIsPulsing] = useState(false);
     const [signalLost, setSignalLost] = useState(false);
-    const pulseTimeout = useRef<ReturnType<typeof setTimeout>>();
+    const pulseTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
     const lastUpdateRef = useRef<number>(Date.now());
 
     // Wire DoseController events into React state

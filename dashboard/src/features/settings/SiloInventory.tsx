@@ -35,9 +35,6 @@ export const SiloInventory: React.FC<SiloInventoryProps> = ({ siloManager, activ
     const [topUpWeightKg, setTopUpWeightKg] = useState<string>('1.0');
 
     useEffect(() => {
-        const onPreferences = (newPrefs: any) => {
-            if (newPrefs.inventory) setInventory(newPrefs.inventory);
-        };
         const interval = setInterval(() => {
             const prefs = siloManager.getPreferences();
             if (prefs.inventory) {

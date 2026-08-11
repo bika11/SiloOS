@@ -13,7 +13,6 @@ interface ScaleLoadingScreenProps {
 export const ScaleLoadingScreen: React.FC<ScaleLoadingScreenProps> = ({
     isStabilizing,
     currentWeight,
-    targetWeight,
     connectionState,
     onCancel
 }) => {

@@ -1,4 +1,5 @@
-import { useState, useEffect, Component, ErrorInfo, ReactNode } from 'react';
+import { useState, useEffect, Component } from 'react';
+import type { ErrorInfo, ReactNode } from 'react';
 import { TopBrewerConnection } from './bluetooth';
 import { DiscoveryScreen } from './features/discovery/DiscoveryScreen';
 import { DashboardScreen } from './features/dashboard/DashboardScreen';

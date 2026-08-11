@@ -270,7 +270,6 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
             // Clamp to the hard cap so a stray large value can never be requested
             // (the Pi also rejects >130 kg server-side as a second guard).
             const targetKg = Math.min(Math.max(0, customVolume), GRAV_MAX_KG);
-            const nominalKg = details.globalNom || 1;
 
             // Confirmation before dispensing — the one irreversible action here.
             // Echo the exact target + unit so the operator can catch a wrong value
@@ -548,7 +547,7 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
                                         <div key={variant.id} className="variant-row">
                                             <Stepper
                                                 label={variant.name || `VAR ${variant.id}`}
-                                                unit={variant.unit}
+                                                unit={variant.unit ?? ''}
                                                 min={variant.min}
                                                 max={variant.max}
                                                 step={variant.max > 10 ? 1 : 0.1}

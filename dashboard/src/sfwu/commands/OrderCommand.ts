@@ -36,7 +36,6 @@ export interface Order {
 export function buildOrderPayload(order: Order): Uint8Array {
     // Calculate data length
     const hasMenuId = order.menuId !== -1;
-    const hasCups = order.cups > 0;
     const hasCupSize = order.cupSize > 0;
 
     const varLength = (hasMenuId ? 1 : 0) + 1 + (hasCupSize ? 4 : 0);

@@ -177,7 +177,7 @@ export class BLEAdapter {
 
             // Use writeValueWithoutResponse if supported for better performance
             // Create a DataView to ensure proper ArrayBuffer compatibility
-            const buffer = new DataView(data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength));
+            const buffer = new DataView(data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer);
             if (characteristic.properties.writeWithoutResponse) {
                 await characteristic.writeValueWithoutResponse(buffer);
             } else {

@@ -1,10 +1,11 @@
 import { logger } from '../utils/logger';
 import type { Recipe } from '../features/dosing/Recipe';
+import type { DoseState } from '../features/dosing/DoseController';
 
 export interface PiDoseMessage {
     siloId: string;
     orderId?: string;
-    state: string;
+    state: DoseState;
     dispensedKg?: number;
     targetKg?: number;
     progress?: number;
@@ -35,7 +36,6 @@ export class SiloManager {
     private machineConnected: boolean = false;
     private lastWeight: number = 0;
     private lastNetWeight: number = 0;
-    private tareOffset: number = 0;
     private reconnectTimeout: any = null;
     private url: string;
     private settings: any = { theme: 'dark', hidden_recipes: [] };
@@ -162,9 +162,6 @@ export class SiloManager {
                             this.lastWeight = data.weight;
                             this.events.onWeightUpdate?.(data.weight);
                             this.listeners.weight.forEach(l => l(data.weight));
-                        }
-                        if (typeof data.tare_offset === 'number') {
-                            this.tareOffset = data.tare_offset;
                         }
                         if (data.settings) {
                             this.settings = data.settings;
