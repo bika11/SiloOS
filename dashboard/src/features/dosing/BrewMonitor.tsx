@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { type DoseControllerLike, type DoseUpdate, type DoseResult, type DoseState } from './DoseController';
 import { Button } from '../../components/ui/Button';
+import { kgValue } from '../../utils/formatWeight';
 import './BrewMonitor.css';
 
 interface BrewMonitorProps {
     controller: DoseControllerLike;
     onClose: () => void;
+    /** When set (n>=1), the current dose is auto-top-up n of max — shown instead of "Dispensing…". */
+    topUp?: { n: number; max: number };
 }
 
 const STATE_LABEL_MAP: Record<DoseState, string> = {
@@ -22,10 +25,11 @@ const STATE_LABEL_MAP: Record<DoseState, string> = {
 const RING_RADIUS = 110;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
-/** Format kg for display — shows 3 decimals to 0.001 kg resolution */
-const fmtKg = (kg: number) => kg.toFixed(3);
+/** Weight for the dose result grid — 2 decimals (finer detail than the 0.1 kg
+ *  live resolution, useful when reviewing a completed dose). Uses the shared util. */
+const fmtKg = (kg: number) => kgValue(kg, 2);
 
-export const BrewMonitor: React.FC<BrewMonitorProps> = ({ controller, onClose }) => {
+export const BrewMonitor: React.FC<BrewMonitorProps> = ({ controller, onClose, topUp }) => {
     const [update, setUpdate] = useState<DoseUpdate>({
         dispensedKg: 0,
         targetKg: controller.getConfig().targetKg,
@@ -114,7 +118,9 @@ export const BrewMonitor: React.FC<BrewMonitorProps> = ({ controller, onClose })
             <div className={`brew-monitor-status ${signalLost && !isDone ? 'aborted' : stateClass}`}>
                 {signalLost && !isDone
                     ? '⚠ SIGNAL LOST — CLOSING VALVE'
-                    : (STATE_LABEL_MAP[update.state] || update.state)}
+                    : (topUp && topUp.n >= 1 && (update.state === 'running' || update.state === 'stopping' || update.state === 'settling')
+                        ? `Topping up ${topUp.n} of ${topUp.max}`
+                        : (STATE_LABEL_MAP[update.state] || update.state))}
             </div>
 
             {/* Circular Progress Ring */}

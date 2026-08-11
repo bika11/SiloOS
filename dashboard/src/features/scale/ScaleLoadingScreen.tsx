@@ -1,5 +1,6 @@
 import React from 'react';
 import type { ScaleConnectionState } from '../../bluetooth/ScaleManager';
+import { kgValue } from '../../utils/formatWeight';
 
 interface ScaleLoadingScreenProps {
     isStabilizing: boolean;
@@ -36,7 +37,7 @@ export const ScaleLoadingScreen: React.FC<ScaleLoadingScreenProps> = ({
                         <span className="text-sm font-mono text-zinc-500 uppercase mb-2">Current Load</span>
                         <div className="flex items-baseline gap-3">
                             <span className="text-7xl font-mono font-bold tabular-nums">
-                                {currentWeight.toFixed(3)}
+                                {kgValue(currentWeight)}
                             </span>
                             <span className="text-2xl font-mono text-zinc-500 uppercase">kg</span>
                         </div>

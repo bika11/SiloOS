@@ -17,6 +17,7 @@ import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Stepper } from '../../components/ui/Stepper';
 import { ScaleLoadingScreen } from '../scale/ScaleLoadingScreen';
+import { formatKg } from '../../utils/formatWeight';
 import './DrinkCustomizer.css';
 
 interface DrinkCustomizerProps {
@@ -52,6 +53,7 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
     const [doseController, setDoseController] = useState<DoseControllerLike | null>(null);
     const [cups, setCups] = useState(1);
     const [rejectMsg, setRejectMsg] = useState<string | null>(null);
+    const [topUpInfo, setTopUpInfo] = useState<{ n: number; max: number } | null>(null);
 
     const activeSiloIdRef = useRef<string | null>(null);
     const deadManTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -98,7 +100,8 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
                 }
 
                 setLoading(false);
-                setTimeout(() => setIsSynchronizing(false), 1500);
+                // isSynchronizing is cleared by the real stability gate below,
+                // not a fixed timer.
             }
         };
 
@@ -126,37 +129,35 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
         };
     }, [drink, connection, PREF_KEY_VALS, PREF_KEY_VOLUME, siloManager, retryCount]);
 
-    // Handle incoming updates from other clients
+    // MULTI-DEVICE: customization stays LOCAL until the operator commits it (on
+    // brew, via persistPrefs()). We deliberately do NOT broadcast on every slider
+    // move, and do NOT live-apply other clients' edits — otherwise two tablets
+    // editing the same drink yank each other's sliders mid-adjustment.
+    const persistPrefs = useCallback(() => {
+        siloManager.updatePreferences({
+            [PREF_KEY_VALS]: customValues,
+            [PREF_KEY_VOLUME]: customVolume,
+        });
+    }, [siloManager, PREF_KEY_VALS, PREF_KEY_VOLUME, customValues, customVolume]);
+
+    // Real stability gate: clear the "Zeroing/Stabilizing" screen once the scale
+    // reading actually holds steady (polls getWeight so it works even though the
+    // bridge only broadcasts weight on change), with a max-wait fallback. Replaces
+    // the old hardcoded 1.5 s timer that gave a false "Stability Confirmed".
     useEffect(() => {
-        const handlePrefUpdate = (prefs: any) => {
-            const savedVals = prefs[PREF_KEY_VALS];
-            const savedVol = prefs[PREF_KEY_VOLUME];
-
-            if (savedVals) {
-                setCustomValues(savedVals);
-                setModifiedIngredients(new Set(Object.keys(savedVals)));
-            }
-            if (savedVol) {
-                setCustomVolume(parseFloat(savedVol));
-            }
-        };
-
-        siloManager.onPreferencesUpdate = handlePrefUpdate;
-        return () => { if (siloManager.onPreferencesUpdate === handlePrefUpdate) siloManager.onPreferencesUpdate = undefined; };
-    }, [siloManager, PREF_KEY_VALS, PREF_KEY_VOLUME]);
-
-    // Save on every change via SiloManager
-    useEffect(() => {
-        if (Object.keys(customValues).length > 0) {
-            siloManager.updatePreferences({ [PREF_KEY_VALS]: customValues });
-        }
-    }, [customValues, PREF_KEY_VALS, siloManager]);
-
-    useEffect(() => {
-        if (customVolume > 0) {
-            siloManager.updatePreferences({ [PREF_KEY_VOLUME]: customVolume });
-        }
-    }, [customVolume, PREF_KEY_VOLUME, siloManager]);
+        if (!isSynchronizing) return;
+        let last = siloManager.getWeight();
+        let stable = 0;
+        const STABLE_TOLERANCE_KG = 0.15;
+        const iv = setInterval(() => {
+            const w = siloManager.getWeight();
+            stable = Math.abs(w - last) <= STABLE_TOLERANCE_KG ? stable + 1 : 0;
+            last = w;
+            if (stable >= 5) setIsSynchronizing(false); // ~1.25 s of calm
+        }, 250);
+        const maxWait = setTimeout(() => setIsSynchronizing(false), 8000);
+        return () => { clearInterval(iv); clearTimeout(maxWait); };
+    }, [isSynchronizing, siloManager]);
 
     const handleValueChange = useCallback((ingId: number, varId: number, value: number) => {
         const key = `${ingId}-${varId}`;
@@ -267,7 +268,12 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
                 return;
             }
 
+            // Commit the operator's settings now (local-until-saved): this is the
+            // explicit action that persists/broadcasts prefs, not every slider move.
+            persistPrefs();
+
             const runDose = async (doseTargetKg: number, topUpN: number) => {
+                setTopUpInfo({ n: topUpN, max: MAX_TOP_UPS });
                 // 1. Request dose from Pi (Pi tares at current scale weight)
                 logger.info('Customizer', `Requesting Pi dose: silo="${siloId}" target=${doseTargetKg.toFixed(3)}kg topUp=#${topUpN}`);
                 siloManager.send({ type: 'dose_request', siloId, targetKg: doseTargetKg });
@@ -330,12 +336,14 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
                         );
                     } else {
                         logger.info('Customizer', `Dose finished. Shortfall ${shortfall.toFixed(3)}kg within tolerance or max retries reached.`);
+                        setTopUpInfo(null);
                     }
                 };
 
                 proxy.events.onAbort = (reason) => {
                     logger.warn('Customizer', `Dose aborted: ${reason}`);
                     activeSiloIdRef.current = null;
+                    setTopUpInfo(null);
                     if (deadManTimerRef.current) clearTimeout(deadManTimerRef.current);
                 };
 
@@ -352,6 +360,7 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
             // --- Standard (non-gravimetric) brew ---
             // Machine handles proportional scaling via CUP_SIZE / Nominal ratio.
             // Only user-modified ingredients are sent; the rest use machine defaults.
+            persistPrefs();
             onBrewingStart();
             await connection.sendCustomOrder({
                 menuId: drink.id,
@@ -418,9 +427,11 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
             {doseController && (
                 <BrewMonitor
                     controller={doseController}
+                    topUp={topUpInfo ?? undefined}
                     onClose={() => {
                         activeSiloIdRef.current = null;
                         if (deadManTimerRef.current) clearTimeout(deadManTimerRef.current);
+                        setTopUpInfo(null);
                         setDoseController(null);
                         onClose();
                     }}
@@ -447,7 +458,7 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
                         <span className="text-zinc-500 text-sm">ID: {drink.id}</span>
                         <span className="total-volume text-mono text-amber">
                             {isGravimetric
-                                ? `${customVolume.toFixed(1)} kg`
+                                ? formatKg(customVolume)
                                 : `${customVolume} ${recipeUnit}`
                             }
                         </span>
