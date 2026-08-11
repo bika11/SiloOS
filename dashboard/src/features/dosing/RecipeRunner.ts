@@ -69,8 +69,25 @@ export class RecipeRunner {
         this.totalTargetKg = recipe.steps.reduce((sum, s) => sum + s.targetKg, 0);
     }
 
+    /** Hopper capacity (kg) — mirrors the Pi's safety.hopper_abort_kg. */
+    private static readonly HOPPER_CAP_KG = 130;
+
     public start(): void {
         if (this.state === 'running') return;
+
+        // Upfront overflow check: refuse the WHOLE blend before dispensing anything
+        // if it can't fit given what's already in the hopper. The Pi's per-step
+        // gate + overflow guard are the authoritative backstops; this just gives a
+        // clean early block instead of dispensing partway then rejecting mid-sequence.
+        const currentKg = this.siloManager.getWeight() || 0;
+        if (currentKg + this.totalTargetKg > RecipeRunner.HOPPER_CAP_KG) {
+            const reason = `Blend won't fit — hopper ${currentKg.toFixed(1)}kg + ${this.totalTargetKg.toFixed(1)}kg ` +
+                `exceeds ${RecipeRunner.HOPPER_CAP_KG}kg cap. Empty the hopper first.`;
+            logger.warn('RecipeRunner', reason);
+            this.state = 'aborted';
+            this.events.onAbort?.(reason);
+            return;
+        }
 
         logger.info('RecipeRunner',
             `Starting recipe: "${this.recipe.name}" ` +
