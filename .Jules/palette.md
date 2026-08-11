@@ -1,0 +1,3 @@
+## 2026-08-11 - Keyboard Accessibility for Hold-to-Repeat Custom Components
+**Learning:** In custom React UI components, hold-to-repeat functionality relying solely on `onMouseDown` and `onTouchStart` breaks keyboard accessibility. When implementing keyboard support, native browser key-repeat will spawn duplicate timers if held down.
+**Action:** Always pair mouse/touch handlers with `onKeyDown` and `onKeyUp` handlers for 'Enter' and ' ' (Space) keys. Check `!e.repeat` during `onKeyDown` (or conditionally check state like `isPressing`) to prevent native browser key-repeat from triggering multiple timer intervals.

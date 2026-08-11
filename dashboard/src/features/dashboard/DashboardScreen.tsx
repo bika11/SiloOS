@@ -214,13 +214,25 @@ export const DashboardScreen: React.FC<DashboardProps> = ({
                             <div className="btn-emergency-wrapper">
                                 {/* The physical button wrapper */}
                                 <button
-                                    className={`btn-emergency ${isMachineActive ? 'active-machine' : 'inactive-machine'} ${isHolding ? 'holding' : ''}`}
+                                    className={`btn-emergency focus-visible:ring-4 focus-visible:outline-none focus-visible:ring-amber-500 focus-visible:ring-offset-4 focus-visible:ring-offset-zinc-900 ${isMachineActive ? 'active-machine' : 'inactive-machine'} ${isHolding ? 'holding' : ''}`}
                                     onMouseDown={startHold}
                                     onMouseUp={stopHold}
                                     onMouseLeave={stopHold}
                                     onTouchStart={(e: React.TouchEvent<HTMLButtonElement>) => { e.preventDefault(); startHold(); }}
                                     onTouchEnd={stopHold}
                                     onTouchCancel={stopHold}
+                                    onKeyDown={(e: React.KeyboardEvent<HTMLButtonElement>) => {
+                                        if ((e.key === 'Enter' || e.key === ' ') && !e.repeat && !isHolding) {
+                                            e.preventDefault();
+                                            startHold();
+                                        }
+                                    }}
+                                    onKeyUp={(e: React.KeyboardEvent<HTMLButtonElement>) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            stopHold();
+                                        }
+                                    }}
                                 >
                                     {/* Progress Background */}
                                     {isMachineActive && (
