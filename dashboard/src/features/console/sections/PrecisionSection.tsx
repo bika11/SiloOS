@@ -13,7 +13,7 @@ import type { SiloManager } from '../../../bluetooth/SiloManager';
 import { Button, Label, Stepper, Switch } from '../../../components/amokka';
 import { SectionHead } from '../sectionParts';
 import type { ConsoleSilo } from '../siloModel';
-import { DEFAULT_PARAMS, PARAM_SPEC, confidenceFor } from '../paramSpec';
+import { DEFAULT_PARAMS, PARAM_SPEC, confidenceFor, emaAlpha } from '../paramSpec';
 
 interface PrecisionSectionProps {
   siloManager: SiloManager;
@@ -147,10 +147,11 @@ export function PrecisionSection({ siloManager, silos, doseParams }: PrecisionSe
                     <span style={{ fontSize: 12, fontWeight: 500, letterSpacing: '1.6px' }}>{s.title}</span>
                     <span style={{ fontSize: 11, letterSpacing: '1.4px', textTransform: 'uppercase', color: conf === 'Converged' ? 'var(--color-success)' : 'var(--text-secondary)' }}>{conf}</span>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginTop: 14 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 14, marginTop: 14 }}>
                     <Stat label="Coast" value={p?.overshootKg != null ? p.overshootKg.toFixed(3) : '—'} />
                     <Stat label="Valve delay" value={p ? p.valveDelayS.toFixed(2) : '—'} />
                     <Stat label="Flow kg/s" value={p ? p.flowRateKgPerS.toFixed(2) : '—'} />
+                    <Stat label="EMA α" value={p ? emaAlpha(p.totalDoses).toFixed(1) : '—'} />
                   </div>
                   <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
                     <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{p?.totalDoses ?? 0} doses learned</span>

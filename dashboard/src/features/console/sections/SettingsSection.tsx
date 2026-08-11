@@ -5,12 +5,18 @@
  * shown but marked as landing with the Phase 5 backend — no fake controls.
  */
 import type { SiloManager } from '../../../bluetooth/SiloManager';
+import type { TopBrewerConnection } from '../../../bluetooth';
 import type { ParsedMenuItem } from '../../../entities/Menu';
-import { InfoRow, Label, Switch } from '../../../components/amokka';
+import { Button, InfoRow, Label, Switch } from '../../../components/amokka';
 import { SectionHead } from '../sectionParts';
+import { logger } from '../../../utils/logger';
+
+/** App version shown in Settings. Bridge sha is appended once Batch B exposes it. */
+const CONSOLE_VERSION = 'SiloOS Console · v1.4.0';
 
 interface SettingsSectionProps {
   siloManager: SiloManager;
+  connection: TopBrewerConnection | null;
   menuItems: ParsedMenuItem[];
   settings: Record<string, unknown>;
 }
@@ -21,7 +27,7 @@ const BEHAVIOURS = [
   { label: 'Tare before every dose', help: 'Zero the hopper reading at arm time.' },
 ];
 
-export function SettingsSection({ siloManager, menuItems, settings }: SettingsSectionProps) {
+export function SettingsSection({ siloManager, connection, menuItems, settings }: SettingsSectionProps) {
   const theme = (settings.theme as string) ?? 'dark';
   const hidden = (settings.hidden_recipes as number[]) ?? [];
   const host = `${window.location.hostname}:8765`;
@@ -34,7 +40,7 @@ export function SettingsSection({ siloManager, menuItems, settings }: SettingsSe
 
   return (
     <section id="settings" className="console-section" style={{ paddingTop: 72 }}>
-      <SectionHead title="Settings" aside="SiloOS Console" />
+      <SectionHead title="Settings" aside={CONSOLE_VERSION} />
 
       <div className="console-grid-seam" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', borderTop: '1px solid var(--border-color)' }}>
         {/* Bridge */}
@@ -45,6 +51,10 @@ export function SettingsSection({ siloManager, menuItems, settings }: SettingsSe
             <InfoRow label="Machine" value="TopBrewer · BLE relay" />
             <InfoRow label="Scale" value="Laumas TLS485 · RS485" />
             <InfoRow label="Auth token" value="•••• (env)" divider={false} />
+          </div>
+          <div style={{ marginTop: 20, display: 'flex', gap: 10 }}>
+            <Button variant="ghost" onClick={() => connection?.requestMenu()} disabled={!connection}>Rescan</Button>
+            <Button variant="ghost" onClick={() => logger.downloadLogs()}>Logs</Button>
           </div>
           <div style={{ marginTop: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20 }}>
             <div>

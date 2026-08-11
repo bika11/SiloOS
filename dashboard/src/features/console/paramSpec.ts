@@ -46,3 +46,11 @@ export function confidenceFor(totalDoses: number): 'Learning' | 'Settling' | 'Co
   if (totalDoses >= 10) return 'Settling';
   return 'Learning';
 }
+
+/** Adaptive EMA weight the loop applies to the NEXT dose (matches dose_controller). */
+export function emaAlpha(totalDoses: number): number {
+  if (totalDoses === 0) return 1.0;
+  if (totalDoses < 3) return 0.7;
+  if (totalDoses < 10) return 0.4;
+  return 0.2;
+}

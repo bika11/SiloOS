@@ -9,7 +9,7 @@
  * useDoseRunner) — this file only presents it.
  */
 import { useState } from 'react';
-import { BrewRing, Button, InfoRow, Label, SignalBars, StatusDot, Stepper } from '../../../components/amokka';
+import { BrewRing, Button, InfoRow, Label, SignalBars, Sparkline, StatusDot, Stepper } from '../../../components/amokka';
 import { SectionHead } from '../sectionParts';
 import { HOPPER_CAP_KG, LOW_SILO_KG, MAX_TARGET_KG, type ConsoleSilo } from '../siloModel';
 import type { LiveDose } from '../useConsoleData';
@@ -53,6 +53,17 @@ export function LiveSection({ silos, hopperWeight, scaleStale, dose, runner }: L
 
   const canDose = !!selected && !live && !scaleStale;
 
+  // Live-dose derived values (design InfoRows).
+  const doseSilo = silos.find((s) => s.id === dose.siloId);
+  const coastKg = doseSilo?.profile?.overshootKg;
+  const stopPointKg = coastKg != null ? Math.max(0, dose.targetKg - coastKg) : null;
+  const stepLabel = runner.update && runner.update.recipe.steps.length > 1
+    ? `Step ${Math.min(runner.update.currentStepIndex + 1, runner.update.recipe.steps.length)}/${runner.update.recipe.steps.length} · ${runner.update.recipe.name}`
+    : 'Single dose';
+  const doseSubline = dose.siloId
+    ? `Silo ${dose.siloId}${doseSilo?.lotName ? ` · ${doseSilo.lotName}` : ''}`
+    : '';
+
   return (
     <section id="live" className="console-section" style={{ paddingTop: 48 }}>
       <SectionHead
@@ -82,7 +93,7 @@ export function LiveSection({ silos, hopperWeight, scaleStale, dose, runner }: L
                   )}
                 </div>
                 <div style={{ marginTop: 10, fontSize: 13, color: 'var(--text-secondary)' }}>
-                  {dose.siloId ? `Silo ${dose.siloId}` : ''}
+                  {doseSubline}
                 </div>
 
                 {/* Phase bars */}
@@ -112,10 +123,21 @@ export function LiveSection({ silos, hopperWeight, scaleStale, dose, runner }: L
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 40px', marginTop: 34 }}>
                   <InfoRow label="Flow rate" value={`${dose.flowRateKgPerS.toFixed(3)} kg/s`} />
-                  <InfoRow label="Progress" value={`${Math.round(progress * 100)} %`} />
-                  <InfoRow label="Target" value={`${dose.targetKg.toFixed(1)} kg`} />
+                  <InfoRow label="Stop point" value={stopPointKg != null ? `${stopPointKg.toFixed(3)} kg` : '—'} />
+                  <InfoRow label="Coast-down allowance" value={coastKg != null ? `${coastKg.toFixed(3)} kg` : '—'} />
+                  <InfoRow label="Elapsed" value={`${dose.elapsedS.toFixed(1)} s`} />
                   <InfoRow label="Source" value="Pi loop · dose_controller" divider={false} />
+                  <InfoRow label="Step" value={stepLabel} divider={false} />
                 </div>
+
+                {dose.flowSeries.length > 1 && (
+                  <div style={{ marginTop: 28 }}>
+                    <Label>Flow curve</Label>
+                    <div style={{ marginTop: 12 }}>
+                      <Sparkline points={dose.flowSeries} width={420} height={44} />
+                    </div>
+                  </div>
+                )}
 
                 <div style={{ display: 'flex', gap: 12, marginTop: 32 }}>
                   <Button variant="danger" block={false} onClick={runner.abort}>Abort dose</Button>
@@ -230,6 +252,10 @@ export function LiveSection({ silos, hopperWeight, scaleStale, dose, runner }: L
               <InfoRow
                 label="Error"
                 value={dose.lastResult ? `${dose.lastResult.overshootKg > 0 ? '+' : ''}${dose.lastResult.overshootKg.toFixed(2)} kg` : '—'}
+              />
+              <InfoRow
+                label="Duration"
+                value={dose.lastResult ? `${(dose.lastResult.durationMs / 1000).toFixed(1)} s` : '—'}
                 divider={false}
               />
             </div>

@@ -1,8 +1,12 @@
 /**
- * PerformanceSection — Phase 5: real analytics from the bridge dose-history
- * store (siloManager.getDoseHistory), with graceful empty states before any
- * dose has been logged. Per-silo learned flow still comes from profiles.
+ * PerformanceSection — analytics from the bridge dose-history store
+ * (siloManager.getDoseHistory), with graceful empty states. Per-silo learned
+ * flow comes from profiles; runs-per-recipe from the recipe store. Bridge stats,
+ * top-up corrections and the predictive lead-time block arrive in Batch B/C.
  */
+import { useEffect, useState } from 'react';
+import type { SiloManager } from '../../../bluetooth/SiloManager';
+import type { Recipe } from '../../dosing/Recipe';
 import { InfoRow, Label, Sparkline } from '../../../components/amokka';
 import { SectionHead } from '../sectionParts';
 import type { ConsoleSilo } from '../siloModel';
@@ -19,6 +23,7 @@ interface History {
 }
 
 interface PerformanceSectionProps {
+  siloManager: SiloManager;
   silos: ConsoleSilo[];
   history: History | null;
 }
@@ -42,10 +47,24 @@ function Kpi({ label, value, unit, note }: { label: string; value: string; unit?
   );
 }
 
-export function PerformanceSection({ silos, history }: PerformanceSectionProps) {
+export function PerformanceSection({ siloManager, silos, history }: PerformanceSectionProps) {
+  const [recipes, setRecipes] = useState<Record<string, Recipe>>(siloManager.getRecipes());
+  useEffect(() => {
+    const on = (r: Record<string, Recipe>) => setRecipes(r);
+    siloManager.addRecipesListener(on);
+    return () => siloManager.removeRecipesListener(on);
+  }, [siloManager]);
+
   const k = history?.kpis;
   const maxHist = Math.max(1, ...(history?.histogram ?? []).map((h) => h.count));
   const empty = !history || history.totalDoses === 0;
+
+  const perSilo = history?.perSilo ?? {};
+  const todayTotal = Object.values(perSilo).reduce((a, s) => a + (s.today || 0), 0);
+  const maxToday = Math.max(0.001, ...silos.map((s) => perSilo[s.id]?.today || 0));
+
+  const recipeList = Object.values(recipes);
+  const maxRuns = Math.max(1, ...recipeList.map((r) => r.runs ?? 0));
 
   return (
     <section id="performance" className="console-section" style={{ paddingTop: 72 }}>
@@ -60,20 +79,31 @@ export function PerformanceSection({ silos, history }: PerformanceSectionProps) 
         <Kpi label="Within ± 0.1 kg" value={k?.withinTolPct == null ? '—' : String(k.withinTolPct)} unit="%" note="Last 50 doses" />
       </div>
 
-      {/* Learned flow + recent error sparkline per silo */}
+      {/* Dispensed by silo */}
       <div style={{ border: '1px solid var(--border-color)', borderTop: 'none', padding: '30px 28px 26px' }}>
-        <Label>Learned flow & recent error per silo</Label>
-        <div style={{ marginTop: 18 }}>
-          {silos.length === 0 && <div style={{ color: 'var(--text-secondary)', fontSize: 13 }}>No silos yet.</div>}
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+          <Label>Dispensed by silo</Label>
+          <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Today {fmt(todayTotal)} kg across {silos.length} silos</span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.max(1, Math.min(4, silos.length))}, minmax(0, 1fr))`, gap: 40, marginTop: 24 }}>
           {silos.map((s) => {
-            const series = history?.recentBySilo?.[s.id];
-            const disp = history?.perSilo?.[s.id];
+            const d = perSilo[s.id] || { today: 0, week: 0, month: 0 };
+            const share = todayTotal > 0 ? (d.today / todayTotal) * 100 : 0;
             return (
-              <div key={s.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '14px 0', borderBottom: '1px solid var(--border-color)' }}>
-                <span style={{ fontSize: 12, fontWeight: 500, letterSpacing: '1.6px', width: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.title}</span>
-                <Sparkline points={series && series.length > 1 ? series : [0, 0]} width={160} height={26} />
-                <span style={{ fontSize: 13, fontVariantNumeric: 'tabular-nums', width: 110, textAlign: 'right' }}>{s.profile ? `${s.profile.flowRateKgPerS.toFixed(2)} kg/s` : '—'}</span>
-                <span style={{ fontSize: 12, color: 'var(--text-secondary)', width: 110, textAlign: 'right' }}>{disp ? `${disp.today.toFixed(1)} kg today` : '0 kg today'}</span>
+              <div key={s.id}>
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 11, fontWeight: 500, letterSpacing: '2px' }}>{s.title}</span>
+                  <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{share.toFixed(0)}% of today</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 7, marginTop: 12 }}>
+                  <span style={{ fontSize: 32, fontWeight: 200, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{d.today.toFixed(1)}</span>
+                  <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>kg today</span>
+                </div>
+                <div style={{ marginTop: 14, height: 3, background: 'var(--border-color)' }}>
+                  <div style={{ height: 3, background: 'var(--text-primary)', width: `${(d.today / maxToday) * 100}%` }} />
+                </div>
+                <div style={{ marginTop: 10, fontSize: 11, color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}>{d.week.toFixed(1)} kg this week</div>
+                <div style={{ marginTop: 4, fontSize: 11, color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}>{d.month.toFixed(1)} kg this month</div>
               </div>
             );
           })}
@@ -92,12 +122,17 @@ export function PerformanceSection({ silos, history }: PerformanceSectionProps) 
             {(history?.doseLog ?? []).map((d, i) => {
               const good = Math.abs(d.errorKg) <= 0.1;
               const sign = d.errorKg > 0 ? '+' : d.errorKg < 0 ? '−' : '±';
+              const w = Math.min(50, (Math.abs(d.errorKg) / 0.4) * 50);
               return (
-                <div key={i} style={{ display: 'grid', gridTemplateColumns: '60px 1fr 70px 70px 70px', gap: 12, alignItems: 'center', padding: '11px 0', borderBottom: '1px solid var(--border-color)' }}>
+                <div key={i} style={{ display: 'grid', gridTemplateColumns: '52px 1fr 60px 60px 1fr 64px', gap: 12, alignItems: 'center', padding: '11px 0', borderBottom: '1px solid var(--border-color)' }}>
                   <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}>{hhmm(d.ts)}</span>
                   <span style={{ fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.silo}</span>
                   <span style={{ fontSize: 13, color: 'var(--text-secondary)', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{d.targetKg?.toFixed(1)}</span>
                   <span style={{ fontSize: 13, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{d.actualKg?.toFixed(1)}</span>
+                  <div style={{ position: 'relative', height: 8 }}>
+                    <div style={{ position: 'absolute', left: '50%', top: -3, bottom: -3, width: 1, background: 'var(--border-color)' }} />
+                    <div style={{ position: 'absolute', top: 2, height: 4, left: d.errorKg >= 0 ? '50%' : `${50 - w}%`, width: `${Math.max(1, w)}%`, background: good ? 'var(--color-success)' : 'var(--color-danger)' }} />
+                  </div>
                   <span style={{ fontSize: 12, textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: good ? 'var(--text-secondary)' : 'var(--danger-text)' }}>{sign}{Math.abs(d.errorKg).toFixed(2)}</span>
                 </div>
               );
@@ -122,6 +157,47 @@ export function PerformanceSection({ silos, history }: PerformanceSectionProps) 
           </div>
           <div style={{ marginTop: 22 }}>
             <InfoRow label="Aborted doses (7 d)" value={String(history?.abortCount ?? 0)} divider={false} />
+          </div>
+        </div>
+      </div>
+
+      {/* Learned flow + runs per recipe */}
+      <div className="console-grid-seam" style={{ gridTemplateColumns: '1fr 1fr', borderTop: 'none' }}>
+        <div style={{ padding: '30px 28px' }}>
+          <Label>Learned flow & recent error per silo</Label>
+          <div style={{ marginTop: 18 }}>
+            {silos.length === 0 && <div style={{ color: 'var(--text-secondary)', fontSize: 13 }}>No silos yet.</div>}
+            {silos.map((s) => {
+              const series = history?.recentBySilo?.[s.id];
+              return (
+                <div key={s.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '14px 0', borderBottom: '1px solid var(--border-color)' }}>
+                  <span style={{ fontSize: 12, fontWeight: 500, letterSpacing: '1.6px', width: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.title}</span>
+                  <Sparkline points={series && series.length > 1 ? series : [0, 0]} width={150} height={26} />
+                  <span style={{ fontSize: 13, fontVariantNumeric: 'tabular-nums', width: 90, textAlign: 'right' }}>{s.profile ? `${s.profile.flowRateKgPerS.toFixed(2)} kg/s` : '—'}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div style={{ padding: '30px 28px' }}>
+          <Label>Runs per recipe</Label>
+          <div style={{ marginTop: 18 }}>
+            {recipeList.length === 0 && <div style={{ color: 'var(--text-secondary)', fontSize: 13 }}>No recipes.</div>}
+            {recipeList.map((r) => (
+              <div key={r.id} style={{ padding: '12px 0' }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 13 }}>{r.name}</span>
+                  <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}>{r.runs ?? 0}</span>
+                </div>
+                <div style={{ marginTop: 9, height: 2, background: 'var(--border-color)' }}>
+                  <div style={{ height: 2, background: 'var(--text-primary)', width: `${((r.runs ?? 0) / maxRuns) * 100}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: 20, fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+            Bridge stats, top-up corrections and predictive stop lead-time land in the next backend batch.
           </div>
         </div>
       </div>

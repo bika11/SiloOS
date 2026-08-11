@@ -106,8 +106,8 @@ export function RecipesSection({ siloManager, silos, runner }: RecipesSectionPro
       <div className="console-grid-seam" style={{ gridTemplateColumns: '1fr 420px', borderTop: '1px solid var(--border-color)' }}>
         {/* Recipe list */}
         <div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 90px 110px 130px', gap: 20, padding: '14px 28px', borderBottom: '1px solid var(--border-color)' }}>
-            {['Recipe', 'Steps', 'Total', 'Last run'].map((h, i) => (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px 100px 80px 120px', gap: 20, padding: '14px 28px', borderBottom: '1px solid var(--border-color)' }}>
+            {['Recipe', 'Steps', 'Total', 'Runs', 'Last run'].map((h, i) => (
               <span key={h} style={{ fontSize: 11, fontWeight: 500, letterSpacing: '2px', textTransform: 'uppercase', color: 'var(--text-secondary)', textAlign: i === 0 ? 'left' : 'right' }}>{h}</span>
             ))}
           </div>
@@ -119,11 +119,12 @@ export function RecipesSection({ siloManager, silos, runner }: RecipesSectionPro
                 key={r.id}
                 type="button"
                 onClick={() => { setActiveId(r.id); setEditing(false); }}
-                style={{ width: '100%', display: 'grid', gridTemplateColumns: '1fr 90px 110px 130px', gap: 20, alignItems: 'baseline', padding: '20px 28px', background: active?.id === r.id ? 'var(--surface)' : 'transparent', border: 'none', borderBottom: '1px solid var(--border-color)', cursor: 'pointer', fontFamily: 'var(--font-brand)', textAlign: 'left' }}
+                style={{ width: '100%', display: 'grid', gridTemplateColumns: '1fr 80px 100px 80px 120px', gap: 20, alignItems: 'baseline', padding: '20px 28px', background: active?.id === r.id ? 'var(--surface)' : 'transparent', border: 'none', borderBottom: '1px solid var(--border-color)', cursor: 'pointer', fontFamily: 'var(--font-brand)', textAlign: 'left' }}
               >
                 <span style={{ fontSize: 15, fontWeight: 300, color: 'var(--text-primary)' }}>{r.name}</span>
                 <span style={{ fontSize: 13, color: 'var(--text-secondary)', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{r.steps.length}</span>
                 <span style={{ fontSize: 13, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{stepTotal(r.steps).toFixed(1)} kg</span>
+                <span style={{ fontSize: 13, color: 'var(--text-secondary)', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{r.runs ?? 0}</span>
                 <span style={{ fontSize: 13, color: 'var(--text-secondary)', textAlign: 'right' }}>{r.lastUsed ? new Date(r.lastUsed).toLocaleDateString() : '—'}</span>
               </button>
             ))
@@ -205,7 +206,7 @@ export function RecipesSection({ siloManager, silos, runner }: RecipesSectionPro
                   <div style={{ marginTop: 26, display: 'flex', gap: 10 }}>
                     <Button
                       onClick={() => {
-                        const stamped = { ...active, lastUsed: Date.now() };
+                        const stamped = { ...active, lastUsed: Date.now(), runs: (active.runs ?? 0) + 1 };
                         persist({ ...recipes, [stamped.id]: stamped });
                         runner.runRecipe(stamped);
                       }}

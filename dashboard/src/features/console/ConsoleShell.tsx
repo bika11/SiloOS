@@ -157,6 +157,12 @@ export function ConsoleShell({ connection, siloManager, menuItems, onExitToClass
               {chipLabel('Hopper')}
               <span style={{ fontSize: 13, fontVariantNumeric: 'tabular-nums' }}>{hopperWeight.toFixed(1)} kg</span>
             </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              {chipLabel('Dispensed today')}
+              <span style={{ fontSize: 13, fontVariantNumeric: 'tabular-nums' }}>
+                {doseHistory?.kpis?.todayKg != null ? `${doseHistory.kpis.todayKg.toFixed(1)} kg` : '—'}
+              </span>
+            </div>
             {live && (
               <button
                 type="button"
@@ -200,11 +206,11 @@ export function ConsoleShell({ connection, siloManager, menuItems, onExitToClass
 
         <RecipesSection siloManager={siloManager} silos={silos} runner={runner} />
 
-        <PerformanceSection silos={silos} history={doseHistory} />
+        <PerformanceSection siloManager={siloManager} silos={silos} history={doseHistory} />
 
         <PrecisionSection siloManager={siloManager} silos={silos} doseParams={doseParams} />
 
-        <SettingsSection siloManager={siloManager} menuItems={menuItems} settings={settings} />
+        <SettingsSection siloManager={siloManager} connection={connection} menuItems={menuItems} settings={settings} />
       </div>
     </div>
   );

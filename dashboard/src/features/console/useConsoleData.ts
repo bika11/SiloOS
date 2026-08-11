@@ -7,7 +7,7 @@
  * RecipeRunner (see LiveSection). These hooks render whatever dose is live,
  * regardless of which client/flow started it.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { SiloManager, PiDoseMessage } from '../../bluetooth/SiloManager';
 
 /** Live settings object from the bridge (theme, hidden_recipes, …). */
@@ -106,6 +106,10 @@ export interface LiveDose {
   targetKg: number;
   progress: number;
   flowRateKgPerS: number;
+  /** Flow-rate samples accumulated during the active dose (for the flow curve). */
+  flowSeries: number[];
+  /** Client-side timer: seconds since the dose armed (live), else last duration. */
+  elapsedS: number;
   lastResult: PiDoseMessage['result'] | null;
   lastReason: string | null;
 }
@@ -118,6 +122,8 @@ const IDLE_DOSE: LiveDose = {
   targetKg: 0,
   progress: 0,
   flowRateKgPerS: 0,
+  flowSeries: [],
+  elapsedS: 0,
   lastResult: null,
   lastReason: null,
 };
@@ -130,13 +136,16 @@ const ACTIVE_STATES = ['armed', 'running', 'stopping', 'settling'];
  */
 export function useLiveDose(siloManager: SiloManager): LiveDose {
   const [dose, setDose] = useState<LiveDose>(IDLE_DOSE);
+  const startedAt = useRef<number | null>(null);
 
   useEffect(() => {
     const onAck = (siloId: string, _tareG: number, targetKg: number) => {
-      setDose((d) => ({ ...d, active: true, state: 'armed', siloId, targetKg, dispensedKg: 0, progress: 0, lastReason: null }));
+      startedAt.current = Date.now();
+      setDose((d) => ({ ...d, active: true, state: 'armed', siloId, targetKg, dispensedKg: 0, progress: 0, flowSeries: [], elapsedS: 0, lastReason: null }));
     };
     const onUpdate = (msg: PiDoseMessage) => {
       if (msg.state === 'done') {
+        startedAt.current = null;
         setDose((d) => ({
           ...d,
           active: false,
@@ -144,24 +153,36 @@ export function useLiveDose(siloManager: SiloManager): LiveDose {
           dispensedKg: msg.result?.actualKg ?? d.dispensedKg,
           progress: 1,
           flowRateKgPerS: 0,
+          elapsedS: msg.result?.durationMs != null ? msg.result.durationMs / 1000 : d.elapsedS,
           lastResult: msg.result ?? d.lastResult,
         }));
       } else if (msg.state === 'aborted') {
+        startedAt.current = null;
         setDose((d) => ({ ...d, active: false, state: 'aborted', flowRateKgPerS: 0, lastReason: msg.reason ?? null }));
       } else {
-        setDose((d) => ({
-          ...d,
-          active: ACTIVE_STATES.includes(msg.state),
-          state: msg.state,
-          siloId: msg.siloId || d.siloId,
-          dispensedKg: msg.dispensedKg ?? d.dispensedKg,
-          targetKg: msg.targetKg ?? d.targetKg,
-          progress: msg.progress ?? d.progress,
-          flowRateKgPerS: msg.flowRateKgPerS ?? d.flowRateKgPerS,
-        }));
+        setDose((d) => {
+          const active = ACTIVE_STATES.includes(msg.state);
+          if (active && startedAt.current == null) startedAt.current = Date.now();
+          const flow = msg.flowRateKgPerS ?? d.flowRateKgPerS;
+          const flowSeries = (msg.state === 'running' || msg.state === 'stopping')
+            ? [...d.flowSeries, flow].slice(-120)
+            : d.flowSeries;
+          return {
+            ...d,
+            active,
+            state: msg.state,
+            siloId: msg.siloId || d.siloId,
+            dispensedKg: msg.dispensedKg ?? d.dispensedKg,
+            targetKg: msg.targetKg ?? d.targetKg,
+            progress: msg.progress ?? d.progress,
+            flowRateKgPerS: flow,
+            flowSeries,
+          };
+        });
       }
     };
     const onRejected = (_siloId: string, reason: string) => {
+      startedAt.current = null;
       setDose((d) => ({ ...d, active: false, lastReason: reason }));
     };
 
@@ -174,6 +195,15 @@ export function useLiveDose(siloManager: SiloManager): LiveDose {
       siloManager.removeDoseRejectedListener(onRejected);
     };
   }, [siloManager]);
+
+  // Client-side elapsed timer while a dose is live (the bridge doesn't push elapsed).
+  useEffect(() => {
+    if (!dose.active) return;
+    const id = setInterval(() => {
+      if (startedAt.current != null) setDose((d) => ({ ...d, elapsedS: (Date.now() - startedAt.current!) / 1000 }));
+    }, 200);
+    return () => clearInterval(id);
+  }, [dose.active]);
 
   return dose;
 }

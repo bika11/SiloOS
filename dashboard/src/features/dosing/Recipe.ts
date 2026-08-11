@@ -18,4 +18,6 @@ export interface Recipe {
     steps: RecipeStep[];
     /** Timestamp of last execution */
     lastUsed?: number;
+    /** Number of times this recipe has been run (Console display). */
+    runs?: number;
 }
