@@ -196,10 +196,17 @@ class PiDoseController:
     # while a dose is live, force-cancel (the scale feed has died — going blind).
     SCALE_STALE_S = 1.5
 
+    # Empty/blocked-silo detection: if no meaningful material has been dispensed
+    # within this window after starting, the silo is empty or jammed — abort and
+    # flag it, rather than silently "completing" a 0 kg dose. NO_FLOW_MIN_KG is one
+    # scale quantum; below it we treat the dose as "nothing came out".
+    NO_FLOW_TIMEOUT_S = 10.0
+    NO_FLOW_MIN_KG = 0.1
+
     def __init__(self, silo_id: str, target_kg: float, tare_weight: float,
                  ble_client, broadcast_fn, loop,
                  max_dispense_s: float = None, max_weight_kg: float = None,
-                 get_ble_client=None, order_id: str = None):
+                 get_ble_client=None, order_id: str = None, control: dict = None):
         """
         Args:
             silo_id: Drink/silo identifier (for profile lookup)
@@ -229,6 +236,20 @@ class PiDoseController:
         self._get_ble_client = get_ble_client
         self.profile = load_profile(silo_id)
 
+        # Console Phase 7 (C1): control constants are now per-dose params, each
+        # DEFAULTING to the original constant so an un-overridden dose behaves
+        # exactly as before (dose_sim proves this). The bridge passes overrides
+        # from config.json → control; server-side safety caps stay authoritative.
+        control = control or {}
+        self.settle_s = float(control.get("settle_s", self.SETTLE_TIMEOUT_S))
+        self.stall_time_s = float(control.get("stall_time_s", self.STALL_TIMEOUT_S))
+        self.stall_kg = float(control.get("stall_kg", self.STALL_THRESHOLD))
+        self.scale_stale_s = float(control.get("scale_stale_s", self.SCALE_STALE_S))
+        self.debounce = int(control.get("debounce", DEBOUNCE_WINDOW))
+        self.backstop_mult = float(control.get("backstop_mult", 1.5))
+        self.no_flow_s = float(control.get("no_flow_s", self.NO_FLOW_TIMEOUT_S))
+        self.no_flow_min_kg = float(control.get("no_flow_min_kg", self.NO_FLOW_MIN_KG))
+
         self.state = 'armed'
         self.start_time = 0.0
         self.stop_time = 0.0
@@ -252,6 +273,7 @@ class PiDoseController:
         self._safety_handle = None
         self._max_time_handle = None
         self._watchdog_handle = None
+        self._no_flow_handle = None
         self.effective_target = target_kg  # target minus learned coast-down (set in start)
 
         logger.info(
@@ -301,7 +323,7 @@ class PiDoseController:
         # corrupt the dose). It only catches a dose running far longer than
         # expected; the scale-stale watchdog and MAX_DISPENSE_S sit above it.
         expected_s = self.target_kg / max(self.profile['flow_rate_kg_per_s'], 1e-3)
-        seconds_until_stop = max(0.5, expected_s * 1.5)
+        seconds_until_stop = max(0.5, expected_s * self.backstop_mult)
 
         logger.info(
             f"Pi DoseCtrl: RUNNING target={self.target_kg:.3f} "
@@ -323,7 +345,14 @@ class PiDoseController:
             )
         # Scale-feed watchdog: force-cancel if the weight stream goes silent.
         self._watchdog_handle = self.loop.call_later(
-            self.SCALE_STALE_S, self._watchdog_tick
+            self.scale_stale_s, self._watchdog_tick
+        )
+        # Empty/blocked-silo watchdog: if nothing meaningful is dispensed within
+        # no_flow_s, the silo is empty or jammed — abort and flag it rather than
+        # silently "completing" a 0 kg dose. Distinct from the scale-stale watchdog
+        # (the scale is fine here; the weight just never rises).
+        self._no_flow_handle = self.loop.call_later(
+            self.no_flow_s, self._no_flow_check
         )
 
         # Broadcast initial state
@@ -344,8 +373,8 @@ class PiDoseController:
         # the hard stop or the max-weight cap. Small window keeps latency minimal.
         raw = max(0, weight - self.tare_weight)
         self._raw_window.append(raw)
-        if len(self._raw_window) > DEBOUNCE_WINDOW:
-            self._raw_window = self._raw_window[-DEBOUNCE_WINDOW:]
+        if len(self._raw_window) > self.debounce:
+            self._raw_window = self._raw_window[-self.debounce:]
         dispensed = _median(self._raw_window)
         self.last_dispensed = dispensed
 
@@ -397,11 +426,16 @@ class PiDoseController:
                 self._send_stop()
                 return
 
-            # Stall detection — exact same as TypeScript
-            if abs(dispensed - self.last_known_weight) > self.STALL_THRESHOLD:
+            # Stall detection — exact same as TypeScript, but only once real flow
+            # has begun (dispensed past one scale quantum). Before any material
+            # comes out, the empty/blocked-silo watchdog (_no_flow_check) owns the
+            # timeout, so a stall here can't pre-empt it and silently "complete" a
+            # 0 kg dose. Once beans are flowing, stall behaves exactly as before.
+            if abs(dispensed - self.last_known_weight) > self.stall_kg:
                 self.last_activity_time = now
                 self.last_known_weight = dispensed
-            elif now - self.last_activity_time > self.STALL_TIMEOUT_S:
+            elif (dispensed > self.no_flow_min_kg
+                  and now - self.last_activity_time > self.stall_time_s):
                 logger.warning(
                     f"Pi DoseCtrl: STALL DETECTED ({now - self.last_activity_time:.1f}s)"
                 )
@@ -463,7 +497,7 @@ class PiDoseController:
         if self.state in ('done', 'aborted'):
             return
         idle = time.monotonic() - self.last_weight_time
-        if idle >= self.SCALE_STALE_S:
+        if idle >= self.scale_stale_s:
             logger.warning(
                 f"Pi DoseCtrl: SCALE-STALE abort — no weight for {idle:.1f}s "
                 f"at dispensed={self.last_dispensed:.3f}"
@@ -474,8 +508,28 @@ class PiDoseController:
         else:
             # Re-arm for the remaining window.
             self._watchdog_handle = self.loop.call_later(
-                self.SCALE_STALE_S - idle, self._watchdog_tick
+                self.scale_stale_s - idle, self._watchdog_tick
             )
+
+    def _no_flow_check(self):
+        """
+        Empty/blocked-silo detector — abort if no meaningful material has been
+        dispensed within no_flow_s of starting. This is the empty-silo / jam case
+        (the scale is alive but the weight never rises), so we flag it as
+        'empty_or_blocked_silo' instead of quietly completing a 0 kg dose. If flow
+        has already started (dispensed ≥ no_flow_min_kg), this is a no-op.
+        """
+        if self.state != 'running':
+            return
+        if self.last_dispensed >= self.no_flow_min_kg:
+            return  # beans are flowing — nothing to flag
+        logger.warning(
+            f"Pi DoseCtrl: EMPTY/BLOCKED SILO — only {self.last_dispensed:.3f} "
+            f"dispensed in {self.no_flow_s:.0f}s"
+        )
+        audit("pi_empty_silo", silo_id=self.silo_id,
+              dispensed=self.last_dispensed, timeout_s=self.no_flow_s)
+        self._force_abort("empty_or_blocked_silo")
 
     def _force_abort(self, reason: str):
         """
@@ -576,7 +630,7 @@ class PiDoseController:
         if self._settle_handle:
             self._settle_handle.cancel()
         self._settle_handle = self.loop.call_later(
-            self.SETTLE_TIMEOUT_S, self._settle_fire
+            self.settle_s, self._settle_fire
         )
 
     def _settle_fire(self):
@@ -609,12 +663,18 @@ class PiDoseController:
         else:
             flow_rate = self.profile['flow_rate_kg_per_s']
 
+        # Predictive stop lead-time (C2, additive): how many seconds before the
+        # target the loop stopped, at the measured flow. Derived from existing
+        # state; does not affect control.
+        lead_s = ((self.target_kg - self.dispensed_at_stop) / flow_rate) \
+            if (flow_rate > 0 and self.dispensed_at_stop) else 0.0
         result = {
             "targetKg": self.target_kg,
             "actualKg": round(actual, 4),
             "overshootKg": round(overshoot, 4),
             "durationMs": round(duration_s * 1000, 1),
             "flowRateKgPerS": round(flow_rate, 4),
+            "leadS": round(max(0.0, lead_s), 3),
         }
 
         # Learn from this dose
@@ -717,7 +777,7 @@ class PiDoseController:
     def _cancel_timers(self):
         for handle in (self._preemptive_handle, self._settle_handle,
                        self._safety_handle, self._max_time_handle,
-                       self._watchdog_handle):
+                       self._watchdog_handle, self._no_flow_handle):
             if handle:
                 handle.cancel()
         self._preemptive_handle = None
@@ -725,3 +785,4 @@ class PiDoseController:
         self._safety_handle = None
         self._max_time_handle = None
         self._watchdog_handle = None
+        self._no_flow_handle = None

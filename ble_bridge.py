@@ -87,11 +87,26 @@ class Config:
             "tare_offset": 0.0,
             "settings": {
                 "theme": "dark",
-                "hidden_recipes": []
+                "hidden_recipes": [],
+                # Console Phase 7 (C3) behaviour toggles — defaults preserve current behavior.
+                "auto_topup": True,      # client re-requests the missing fraction on shortfall
+                "hold_to_abort": True,   # E-stop needs a 2 s hold (vs immediate)
+                "tare_every": True,      # settle + fresh baseline at each dose arm
+                "verbose_audit": False   # DEBUG-level bridge logging
             },
             "preferences": {}, # Drink-specific tweaks (vol, intensity)
             "profiles": {},     # Learned silo flow rates/delays
             "recipes": {},      # Custom sequential recipes
+            # Console Phase 7 (C1) tunable control constants — each default equals the
+            # dose_controller constant, so an empty/absent block = original behavior.
+            "control": {
+                "settle_s": 2.0,
+                "stall_time_s": 3.0,
+                "stall_kg": 0.005,
+                "scale_stale_s": 1.5,
+                "debounce": 3,
+                "backstop_mult": 1.5
+            },
             "safety": {         # Absolute spill/overflow backstops (see Phase 1)
                 "hopper_abort_kg": 130.0,  # hard abort if a dose reaches this weight
                 "max_target_kg": 130.0,    # reject any dose_request above this
@@ -112,7 +127,7 @@ class Config:
                 # Clean keys and merge dictionaries
                 for k, v in loaded.items():
                     k_clean = k.strip().lower()
-                    if k_clean in ["settings", "preferences", "profiles", "recipes", "safety"] and isinstance(v, dict):
+                    if k_clean in ["settings", "preferences", "profiles", "recipes", "safety", "control"] and isinstance(v, dict):
                         self.data[k_clean].update(v)
                     else:
                         self.data[k_clean] = v.strip() if isinstance(v, str) else v
@@ -149,15 +164,40 @@ MAX_TARGET_KG   = float(_SAFETY.get("max_target_kg", 130.0))
 MAX_DISPENSE_S  = float(_SAFETY.get("max_dispense_s", 600.0))
 ENFORCE_SCALE_CRC = bool(_SAFETY.get("enforce_scale_crc", True))
 
+# --- CONTROL CONSTANTS (Console Phase 7 C1) — tunable per config.json → control.
+# Each default equals the dose_controller constant; passed into each new dose so
+# the loop math is unchanged unless an operator overrides a value. ---
+_CONTROL = config.data.get("control", {})
+CTRL_SETTLE_S       = float(_CONTROL.get("settle_s", 2.0))
+CTRL_STALL_TIME_S   = float(_CONTROL.get("stall_time_s", 3.0))
+CTRL_STALL_KG       = float(_CONTROL.get("stall_kg", 0.005))
+CTRL_SCALE_STALE_S  = float(_CONTROL.get("scale_stale_s", 1.5))
+CTRL_DEBOUNCE       = int(_CONTROL.get("debounce", 3))
+CTRL_BACKSTOP_MULT  = float(_CONTROL.get("backstop_mult", 1.5))
+
 
 # --- CONSOLE PHASE 5 HELPERS (additive; do NOT alter the control loop) ---
+def _control_params():
+    """Current tunable control constants, passed into each new PiDoseController."""
+    return {
+        "settle_s": CTRL_SETTLE_S,
+        "stall_time_s": CTRL_STALL_TIME_S,
+        "stall_kg": CTRL_STALL_KG,
+        "scale_stale_s": CTRL_SCALE_STALE_S,
+        "debounce": CTRL_DEBOUNCE,
+        "backstop_mult": CTRL_BACKSTOP_MULT,
+    }
+
+
 def _safety_public():
-    """Current absolute safety backstops, for the Console Precision section."""
+    """Current safety backstops + tunable control constants (merged), for the
+    Console Precision section. Sent as the `safety` payload the client edits."""
     return {
         "hopper_abort_kg": HOPPER_ABORT_KG,
         "max_target_kg": MAX_TARGET_KG,
         "max_dispense_s": MAX_DISPENSE_S,
         "enforce_scale_crc": ENFORCE_SCALE_CRC,
+        **_control_params(),
     }
 
 
@@ -199,6 +239,12 @@ def _bridge_stats():
     }
 
 
+def _apply_verbose_audit():
+    """C3: 'verbose_audit' toggles DEBUG-level bridge logging. No dosing effect."""
+    verbose = bool(config.data.get("settings", {}).get("verbose_audit", False))
+    logger.setLevel(logging.DEBUG if verbose else logging.INFO)
+
+
 def _record_tare(offset):
     """Append a tare event for the drift/tare telemetry (additive)."""
     global _last_tare_ts
@@ -213,6 +259,7 @@ def update_safety_params(new: dict):
     config.json and updates the module globals so the NEXT dose uses them. Does
     NOT change the control-loop algorithm; callers refuse it while a dose is live."""
     global HOPPER_ABORT_KG, MAX_TARGET_KG, MAX_DISPENSE_S, ENFORCE_SCALE_CRC
+    global CTRL_SETTLE_S, CTRL_STALL_TIME_S, CTRL_STALL_KG, CTRL_SCALE_STALE_S, CTRL_DEBOUNCE, CTRL_BACKSTOP_MULT
 
     def clamp(v, lo, hi, cur):
         try:
@@ -221,6 +268,7 @@ def update_safety_params(new: dict):
             return cur
         return max(lo, min(hi, v))
 
+    # --- Absolute safety backstops ---
     if "hopper_abort_kg" in new:
         HOPPER_ABORT_KG = clamp(new["hopper_abort_kg"], 10.0, 300.0, HOPPER_ABORT_KG)
     if "max_target_kg" in new:
@@ -229,9 +277,28 @@ def update_safety_params(new: dict):
         MAX_DISPENSE_S = clamp(new["max_dispense_s"], 30.0, 3600.0, MAX_DISPENSE_S)
     if "enforce_scale_crc" in new:
         ENFORCE_SCALE_CRC = bool(new["enforce_scale_crc"])
-    config.data["safety"] = _safety_public()
+
+    # --- Tunable control constants (clamped to sane ranges; applied to NEXT dose) ---
+    if "settle_s" in new:
+        CTRL_SETTLE_S = clamp(new["settle_s"], 0.5, 10.0, CTRL_SETTLE_S)
+    if "stall_time_s" in new:
+        CTRL_STALL_TIME_S = clamp(new["stall_time_s"], 1.0, 15.0, CTRL_STALL_TIME_S)
+    if "stall_kg" in new:
+        CTRL_STALL_KG = clamp(new["stall_kg"], 0.001, 0.1, CTRL_STALL_KG)
+    if "scale_stale_s" in new:
+        CTRL_SCALE_STALE_S = clamp(new["scale_stale_s"], 0.5, 5.0, CTRL_SCALE_STALE_S)
+    if "debounce" in new:
+        CTRL_DEBOUNCE = int(clamp(new["debounce"], 1, 9, CTRL_DEBOUNCE))
+    if "backstop_mult" in new:
+        CTRL_BACKSTOP_MULT = clamp(new["backstop_mult"], 1.0, 3.0, CTRL_BACKSTOP_MULT)
+
+    config.data["safety"] = {
+        "hopper_abort_kg": HOPPER_ABORT_KG, "max_target_kg": MAX_TARGET_KG,
+        "max_dispense_s": MAX_DISPENSE_S, "enforce_scale_crc": ENFORCE_SCALE_CRC,
+    }
+    config.data["control"] = _control_params()
     config.save()
-    logger.info(f"Safety params updated: {_safety_public()}")
+    logger.info(f"Dose params updated: {_safety_public()}")
 
 
 def _maybe_record_history(msg):
@@ -247,7 +314,7 @@ def _maybe_record_history(msg):
                 silo=msg.get("siloId", "?"),
                 target_kg=r.get("targetKg"), actual_kg=r.get("actualKg"),
                 error_kg=r.get("overshootKg"), duration_ms=r.get("durationMs"),
-                source="dose", aborted=False,
+                source="dose", aborted=False, lead_s=r.get("leadS"),
             )
             asyncio.ensure_future(broadcast_relay({
                 "type": "dose_history_update",
@@ -445,6 +512,7 @@ async def websocket_handler(request):
                     elif data.get("type") == "update_settings":
                         config.data["settings"].update(data.get("settings", {}))
                         config.save()
+                        _apply_verbose_audit()  # C3: reflect verbose_audit toggle live
                         await broadcast_relay({"type": "settings_update", "settings": config.settings})
 
                     elif data.get("type") == "update_preferences":
@@ -562,8 +630,13 @@ async def websocket_handler(request):
                         else:
                             # Settle the scale before capturing the dose baseline so a
                             # vibration doesn't bias the tare (garbage baseline -> wrong
-                            # dispensed weight for the whole dose).
-                            tare_at = await read_stable_weight()
+                            # dispensed weight for the whole dose). C3: 'tare_every' off
+                            # skips the settle gate and uses the current reading (faster
+                            # arm, no stability check) — defaults ON = original behavior.
+                            if config.data["settings"].get("tare_every", True):
+                                tare_at = await read_stable_weight()
+                            else:
+                                tare_at = current_weight
                             if tare_at is None:
                                 audit("dose_rejected", silo_id=silo_id,
                                       reason="scale not settled", weight=current_weight,
@@ -587,6 +660,7 @@ async def websocket_handler(request):
                                     max_weight_kg=HOPPER_ABORT_KG,
                                     get_ble_client=lambda: topbrewer_client,
                                     order_id=order_id,
+                                    control=_control_params(),
                                 )
                                 active_doses[silo_id] = {
                                     "start_time": time.time(),
@@ -786,6 +860,7 @@ async def run_topbrewer_client():
 
 async def main():
     dose_history.init()  # Console Phase 5: additive dose-history store
+    _apply_verbose_audit()  # C3: honor verbose_audit at startup
     service = None
     if HAVE_BLUEZ:
         try:

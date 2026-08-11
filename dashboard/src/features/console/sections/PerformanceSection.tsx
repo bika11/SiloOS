@@ -22,6 +22,9 @@ interface History {
   totalDoses: number;
   topUpCount: number;
   topUpMeanShortfall: number;
+  leadNow: number | null;
+  leadSeries: number[];
+  leadTrend: number | null;
 }
 
 interface BridgeStats {
@@ -243,19 +246,28 @@ export function PerformanceSection({ siloManager, silos, history, bridgeStats }:
         </div>
 
         <div style={{ padding: '30px 28px' }}>
-          <Label>Scale tare</Label>
-          <div style={{ marginTop: 14 }}>
+          <Label>Predictive stop &amp; scale tare</Label>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 14 }}>
+            <span style={{ fontSize: 40, fontWeight: 200, lineHeight: 1, fontVariantNumeric: 'tabular-nums', color: history?.leadNow == null ? 'var(--text-tertiary)' : 'var(--text-primary)' }}>
+              {history?.leadNow == null ? '—' : history.leadNow.toFixed(2)}
+            </span>
+            <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>s lead before target</span>
+          </div>
+          {history && history.leadSeries.length > 1 && (
+            <div style={{ marginTop: 14 }}>
+              <Sparkline points={history.leadSeries} width={340} height={44} />
+            </div>
+          )}
+          <div style={{ marginTop: 16 }}>
+            <InfoRow label="Lead trend (last 12)" value={history?.leadTrend == null ? '—' : `${history.leadTrend > 0 ? '+' : ''}${history.leadTrend.toFixed(2)} s`} />
             <InfoRow label="Last tare" value={bridgeStats?.lastTareTs ? new Date(bridgeStats.lastTareTs * 1000).toLocaleString() : '—'} />
-            <InfoRow label="Current offset" value={bridgeStats ? `${bridgeStats.tareOffset.toFixed(2)} kg` : '—'} divider={false} />
+            <InfoRow label="Scale offset" value={bridgeStats ? `${bridgeStats.tareOffset.toFixed(2)} kg` : '—'} divider={false} />
           </div>
           {bridgeStats && bridgeStats.tareSeries.length > 1 && (
             <div style={{ marginTop: 16 }}>
-              <Sparkline points={bridgeStats.tareSeries} width={320} height={34} />
+              <Sparkline points={bridgeStats.tareSeries} width={340} height={34} />
             </div>
           )}
-          <div style={{ marginTop: 16, fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-            Predictive stop lead-time lands with the control-params batch.
-          </div>
         </div>
       </div>
     </section>

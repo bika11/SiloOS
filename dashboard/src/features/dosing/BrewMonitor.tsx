@@ -21,6 +21,14 @@ const STATE_LABEL_MAP: Record<DoseState, string> = {
     aborted: 'Aborted',
 };
 
+/** Friendly operator copy for the machine-readable abort reasons the Pi sends. */
+const ABORT_REASON_LABEL: Record<string, string> = {
+    empty_or_blocked_silo: '⚠ EMPTY OR BLOCKED SILO',
+    scale_stale: '⚠ SCALE SIGNAL LOST',
+    max_weight: '⚠ OVERFLOW GUARD — MAX WEIGHT',
+    max_time: '⚠ MAX DISPENSE TIME REACHED',
+};
+
 // SVG ring constants
 const RING_RADIUS = 110;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
@@ -40,6 +48,7 @@ export const BrewMonitor: React.FC<BrewMonitorProps> = ({ controller, onClose, t
     const [result, setResult] = useState<DoseResult | null>(null);
     const [isPulsing, setIsPulsing] = useState(false);
     const [signalLost, setSignalLost] = useState(false);
+    const [abortReason, setAbortReason] = useState<string | null>(null);
     const pulseTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
     const lastUpdateRef = useRef<number>(Date.now());
 
@@ -48,6 +57,7 @@ export const BrewMonitor: React.FC<BrewMonitorProps> = ({ controller, onClose, t
         const handleUpdate = (u: DoseUpdate) => {
             lastUpdateRef.current = Date.now();
             setSignalLost(false);
+            if (u.state === 'running') setAbortReason(null); // clear stale reason on a new/next dose
             setUpdate(u);
             setIsPulsing(true);
             clearTimeout(pulseTimeout.current);
@@ -60,8 +70,9 @@ export const BrewMonitor: React.FC<BrewMonitorProps> = ({ controller, onClose, t
             setUpdate(prev => ({ ...prev, state: 'done' }));
         };
 
-        const handleAbort = (_reason: string) => {
+        const handleAbort = (reason: string) => {
             lastUpdateRef.current = Date.now();
+            setAbortReason(reason || null);
             setUpdate(prev => ({ ...prev, state: 'aborted' }));
         };
 
@@ -108,6 +119,12 @@ export const BrewMonitor: React.FC<BrewMonitorProps> = ({ controller, onClose, t
     const stateClass = update.state;
     const isDone = update.state === 'done' || update.state === 'aborted';
 
+    // When the dose was aborted, prefer the specific reason (empty/blocked silo,
+    // scale lost, overflow guard…) over the generic "Aborted" label.
+    const abortLabel = abortReason
+        ? (ABORT_REASON_LABEL[abortReason] ?? `Aborted — ${abortReason}`)
+        : 'Aborted';
+
     // Overshoot thresholds in kg (0.01 kg = 10 g = good, 0.05 kg = 50 g = warn)
     const overshootClass = (ovKg: number) =>
         Math.abs(ovKg) <= 0.01 ? 'good' : Math.abs(ovKg) <= 0.05 ? 'warn' : 'bad';
@@ -118,9 +135,11 @@ export const BrewMonitor: React.FC<BrewMonitorProps> = ({ controller, onClose, t
             <div className={`brew-monitor-status ${signalLost && !isDone ? 'aborted' : stateClass}`}>
                 {signalLost && !isDone
                     ? '⚠ SIGNAL LOST — CLOSING VALVE'
-                    : (topUp && topUp.n >= 1 && (update.state === 'running' || update.state === 'stopping' || update.state === 'settling')
-                        ? `Topping up ${topUp.n} of ${topUp.max}`
-                        : (STATE_LABEL_MAP[update.state] || update.state))}
+                    : update.state === 'aborted'
+                        ? abortLabel
+                        : (topUp && topUp.n >= 1 && (update.state === 'running' || update.state === 'stopping' || update.state === 'settling')
+                            ? `Topping up ${topUp.n} of ${topUp.max}`
+                            : (STATE_LABEL_MAP[update.state] || update.state))}
             </div>
 
             {/* Circular Progress Ring */}

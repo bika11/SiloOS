@@ -344,7 +344,9 @@ export const DrinkCustomizer: React.FC<DrinkCustomizerProps> = ({
                     if (deadManTimerRef.current) clearTimeout(deadManTimerRef.current);
 
                     const shortfall = result.targetKg - result.actualKg;
-                    if (shortfall > TOP_UP_TOLERANCE_KG && topUpN < MAX_TOP_UPS) {
+                    // C3: auto top-up is gated by the 'auto_topup' behaviour setting (default on).
+                    const autoTopUp = siloManager.getSettings().auto_topup !== false;
+                    if (autoTopUp && shortfall > TOP_UP_TOLERANCE_KG && topUpN < MAX_TOP_UPS) {
                         logger.info('Customizer', `Auto top-up #${topUpN + 1}: shortfall=${shortfall.toFixed(3)}kg`);
                         // Console Phase 7: additive telemetry for the top-up-corrections metric.
                         siloManager.sendTelemetry({ type: 'topup_event', siloId, shortfallKg: shortfall });

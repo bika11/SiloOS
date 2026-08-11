@@ -21,10 +21,11 @@ interface SettingsSectionProps {
   settings: Record<string, unknown>;
 }
 
-const BEHAVIOURS = [
-  { label: 'Scaled top-up correction', help: 'Re-request the missing fraction when a dose falls short.' },
-  { label: 'Require hold to abort', help: 'Emergency stop needs a two-second press.' },
-  { label: 'Tare before every dose', help: 'Zero the hopper reading at arm time.' },
+const TOGGLES: { key: string; label: string; help: string; default: boolean }[] = [
+  { key: 'auto_topup', label: 'Scaled top-up correction', help: 'Re-request the missing fraction when a dose falls short.', default: true },
+  { key: 'hold_to_abort', label: 'Require hold to abort', help: 'Emergency stop needs a two-second press (off = immediate).', default: true },
+  { key: 'tare_every', label: 'Tare before every dose', help: 'Settle + zero the hopper reading at arm time (off = use the current reading).', default: true },
+  { key: 'verbose_audit', label: 'Verbose audit trail', help: 'DEBUG-level logging on the bridge.', default: false },
 ];
 
 export function SettingsSection({ siloManager, connection, menuItems, settings }: SettingsSectionProps) {
@@ -69,15 +70,18 @@ export function SettingsSection({ siloManager, connection, menuItems, settings }
         <div style={{ padding: '30px 28px' }}>
           <Label>Behaviour</Label>
           <div style={{ marginTop: 12 }}>
-            {BEHAVIOURS.map((b) => (
-              <div key={b.label} style={{ padding: '16px 0', borderBottom: '1px solid var(--border-color)' }}>
-                <div style={{ fontSize: 14 }}>{b.label}</div>
-                <div style={{ marginTop: 5, fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{b.help}</div>
-              </div>
-            ))}
-          </div>
-          <div style={{ marginTop: 18, fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-            These are currently fixed in the dose flow. Making them configurable is part of the Phase 5 backend work (they are shown here so the surface is complete, not as live toggles).
+            {TOGGLES.map((t) => {
+              const on = (settings[t.key] as boolean | undefined) ?? t.default;
+              return (
+                <div key={t.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, padding: '16px 0', borderBottom: '1px solid var(--border-color)' }}>
+                  <div>
+                    <div style={{ fontSize: 14 }}>{t.label}</div>
+                    <div style={{ marginTop: 5, fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{t.help}</div>
+                  </div>
+                  <Switch checked={on} onChange={(next) => siloManager.updateSettings({ [t.key]: next })} aria-label={t.label} />
+                </div>
+              );
+            })}
           </div>
         </div>
 

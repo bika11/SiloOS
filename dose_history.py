@@ -45,6 +45,11 @@ def init():
                 )"""
             )
             c.execute("CREATE INDEX IF NOT EXISTS idx_doses_ts ON doses(ts)")
+            # Migration: add lead_s to older DBs (Console Phase 7 C2).
+            try:
+                c.execute("ALTER TABLE doses ADD COLUMN lead_s REAL")
+            except Exception:
+                pass  # column already exists
             c.execute(
                 """CREATE TABLE IF NOT EXISTS topups (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -73,17 +78,18 @@ def record_topup(silo=None, shortfall_kg=None, ts=None):
 
 
 def record(silo, target_kg=None, actual_kg=None, error_kg=None,
-           duration_ms=None, source="dose", aborted=False, reason=None, ts=None):
+           duration_ms=None, source="dose", aborted=False, reason=None, ts=None,
+           lead_s=None):
     """Append one dose row. Guarded — never raises into the caller."""
     try:
         if not _ready:
             init()
         with _lock, contextlib.closing(_connect()) as c:
             c.execute(
-                "INSERT INTO doses (ts, silo, target_kg, actual_kg, error_kg, duration_ms, source, aborted, reason)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO doses (ts, silo, target_kg, actual_kg, error_kg, duration_ms, source, aborted, reason, lead_s)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (ts or time.time(), silo, target_kg, actual_kg, error_kg,
-                 duration_ms, source, 1 if aborted else 0, reason),
+                 duration_ms, source, 1 if aborted else 0, reason, lead_s),
             )
             c.commit()
     except Exception:
@@ -102,6 +108,9 @@ def _empty_summary():
         "totalDoses": 0,
         "topUpCount": 0,
         "topUpMeanShortfall": 0,
+        "leadNow": None,
+        "leadSeries": [],
+        "leadTrend": None,
     }
 
 
@@ -194,6 +203,14 @@ def summary(recent=12, tol_kg=0.1):
             topup_count = (tu[0] if tu else 0) or 0
             topup_mean = round((tu[1] if tu else 0) or 0, 3)
 
+            # Predictive stop lead-time (C2): most-recent + a recent series (oldest→newest).
+            leads = [row[0] for row in c.execute(
+                f"SELECT lead_s FROM doses WHERE {done_where} AND lead_s IS NOT NULL "
+                f"ORDER BY ts DESC LIMIT 30") if row[0] is not None]
+            lead_now = round(leads[0], 3) if leads else None
+            lead_series = list(reversed(leads[:12]))
+            lead_trend = round(leads[0] - leads[min(len(leads) - 1, 11)], 3) if len(leads) > 1 else None
+
             return {
                 "kpis": {
                     "todayKg": today_kg, "todayCount": today_n,
@@ -209,6 +226,9 @@ def summary(recent=12, tol_kg=0.1):
                 "totalDoses": total_done,
                 "topUpCount": topup_count,
                 "topUpMeanShortfall": topup_mean,
+                "leadNow": lead_now,
+                "leadSeries": lead_series,
+                "leadTrend": lead_trend,
             }
     except Exception:
         return _empty_summary()

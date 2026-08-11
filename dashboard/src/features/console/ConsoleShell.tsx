@@ -54,6 +54,7 @@ export function ConsoleShell({ connection, siloManager, menuItems, onExitToClass
   const doseHistory = useDoseHistory(siloManager);
   const bridgeStats = useBridgeStats(siloManager);
   const hidden = (settings.hidden_recipes as number[]) ?? [];
+  const holdToAbort = (settings.hold_to_abort as boolean | undefined) ?? true;
   const hiddenKey = hidden.join(',');
   const visibleItems = useMemo(
     () => menuItems.filter((i) => !hidden.includes(i.id)),
@@ -101,6 +102,7 @@ export function ConsoleShell({ connection, siloManager, menuItems, onExitToClass
   };
   const startHold = () => {
     if (!live) return;
+    if (!holdToAbort) { fireEstop(); return; }  // C3: immediate abort when hold is disabled
     holdVal.current = 0;
     setHold(0);
     holdTimer.current = window.setInterval(() => {
