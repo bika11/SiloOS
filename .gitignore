@@ -20,3 +20,7 @@ dashboard/dist/
 
 # Runtime config (contains auth_token) — keep local, use config.example.json as template
 config.json
+
+# Dashboard local env (contains VITE_WS_AUTH_TOKEN)
+.env
+dashboard/.env
