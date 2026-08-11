@@ -1,0 +1,39 @@
+/* ─────────────────────────────────────────────────────────────
+   Amokka — Typography
+   One family, three weights, three roles. Never bold. The design
+   relies on weight *contrast* (ultralight titles vs. medium caps),
+   not weight extremes.
+   ───────────────────────────────────────────────────────────── */
+:root {
+  /* Family — Mabry Pro is the brand face (logotype + UI).
+     Falls back to the system UI sans, then Outfit. */
+  --font-brand: "Mabry Pro", "Outfit", ui-sans-serif, system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+
+  /* Weights — the ONLY three used. w700+ is forbidden. */
+  --weight-light:   300; /* body, large ultralight titles */
+  --weight-regular: 400;
+  --weight-medium:  500; /* small-caps labels only */
+
+  /* Display — screen titles, drink names, status words. */
+  --display-size: 36px;
+  --display-weight: 300;
+  --display-tracking: -0.5px;
+  --display-line: 1.1;
+
+  /* Label — all-caps section names, tab names, button text. */
+  --label-size: 11px;
+  --label-weight: 500;
+  --label-tracking: 2px;
+  --label-transform: uppercase;
+
+  /* Body — device names, descriptions, option values. */
+  --body-size: 15px;
+  --body-size-sm: 13px;
+  --body-weight: 300;
+  --body-line: 1.5;
+}
+
+/* Convenience utility classes (optional — mirror the app's text styles) */
+.amokka-display { font-family: var(--font-brand); font-size: var(--display-size); font-weight: 200; letter-spacing: var(--display-tracking); line-height: var(--display-line); color: var(--text-primary); }
+.amokka-label   { font-family: var(--font-brand); font-size: var(--label-size); font-weight: var(--label-weight); letter-spacing: var(--label-tracking); text-transform: uppercase; color: var(--text-secondary); }
+.amokka-body    { font-family: var(--font-brand); font-size: var(--body-size); font-weight: var(--body-weight); line-height: var(--body-line); color: var(--text-primary); }

@@ -1,0 +1,8 @@
+/* Amokka Design System — global entry point (SiloOS Console).
+   Import THIS file once (main.tsx). It reaches every token + @font-face.
+   Ported from the Claude Design "SiloOS Console" project. */
+@import "./fonts.css";
+@import "./colors.css";
+@import "./coffee-colors.css";
+@import "./typography.css";
+@import "./spacing.css";

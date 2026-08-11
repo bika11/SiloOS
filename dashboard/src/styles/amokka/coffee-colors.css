@@ -1,0 +1,21 @@
+/* ─────────────────────────────────────────────────────────────
+   Amokka — Coffee Colour System (Scanomat Brand Manual 01/2022, §5)
+   ADDITIVE FILE: label/artwork colours referring to specific coffees.
+   For packaging, social visuals and artwork — NOT the app UI, which
+   stays near-black. Kept for design-system fidelity; unused by the console.
+   ───────────────────────────────────────────────────────────── */
+:root {
+  --coffee-off-white: #faf9f5;
+
+  --coffee-amokka-crema: #ef7b86;
+  --coffee-gorgona:      #ffdd7f;
+  --coffee-city-roast:   #c09f86;
+  --coffee-portofino:    #ac7984;
+  --coffee-amokka-decaf: #66accb;
+  --coffee-brazil:       #c59eca;
+  --coffee-el-salvador:  #c3ceb8;
+  --coffee-treehuggers:  #9cb3ab;
+  --coffee-guatemala:    #90ccb8;
+  --coffee-peru:         #cbdd9f;
+  --coffee-nicaragua:    #fcd19d;
+}

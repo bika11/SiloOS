@@ -1,0 +1,24 @@
+/* Mabry Pro — Amokka's brand typeface. Used for the logotype and all UI.
+   Ported from the Amokka Design System (SiloOS Console). Path adjusted to the
+   OTFs committed alongside this file (styles/amokka/fonts/). */
+@font-face {
+  font-family: "Mabry Pro";
+  src: url("./fonts/mabry-light-pro.otf") format("opentype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Mabry Pro";
+  src: url("./fonts/mabry-regular-pro.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Mabry Pro";
+  src: url("./fonts/mabry-medium-pro.otf") format("opentype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}

@@ -1,0 +1,32 @@
+/* ─────────────────────────────────────────────────────────────
+   Amokka — Spacing, geometry & motion
+   "When in doubt, use more whitespace, not less. Crowding is the
+   enemy." Ported from LayoutConstants.
+   ───────────────────────────────────────────────────────────── */
+:root {
+  /* — Layout rhythm — */
+  --space-screen-x:   28px; /* screen horizontal padding */
+  --space-content-top: 56px; /* top of content, below safe area */
+  --space-content-bottom: 40px; /* bottom, before safe area */
+  --space-section:    32px; /* between major sections (32–48) */
+  --space-section-lg: 48px;
+  --space-related:    20px; /* between related items (16–24) */
+  --space-pair:       8px;  /* between a label and its value (6–8) */
+  --space-tight:      4px;
+
+  /* — Geometry — */
+  --radius: 2px;            /* the ONLY radius. Blocky, never soft */
+  --grid-gap: 1px;          /* drink grid — 1px hairline seams */
+
+  /* — Sizing — */
+  --touch-target: 44px;     /* minimum tap target (Fitts' Law) */
+  --button-min-height: 50px;
+  --tab-height: 42px;
+  --status-dot: 6px;
+  --loader-size: 20px;
+
+  /* — Motion — */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fade: 400ms;  /* screen fade (Discovery → Dashboard) */
+  --dur-quick: 300ms; /* push + fade (Detail → Brew) */
+}

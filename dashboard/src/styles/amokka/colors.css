@@ -1,0 +1,43 @@
+/* ─────────────────────────────────────────────────────────────
+   Amokka — Colour system
+   "No colour is defined anywhere else." Ported 1:1 from the app's
+   AppTheme. A near-black, pure-typography palette in the Dieter Rams
+   tradition — restraint over decoration. Weight and whitespace do the
+   work, not colour.
+   ───────────────────────────────────────────────────────────── */
+:root {
+  /* — Core neutrals (the whole interface lives here) — */
+  --amokka-background: #080808; /* near-black — main scaffold */
+  --amokka-surface:    #111111; /* elevated cards, dialogs, sheets */
+  --amokka-border:     #1e1e1e; /* hairline dividers & card edges */
+  --amokka-white:      #ffffff; /* primary readable text */
+  --amokka-grey:       #777777; /* supporting text, labels */
+  --amokka-graphite:   #333333; /* muted — inactive states */
+
+  /* — Semantic accents (used sparingly, never decoratively) — */
+  --amokka-danger:    #883333; /* errors, Stop button. Muted red, not alarming */
+  --amokka-connected: #3d8b5c; /* success / connected. Muted green */
+
+  /* — Hardware & brew-stage tints (functional telemetry colours) — */
+  --amokka-grinder:     #8b6914; /* grinder stage */
+  --amokka-steamer:     #4a7b8c; /* steam / milk stage */
+  --amokka-fluid:       #3d6b5c; /* fluid / water stage */
+  --amokka-stage-prime: #6b6b3d; /* priming stage */
+  --amokka-stage-clean: #4a7b8c; /* cleaning stage */
+
+  /* ── Semantic aliases (reference these in components) ── */
+  --bg:              var(--amokka-background);
+  --surface:         var(--amokka-surface);
+  --border-color:    var(--amokka-border);
+  --text-primary:    var(--amokka-white);
+  --text-secondary:  var(--amokka-grey);
+  --text-tertiary:   var(--amokka-graphite);
+  --color-success:   var(--amokka-connected);
+  --color-danger:    var(--amokka-danger);
+
+  /* Danger text tint used on outline buttons in the console */
+  --danger-text:     #c96a6a;
+
+  /* Hairline weight — the app draws every border at 0.5px */
+  --hairline: 0.5px;
+}
