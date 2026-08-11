@@ -25,13 +25,13 @@
 ### Step 1: Verify Physical Connection
 Check USB-RS485 adapter:
 ```bash
-ssh -i siloos_key siloos@10.0.124.90 "ls -la /dev/ttyUSB*"
+ssh -i siloos_key siloos@siloos.local "ls -la /dev/ttyUSB*"
 ```
 Expected: `/dev/ttyUSB0` exists
 
 ### Step 2: Run Serial Diagnostics
 ```bash
-ssh -i siloos_key siloos@10.0.124.90 "python3 diag_serial.py"
+ssh -i siloos_key siloos@siloos.local "python3 diag_serial.py"
 ```
 Expected: Raw Modbus frames printed to console
 
@@ -45,7 +45,7 @@ Weight = (weight_h << 8 | weight_l) / scale_factor
 ### Step 4: Test via WebSocket
 Connect to the bridge and observe weight updates:
 ```javascript
-const ws = new WebSocket('ws://10.0.124.90:8765/?auth=silo-secret');
+const ws = new WebSocket('ws://siloos.local:8765/?auth=silo-secret');
 ws.onmessage = (e) => {
   const data = JSON.parse(e.data);
   if (data.weight !== undefined) {

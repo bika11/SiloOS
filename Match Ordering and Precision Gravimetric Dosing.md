@@ -179,7 +179,7 @@ A full-screen overlay component shown during active gravimetric brews.
 ### Verification Commands
 ```bash
 # Check Pi bridge logs during test
-ssh -i siloos_key siloos@10.0.124.90 "sudo journalctl -u scale_bridge -f"
+ssh -i siloos_key siloos@siloos.local "sudo journalctl -u scale_bridge -f"
 
 # Check dashboard builds
 cd dashboard && npm run build

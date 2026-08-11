@@ -48,14 +48,14 @@ Raspberry Pi 3B+, BLE (BlueZ/bleak), RS485 serial, Python async
 ### Deployment Commands
 ```bash
 # SSH to Pi
-ssh -i siloos_key siloos@10.0.124.90
+ssh -i siloos_key siloos@siloos.local
 
 # Deploy bridge
-scp -i siloos_key ble_bridge.py siloos@10.0.124.90:/home/siloos/
-ssh -i siloos_key siloos@10.0.124.90 "sudo systemctl restart scale_bridge"
+scp -i siloos_key ble_bridge.py siloos@siloos.local:/home/siloos/
+ssh -i siloos_key siloos@siloos.local "sudo systemctl restart scale_bridge"
 
 # Check logs
-ssh -i siloos_key siloos@10.0.124.90 "sudo journalctl -u scale_bridge -n 50"
+ssh -i siloos_key siloos@siloos.local "sudo journalctl -u scale_bridge -n 50"
 
 # Full setup on fresh Pi
 sudo ./setup.sh

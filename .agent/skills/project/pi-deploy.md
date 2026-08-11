@@ -8,7 +8,7 @@
 
 ## Prerequisites
 - SSH key available at `./siloos_key`
-- Pi reachable at `10.0.124.90` (or configured IP)
+- Pi reachable at `siloos.local` (or configured IP)
 - Pi user: `siloos`
 
 ## Procedure
@@ -26,31 +26,31 @@ sudo systemctl start scale_bridge
 ### Code Deployment
 ```bash
 # Step 1: Copy updated bridge
-scp -i siloos_key ble_bridge.py siloos@10.0.124.90:/home/siloos/ble_bridge.py
+scp -i siloos_key ble_bridge.py siloos@siloos.local:/home/siloos/ble_bridge.py
 
 # Step 2: Copy updated config (if changed)
-scp -i siloos_key config.json siloos@10.0.124.90:/home/siloos/config.json
+scp -i siloos_key config.json siloos@siloos.local:/home/siloos/config.json
 
 # Step 3: Restart service
-ssh -i siloos_key siloos@10.0.124.90 "sudo systemctl restart scale_bridge"
+ssh -i siloos_key siloos@siloos.local "sudo systemctl restart scale_bridge"
 
 # Step 4: Verify
-ssh -i siloos_key siloos@10.0.124.90 "sudo journalctl -u scale_bridge -n 20 --no-pager"
+ssh -i siloos_key siloos@siloos.local "sudo journalctl -u scale_bridge -n 20 --no-pager"
 ```
 
 ### Health Check
 ```bash
 # Service status
-ssh -i siloos_key siloos@10.0.124.90 "sudo systemctl status scale_bridge"
+ssh -i siloos_key siloos@siloos.local "sudo systemctl status scale_bridge"
 
 # Recent logs
-ssh -i siloos_key siloos@10.0.124.90 "sudo journalctl -u scale_bridge -n 50 --no-pager"
+ssh -i siloos_key siloos@siloos.local "sudo journalctl -u scale_bridge -n 50 --no-pager"
 
 # System resources
-ssh -i siloos_key siloos@10.0.124.90 "free -h && df -h / && uptime"
+ssh -i siloos_key siloos@siloos.local "free -h && df -h / && uptime"
 
 # BLE adapter
-ssh -i siloos_key siloos@10.0.124.90 "bluetoothctl show"
+ssh -i siloos_key siloos@siloos.local "bluetoothctl show"
 ```
 
 ### Dashboard Deployment (on Pi)
@@ -59,10 +59,10 @@ ssh -i siloos_key siloos@10.0.124.90 "bluetoothctl show"
 cd dashboard && npm run build
 
 # Copy dist to Pi
-scp -i siloos_key -r dashboard/dist siloos@10.0.124.90:/home/siloos/dashboard-dist/
+scp -i siloos_key -r dashboard/dist siloos@siloos.local:/home/siloos/dashboard-dist/
 
 # Serve with Python (simple)
-ssh -i siloos_key siloos@10.0.124.90 "cd /home/siloos/dashboard-dist && python3 -m http.server 8080"
+ssh -i siloos_key siloos@siloos.local "cd /home/siloos/dashboard-dist && python3 -m http.server 8080"
 ```
 
 ## Expected Outcomes

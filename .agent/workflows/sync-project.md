@@ -10,8 +10,8 @@ Use this workflow to ensure the local master copy, documentation, and automated 
 ### 1. Synchronize Remote Code
 Pull the latest operational files from the active deployment to ensure the local master matches the live system.
 ```powershell
-ssh -i siloos_key -o BatchMode=yes -o StrictHostKeyChecking=no siloos@10.0.124.90 "cat /home/siloos/ble_bridge.py" > ble_bridge.py
-ssh -i siloos_key -o BatchMode=yes -o StrictHostKeyChecking=no siloos@10.0.124.90 "cat /etc/systemd/system/scale_bridge.service" > scale_bridge.service
+ssh -i siloos_key -o BatchMode=yes -o StrictHostKeyChecking=no siloos@siloos.local "cat /home/siloos/ble_bridge.py" > ble_bridge.py
+ssh -i siloos_key -o BatchMode=yes -o StrictHostKeyChecking=no siloos@siloos.local "cat /etc/systemd/system/scale_bridge.service" > scale_bridge.service
 ```
 
 ### 2. Update Documents

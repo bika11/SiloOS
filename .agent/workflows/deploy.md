@@ -14,33 +14,33 @@ When deploying changes to the live Raspberry Pi system.
 
 ### 1. Backup Current State
 ```bash
-ssh -i siloos_key siloos@10.0.124.90 "cp /home/siloos/ble_bridge.py /home/siloos/ble_bridge.py.backup"
+ssh -i siloos_key siloos@siloos.local "cp /home/siloos/ble_bridge.py /home/siloos/ble_bridge.py.backup"
 ```
 
 ### 2. Deploy Python Bridge
 ```bash
-scp -i siloos_key ble_bridge.py siloos@10.0.124.90:/home/siloos/ble_bridge.py
-scp -i siloos_key config.json siloos@10.0.124.90:/home/siloos/config.json
+scp -i siloos_key ble_bridge.py siloos@siloos.local:/home/siloos/ble_bridge.py
+scp -i siloos_key config.json siloos@siloos.local:/home/siloos/config.json
 ```
 
 ### 3. Deploy Dashboard (if changed)
 ```bash
 cd dashboard && npm run build
-scp -i siloos_key -r dashboard/dist/* siloos@10.0.124.90:/home/siloos/dashboard-dist/
+scp -i siloos_key -r dashboard/dist/* siloos@siloos.local:/home/siloos/dashboard-dist/
 ```
 
 ### 4. Restart Services
 ```bash
-ssh -i siloos_key siloos@10.0.124.90 "sudo systemctl restart scale_bridge"
+ssh -i siloos_key siloos@siloos.local "sudo systemctl restart scale_bridge"
 ```
 
 ### 5. Verify Deployment
 ```bash
 # Check service is running
-ssh -i siloos_key siloos@10.0.124.90 "sudo systemctl status scale_bridge"
+ssh -i siloos_key siloos@siloos.local "sudo systemctl status scale_bridge"
 
 # Check recent logs for errors
-ssh -i siloos_key siloos@10.0.124.90 "sudo journalctl -u scale_bridge -n 30 --no-pager"
+ssh -i siloos_key siloos@siloos.local "sudo journalctl -u scale_bridge -n 30 --no-pager"
 
 # Verify BLE connection
 # Look for "BLE connected" in logs
@@ -55,7 +55,7 @@ ssh -i siloos_key siloos@10.0.124.90 "sudo journalctl -u scale_bridge -n 30 --no
 
 ### 7. Rollback (if needed)
 ```bash
-ssh -i siloos_key siloos@10.0.124.90 "cp /home/siloos/ble_bridge.py.backup /home/siloos/ble_bridge.py && sudo systemctl restart scale_bridge"
+ssh -i siloos_key siloos@siloos.local "cp /home/siloos/ble_bridge.py.backup /home/siloos/ble_bridge.py && sudo systemctl restart scale_bridge"
 ```
 
 ### 8. Update Status

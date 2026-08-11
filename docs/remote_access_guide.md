@@ -4,16 +4,28 @@ Accessing your Raspberry Pi "Brain" from outside your local network (e.g., from 
 
 ## 1. Dashboard Addresses
 
-The Pi has a **static IP** (manually configured, won't change) and **mDNS** (auto-discovery by hostname).
+Prefer the **mDNS hostname `siloos.local`** — it works regardless of the Pi's IP. The Pi is *intended* to hold static IP `10.0.124.5`, but its DHCP address has drifted repeatedly in the past (`.199` → `.90` → `.125`), so never bookmark a raw IP for day-to-day use.
 
 | Address | Works from | Notes |
 |---------|-----------|-------|
-| `http://siloos.local:5173/` | Same Wi-Fi network | Auto-discovery, nothing to remember |
-| `http://10.0.124.90:5173/` | Same Wi-Fi network | Static IP, permanently assigned |
+| `http://siloos.local:5173/` | Same Wi-Fi network | **Preferred** — auto-discovery by hostname, survives IP changes |
+| `http://10.0.124.5:5173/` | Same Wi-Fi network | Only after the static IP is applied (`tools/set_pi_static_ip.sh`) |
 | `http://100.120.122.115:5173/` | Anywhere (with Tailscale) | Tailscale VPN address |
 
 > [!TIP]
 > **Bookmark `http://siloos.local:5173/`** for local access and **`http://100.120.122.115:5173/`** for remote access.
+
+> [!WARNING]
+> If `siloos.local` resolves to the wrong device (e.g. your own laptop), a rogue `tools/mdns_publisher.py` mock may be running locally. See the `siloos-pi-recovery` skill.
+
+### Target static network config
+| Setting | Value |
+|---------|-------|
+| IP address | `10.0.124.5` |
+| Subnet mask | `255.255.255.0` (/24) |
+| Gateway | `10.0.124.1` |
+
+Apply on the Pi with `bash tools/set_pi_static_ip.sh` (handles both NetworkManager and dhcpcd).
 
 ---
 
@@ -52,7 +64,7 @@ This is the traditional method but is **NOT recommended** for Industrial SiloOS 
 
 ### If you must:
 1.  Log into your router's admin panel.
-2.  Forward port `8765` (WebSocket) and port `5173` (Dashboard) to the Pi's local IP (`10.0.124.90`).
+2.  Forward port `8765` (WebSocket) and port `5173` (Dashboard) to the Pi's local IP (`siloos.local`).
 3.  Use your workplace's **Public IP** to connect.
 
 ---
@@ -63,7 +75,7 @@ For terminal access to the Pi:
 
 ```bash
 # Local network
-ssh -i siloos_key siloos@10.0.124.90
+ssh -i siloos_key siloos@siloos.local
 
 # Remote (via Tailscale)
 ssh -i siloos_key siloos@100.120.122.115

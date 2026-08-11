@@ -47,7 +47,7 @@
 - **Priority**: P1
 - **Agent**: frontend
 - **Status**: open
-- **Description**: Replace hardcoded `10.0.124.90` in `vite.config.ts` with environment variable `VITE_PI_HOST` or auto-detection.
+- **Description**: Replace hardcoded `siloos.local` in `vite.config.ts` with environment variable `VITE_PI_HOST` or auto-detection.
 - **Acceptance Criteria**: HMR works without hardcoded IP, env variable documented
 - **Related Issue**: ISS-004
 

@@ -2,13 +2,16 @@
 
 ## System Health Dashboard
 
+> ✅ **2026-08-10 12:12: Dashboard restored over Wi-Fi.** `http://siloos.local:5173/` = HTTP 200, 8/8 stable. Pi (Raspberry Pi 4, hostname `SiloOS`) runs on Wi-Fi `wlan0 = 10.0.124.199` (eth0 disabled — it was a dead link). Bridge + dashboard are systemd services with `Restart=always`, enabled on boot. See Latest Updates + RCA.
+
 | Component | Status | Last Verified | Notes |
 |-----------|--------|---------------|-------|
-| **Dashboard PWA** | ✅ OPERATIONAL | 2026-02-18 | Gravimetric dosing, cup selection, scaling all verified |
-| **Python Bridge** | ✅ OPERATIONAL | 2026-02-18 | Running on Pi via systemd (enabled for boot) |
-| **WebSocket Relay** | ✅ OPERATIONAL | 2026-02-18 | Port 8765, auth working |
-| **BLE Connection** | ✅ OPERATIONAL | 2026-02-18 | TopBrewer connected |
-| **Scale (RS485)** | ✅ OPERATIONAL | 2026-02-18 | Laumas TLS485 reading, 10Hz polling pipeline |
+| **Dashboard PWA** | ✅ OPERATIONAL | 2026-08-10 | `silo-dashboard.service` (Vite `--host`, dual-stack `*:5173`), auto-start, 200 over Wi-Fi |
+| **Python Bridge** | ✅ OPERATIONAL | 2026-08-10 | `scale_bridge.service` installed + enabled + `Restart=always`, serving `:8765` |
+| **WebSocket Relay** | ✅ OPERATIONAL | 2026-08-10 | `0.0.0.0:8765` + `[::]:8765`; returns 401 to unauthenticated GET (healthy) |
+| **BLE Connection** | ❓ VERIFY | 2026-08-10 | Bridge up; confirm TopBrewer link via dashboard/journal |
+| **Scale (RS485)** | ❓ VERIFY | 2026-08-10 | Bridge up; confirm weight stream via dashboard |
+| **Network / Wi-Fi** | ✅ OPERATIONAL | 2026-08-10 | Wi-Fi only (eth0 dead link disabled); power-save off; `siloos.local` → `10.0.124.199` |
 | **SFWU Protocol** | ✅ FIXED | 2026-02-12 | Relay address corrected (0x03→0x02) |
 | **Build Pipeline** | ⚠️ NEEDS REVIEW | 2026-02-12 | Vite builds, HMR IP hardcoded |
 | **Gravimetric Dosing** | ✅ VERIFIED | 2026-02-18 | Weight polling, calculated cups, profile corruption protection |
@@ -38,7 +41,7 @@ Browser (PWA)  ──WebSocket──▶  Raspberry Pi  ──BLE──▶  TopBr
 ### High
 | ID | Issue | Impact | Owner |
 |----|-------|--------|-------|
-| ISS-004 | Vite HMR hardcoded to `10.0.124.90` | Dev server breaks on IP change | frontend |
+| ISS-004 | ~~Vite HMR hardcoded to a raw IP~~ | Dev server breaks on IP change | frontend | ✅ FIXED (2026-08-10, switched to `siloos.local` mDNS) |
 | ISS-005 | Python deps not version-pinned | Reproducibility risk | hardware |
 | ISS-006 | No user feedback when bridge offline | Poor UX, silent failures | frontend |
 
@@ -89,6 +92,24 @@ Browser (PWA)  ──WebSocket──▶  Raspberry Pi  ──BLE──▶  TopBr
 | bluez-peripheral | latest | ⚠️ Not pinned |
 
 ## Latest Updates
+
+### 2026-08-10 — "Not connecting" root-caused: rogue local mock + Pi services down
+- **Agent**: Claude Code (troubleshooting session)
+- **Reported symptom**: SiloOS dashboard would not connect.
+- **Root cause (two compounding problems)**:
+  1. **Rogue processes on the Windows dev laptop** (leftover from a prior agent's session) were masquerading as the Pi:
+     - `ble_bridge.py` running locally (PID 31796) listening on `:8765` with NO real BLE/RS485 hardware behind it.
+     - `tools/mdns_publisher.py` (PID 31796's sibling, PID 22632) broadcasting `siloos.local` → the **laptop's own IP `10.0.124.120`**, hijacking the mDNS name away from the real Pi. This is why earlier probes "found" the Pi at `.120` — that was the laptop answering to its own hijacked name.
+  2. **Stale hardcoded Pi IP everywhere.** The Pi's DHCP address has drifted repeatedly (`.199` → `.90` → dead `.5`), and a prior automated edit rewrote references to the now-dead `10.0.124.5` across `vite.config.ts`, `sync-dashboard.ps1`, and ~15 docs/skill files.
+- **Actual hardware state (verified)**:
+  - Real Pi = **`10.0.124.125`** (identified by Raspberry Pi OUI MAC `b8:27:eb:5a:74:95` in ARP + Linux TTL=64). Answers ping.
+  - On the Pi, **SSH (22) returns Connection Refused** (sshd not running) and **bridge (8765) is down**. Remote deploy/debug is blocked until console/ethernet access is restored.
+  - `10.0.124.5` is completely dead (times out) — not currently assigned to anything.
+- **Fixes applied**:
+  - Killed both rogue laptop processes (user-authorized). Port 8765 freed locally; `siloos.local` no longer hijacked.
+  - Replaced hardcoded `10.0.124.5` with `siloos.local` (mDNS) in `dashboard/vite.config.ts` (HMR host), `sync-dashboard.ps1`, and all `.agent/` docs/skills/workflows plus `CLAUDE.md`/`README.md`. The dashboard's app-level WebSocket URL (`SiloManager.ts`) was already derived from `window.location.hostname`, so it was never the break.
+- **Plan / target config**: Give the Pi a **static IP `10.0.124.5`** (mask `255.255.255.0`, gateway `10.0.124.1`) so it stops drifting. Setup script prepared at `tools/set_pi_static_ip.sh`. Requires console or ethernet access to the Pi (SSH currently down). See skill `siloos-pi-recovery`.
+- **Outstanding**: Restore SSH + bridge service on the Pi; apply the static IP; verify end-to-end connect. `tools/mdns_publisher.py` should be treated as a dev-only mock and NOT left running — consider deleting or clearly quarantining it.
 
 ### 2026-02-12 — CRITICAL BUG FIXED: SFWU Relay Address
 - **Agent**: Protocol (Claude Code)

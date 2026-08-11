@@ -6,10 +6,11 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: true, // Listen on all network interfaces
-    allowedHosts: ['siloos.local'],
-    hmr: {
-      host: '10.0.124.90', // The Pi's static IP address
-    },
+    // Appliance on a trusted LAN accessed by many devices via mDNS name, raw IP,
+    // or Tailscale. Allow any Host header so no device gets "Blocked request".
+    allowedHosts: true,
+    // HMR endpoint is inferred from each client's own connection (works whether a
+    // device reached the dashboard via siloos.local, an IP, or Tailscale).
     watch: {
       usePolling: true, // Recommended for network shares/syncs
     },

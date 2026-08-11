@@ -1,0 +1,22 @@
+[Unit]
+Description=SiloOS BLE/RS485 Bridge (TopBrewer <-> Laumas scale <-> dashboard)
+# Wait for the network to be up before starting the WebSocket relay.
+After=network-online.target bluetooth.target
+Wants=network-online.target
+# Never rate-limit restarts — keep retrying the bridge indefinitely.
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=siloos
+WorkingDirectory=/home/siloos
+ExecStart=/usr/bin/python3 /home/siloos/ble_bridge.py
+# Keep the bridge alive: restart on any exit (crash, BLE drop, unhandled error).
+Restart=always
+RestartSec=3
+# Log to journal so `journalctl -u scale_bridge` works.
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
