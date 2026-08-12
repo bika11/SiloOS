@@ -56,7 +56,22 @@ echo "  ARP flux sysctls applied"
 
 echo "--- [3] Bridge service (scale_bridge) ---"
 systemctl enable scale_bridge 2>&1 || true
-systemctl restart scale_bridge 2>&1 || true
+# Guarded restart: never sever the control loop while a dose is dispensing (the
+# hopper would overflow). Prefer the shared guard script; fall back to an inline
+# check so this recovery tool still works if pushed on its own.
+GUARD="$(dirname "$0")/restart_bridge_safe.sh"
+[ -f "$GUARD" ] || GUARD="/home/siloos/tools/restart_bridge_safe.sh"
+if [ -f "$GUARD" ]; then
+  bash "$GUARD" --wait 30 || echo "  WARNING: bridge NOT restarted (dose active?) — re-run when idle"
+else
+  # Inline fallback: skip the restart if the newest dose event is armed/running.
+  _LAST=$(grep -E '"event": "pi_dose_(armed|running|complete)"|"event": "pi_force_abort"' /home/siloos/logs/dispensing.log 2>/dev/null | tail -1)
+  if echo "$_LAST" | grep -qE '"event": "pi_dose_(armed|running)"'; then
+    echo "  WARNING: a dose looks ACTIVE — skipping scale_bridge restart. Re-run when idle."
+  else
+    systemctl restart scale_bridge 2>&1 || true
+  fi
+fi
 sleep 2
 echo "  scale_bridge active=$(systemctl is-active scale_bridge) enabled=$(systemctl is-enabled scale_bridge)"
 

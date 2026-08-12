@@ -92,9 +92,11 @@ cd dashboard && npm run lint
 # Pi bridge (on Raspberry Pi)
 python3 ble_bridge.py
 
-# Sync to Pi
-scp -i ./siloos_key ./ble_bridge.py siloos@siloos.local:/home/siloos/ble_bridge.py
-ssh -i ./siloos_key siloos@siloos.local "sudo systemctl restart scale_bridge"
+# Sync to Pi (GUARDED restart — never restart scale_bridge mid-dose; the hopper overflows)
+scp -i ./siloos_key ./ble_bridge.py ./dose_controller.py siloos@siloos.local:/home/siloos/
+scp -i ./siloos_key ./tools/restart_bridge_safe.sh siloos@siloos.local:/home/siloos/tools/
+ssh -i ./siloos_key siloos@siloos.local "sudo bash /home/siloos/tools/restart_bridge_safe.sh --wait 60"
+#   guard refuses while a dose is armed/running; --check = report only (0 idle/3 active), --force = override
 
 # Service management on the Pi (both are enabled + Restart=always)
 ssh -i ./siloos_key siloos@siloos.local "systemctl status scale_bridge silo-dashboard --no-pager"

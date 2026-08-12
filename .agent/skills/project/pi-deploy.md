@@ -31,8 +31,10 @@ scp -i siloos_key ble_bridge.py siloos@siloos.local:/home/siloos/ble_bridge.py
 # Step 2: Copy updated config (if changed)
 scp -i siloos_key config.json siloos@siloos.local:/home/siloos/config.json
 
-# Step 3: Restart service
-ssh -i siloos_key siloos@siloos.local "sudo systemctl restart scale_bridge"
+# Step 3: Restart service — GUARDED (never restart mid-dose; the hopper would overflow).
+# Deploy the guard once: scp -i siloos_key tools/restart_bridge_safe.sh siloos@siloos.local:/home/siloos/tools/
+ssh -i siloos_key siloos@siloos.local "sudo bash /home/siloos/tools/restart_bridge_safe.sh --wait 60"
+#   --check -> report only (exit 0 idle / 3 dose active); --force -> restart anyway (risky)
 
 # Step 4: Verify
 ssh -i siloos_key siloos@siloos.local "sudo journalctl -u scale_bridge -n 20 --no-pager"

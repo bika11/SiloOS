@@ -221,8 +221,14 @@ action on live equipment; back up first:
 ```bash
 ssh -i ./siloos_key siloos@siloos.local "cd /home/siloos && cp -a ble_bridge.py ble_bridge.py.bak.$(date +%F-%H%M%S) && cp -a dose_controller.py dose_controller.py.bak.$(date +%F-%H%M%S)"
 scp -i ./siloos_key ble_bridge.py dose_controller.py siloos@siloos.local:/home/siloos/
-scp -i ./siloos_key tools/dose_sim.py tools/scale_registers.py siloos@siloos.local:/home/siloos/tools/
-ssh -i ./siloos_key siloos@siloos.local "cd /home/siloos && python3 -m py_compile ble_bridge.py dose_controller.py && sudo systemctl restart scale_bridge"
+scp -i ./siloos_key tools/dose_sim.py tools/scale_registers.py tools/restart_bridge_safe.sh siloos@siloos.local:/home/siloos/tools/
+# NEVER `systemctl restart scale_bridge` directly — restarting mid-dose severs the
+# control loop and the hopper overflows. Always go through the guarded restart,
+# which refuses while a dose is armed/running:
+ssh -i ./siloos_key siloos@siloos.local "cd /home/siloos && python3 -m py_compile ble_bridge.py dose_controller.py && sudo bash tools/restart_bridge_safe.sh --wait 60"
+#   --wait 60 : if a dose is live, poll up to 60 s for it to finish, then restart.
+#   plain (no flags) skips with exit 3 if a dose is active; --force overrides (risky).
+#   check only: ssh ... "bash tools/restart_bridge_safe.sh --check"  (0 idle, 3 active)
 # verify: is-active, NRestarts=0, 'Connected to SiloSystem via BLE', port :8765 bound dual-stack
 ```
 

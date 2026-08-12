@@ -30,8 +30,14 @@ scp -i siloos_key -r dashboard/dist/* siloos@siloos.local:/home/siloos/dashboard
 ```
 
 ### 4. Restart Services
+⚠️ **Never `systemctl restart scale_bridge` directly.** Restarting mid-dose severs the
+gravimetric control loop and the hopper overflows. Use the **guarded restart**, which refuses while
+a dose is armed/running (deploy the guard once: `scp -i siloos_key tools/restart_bridge_safe.sh
+siloos@siloos.local:/home/siloos/tools/`):
 ```bash
-ssh -i siloos_key siloos@siloos.local "sudo systemctl restart scale_bridge"
+# --wait 60: if a dose is live, poll up to 60s for it to finish, then restart.
+ssh -i siloos_key siloos@siloos.local "sudo bash /home/siloos/tools/restart_bridge_safe.sh --wait 60"
+# check only (no restart): ... "bash /home/siloos/tools/restart_bridge_safe.sh --check"  # 0 idle / 3 active
 ```
 
 ### 5. Verify Deployment
