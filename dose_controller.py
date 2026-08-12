@@ -203,6 +203,18 @@ class PiDoseController:
     NO_FLOW_TIMEOUT_S = 10.0
     NO_FLOW_MIN_KG = 0.1
 
+    # Learning guards.
+    # MIN_LEARN_KG: doses smaller than this are uncontrollable — the coast-down
+    # alone exceeds the target, so effective_target floors and the dose can't be
+    # steered. They must NOT update the shared per-silo profile: a small dose's
+    # `0.9*target` overshoot clamp otherwise slams the learned coast down and
+    # destroys the large-dose calibration (observed live: a 0.5 kg dose reset
+    # 4 Robusta's overshoot_kg from 1.72 → 0.45, causing the +0.7 overshoots).
+    # LEARN_DEADBAND_KG: one scale quantum — inside it we're on target and can't
+    # measure finer, so stop integrating and don't chase quantization noise.
+    MIN_LEARN_KG = 1.0
+    LEARN_DEADBAND_KG = 0.1
+
     def __init__(self, silo_id: str, target_kg: float, tare_weight: float,
                  ble_client, broadcast_fn, loop,
                  max_dispense_s: float = None, max_weight_kg: float = None,
@@ -249,6 +261,8 @@ class PiDoseController:
         self.backstop_mult = float(control.get("backstop_mult", 1.5))
         self.no_flow_s = float(control.get("no_flow_s", self.NO_FLOW_TIMEOUT_S))
         self.no_flow_min_kg = float(control.get("no_flow_min_kg", self.NO_FLOW_MIN_KG))
+        self.min_learn_kg = float(control.get("min_learn_kg", self.MIN_LEARN_KG))
+        self.learn_deadband_kg = float(control.get("learn_deadband_kg", self.LEARN_DEADBAND_KG))
 
         self.state = 'armed'
         self.start_time = 0.0
@@ -708,13 +722,25 @@ class PiDoseController:
         if actual < 0.001 or duration_s < 0.1:
             return  # Skip bogus doses
 
+        # Uncontrollable small doses (auto-top-ups / tiny tests) must NOT touch the
+        # shared per-silo profile. Their coast alone exceeds the target so they
+        # can't be steered, and the `0.9*target` clamp below would slam the learned
+        # coast down and wreck the large-dose calibration (see MIN_LEARN_KG note).
+        if self.target_kg < self.min_learn_kg:
+            logger.info(
+                f"Pi DoseCtrl: skip learn — dose {self.target_kg:.3f}kg "
+                f"< min_learn {self.min_learn_kg:.2f}kg (uncontrollable)"
+            )
+            audit("pi_learn_skipped_small", silo_id=self.silo_id, target=self.target_kg)
+            return
+
         # P2: adaptive alpha — aggressive when the profile is young, smooth later.
         doses = self.profile['total_doses']
-        alpha = 1.0 if doses == 0 else (0.7 if doses < 3 else (0.4 if doses < 10 else 0.2))
+        count_alpha = 1.0 if doses == 0 else (0.7 if doses < 3 else (0.4 if doses < 10 else 0.2))
 
         # Flow rate learning (used only for the preemptive timer + display).
         self.profile['flow_rate_kg_per_s'] = (
-            (1 - alpha) * self.profile['flow_rate_kg_per_s'] + alpha * flow_rate
+            (1 - count_alpha) * self.profile['flow_rate_kg_per_s'] + count_alpha * flow_rate
         )
 
         # PRIMARY control: integral feedback on the net output error. If we
@@ -725,9 +751,22 @@ class PiDoseController:
         # the coast material from actual-dispensed_at_stop instead spirals when the
         # timer fires early, mis-reading the gap as coast.)
         error = actual - self.target_kg
+        if abs(error) <= self.learn_deadband_kg:
+            # On target within one scale quantum — don't integrate quantization /
+            # coast noise, or the loop hovers at the noise floor instead of settling.
+            adj = 0.0
+        else:
+            # Adaptive gain: correct a large miss FAST (a bad seed or a perturbation
+            # should recover in ~2 doses, not ~10), smooth a small one. The old flat
+            # 0.2 EMA is exactly why a matured profile felt "stuck at a constant
+            # offset" — it removed only a fifth of the error per (~45 s) dose.
+            mag_alpha = 0.7 if abs(error) > 0.3 else 0.5
+            alpha_eff = max(count_alpha, mag_alpha)
+            adj = alpha_eff * error
+
         prev = self.profile.get('overshoot_kg',
                                 self.profile['flow_rate_kg_per_s'] * self.profile['valve_delay_s'])
-        new_overshoot = prev + alpha * error
+        new_overshoot = prev + adj
         self.profile['overshoot_kg'] = max(0.0, min(new_overshoot, self.target_kg * 0.9))
 
         # Keep valve_delay_s as a derived, human-readable value (overshoot / flow).

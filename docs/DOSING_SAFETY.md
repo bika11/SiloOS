@@ -98,6 +98,7 @@ blend is refused up front if `current hopper + total blend > 130 kg`.
 | 8 | Scale-stale watchdog | `PiDoseController` | if no scale frame for 1.5 s during a dose → force-abort (feed died = flying blind). |
 | 9 | Reliable cancel | `PiDoseController._do_cancel` + `run_topbrewer_client` | cancel targets the *live* BLE client; re-issues STOP on reconnect; a failed cancel is surfaced (`dose_error`), not silently treated as "stopped". |
 | 10 | Fail-loud UX | `App`, `BrewMonitor`, `DashboardScreen` | offline banner + reactive LED; live-dose "signal lost" watchdog + big red STOP; E-STOP stays live during a Pi-authority dose. |
+| 11 | **Empty/blocked-silo watchdog** | `PiDoseController._no_flow_check` | if `< no_flow_min_kg` (0.1 kg) is dispensed within `no_flow_s` (10 s) of starting — silo empty or auger jammed — force-abort with reason `empty_or_blocked_silo` instead of silently "completing" a 0 kg dose. Shown to the operator as **"⚠ EMPTY OR BLOCKED SILO"** in `BrewMonitor`; logged as an abort (excluded from accuracy KPIs). The stall stop is gated to *after* flow begins so it can't pre-empt this. |
 
 **Tunable limits** live in `config.json` → `safety` block:
 ```json
@@ -132,19 +133,45 @@ cap as `GRAV_MAX_KG` / `RecipeRunner.HOPPER_CAP_KG` — **keep them in sync** if
 
 `PiDoseController` learns a profile per silo, persisted in `silo_profiles.json`:
 - `flow_rate_kg_per_s` — EMA, used for the backstop timer + display.
-- `overshoot_kg` — **the primary control quantity**: an *integral controller on net output error*
-  (`overshoot_kg += alpha·(actual − target)`). `effective_target = target − overshoot_kg`; the dose
-  stops at the effective target and the valve coast-down lands it on target. This replaced a biased
-  `actual/total_duration` estimate that never converged and oscillated — see the sim's `convergence`
-  scenario (lands within ±20 g of a 2 kg target).
-- Graduated EMA alpha (1.0 → 0.2 as `total_doses` grows); P4 step-change flow detection.
+- `overshoot_kg` — **the primary control quantity**: the coast-down material that keeps falling
+  AFTER the valve closes. `effective_target = target − overshoot_kg`; the dose stops at the
+  effective target and the coast-down lands it on target. Learned by feedback on the net output
+  error: `overshoot_kg += alpha · (actual − target)`. (This replaced a biased
+  `actual/total_duration` estimate that never converged.)
+
+**Adaptive-gain learner (current).** The gain adapts to the error magnitude so the loop converges
+fast AND then holds. The old flat `alpha = 0.2` corrected only a fifth of the error per (~45 s)
+dose, so a matured-but-mis-seeded profile crawled for ~10 doses and **read to operators as a
+constant, un-improving offset**. Now:
+- **Deadband** `learn_deadband_kg` (0.1 kg = one scale quantum): within it the dose is on target and
+  can't be measured finer, so `overshoot_kg` is **not** adjusted — this stops the loop hunting on
+  quantization/coast noise.
+- **Magnitude gain**: `|error| > 0.3 kg → 0.7`, else `0.5` (both floored by the young-profile
+  schedule 1.0 → 0.2). A bad seed or a perturbation recovers to spec in ~2–3 doses (sim
+  `bad_seed_recovery`) instead of ~10.
+- **Small-dose guard** `min_learn_kg` (1.0 kg): doses below this are **uncontrollable** (the coast
+  alone exceeds the target, so `effective_target` floors) and are **excluded from learning**. This
+  kills a live-observed poison — a single 0.5 kg auto-top-up hit the `0.9·target` clamp (0.45) and
+  slammed 4 Robusta's learned `overshoot_kg` from **1.72 → 0.45**, causing +0.7 kg overshoots on the
+  next 30 kg doses (sim `tiny_dose_no_poison`).
 
 **Profiles are keyed by silo/drink NAME and shared** between direct doses (`drink.name`) and blend
-steps (`step.menuName`). So **RUN SEQUENCE / custom blends are fully inside the learning &
-precision system** — each completed blend step improves that silo's profile, and direct + blend
-doses reinforce each other. **Only *completed* doses learn** — `_learn()` is called solely from
-`_complete()`, never from an abort / rejection / overflow-guard cancel, so those never corrupt a
+steps (`step.menuName`) — RUN SEQUENCE / custom blends are fully inside the learning system, and
+direct + blend doses reinforce each other. **Only *completed* doses learn** (`_learn()` runs solely
+from `_complete()`), so aborts / rejections / overflow-guard / empty-silo cancels never corrupt a
 profile.
+
+**Re-seeding a bad profile.** `overshoot_kg` ≈ the true coast, which you can read straight off the
+audit log: `coast = overshoot_used + error` per `pi_dose_complete`. To fix a badly-off profile, edit
+`silo_profiles.json` on the Pi (back it up first; **no restart needed** — it's re-read at each
+dose's arm). ⚠️ **Only while idle:** a controller loads its profile at arm-time and `save_profile()`
+at completion rewrites the whole silo entry, so an edit made *during* an in-flight dose is clobbered
+when that dose completes. (Done live on 2026-08-12: Brazil→1.0, Robusta→1.2, Ethiopia 0.0→1.0.)
+
+**Tunable control constants** each default to their original value but can be overridden per
+deployment in `config.json → control` (the bridge passes them through): `no_flow_s`,
+`no_flow_min_kg`, `min_learn_kg`, `learn_deadband_kg`, plus `settle_s`, `stall_time_s`, `stall_kg`,
+`scale_stale_s`, `debounce`, `backstop_mult`. The `config.json → safety` caps stay authoritative.
 
 ---
 
@@ -231,9 +258,13 @@ With a catch tray under the hopper:
 - **Scale-stale:** pull RS485 mid-dose → dose auto-cancels (`scale_stale`).
 - **Overflow guard:** (carefully) confirm gross reaching 130 kg cancels the machine regardless of
   dose state (audit event `overflow_guard`).
+- **Empty/blocked silo:** START a dose on an empty (or closed) silo → within 10 s it auto-aborts,
+  `BrewMonitor` shows **"⚠ EMPTY OR BLOCKED SILO"** (audit `pi_empty_silo`), and it's logged as an
+  abort — not a silent 0 kg dose.
 
-Off-machine regression (run after any `dose_controller.py` change): `python3 tools/dose_sim.py`
-(9/9 scenarios incl. convergence must pass).
+Off-machine regression (run after any `dose_controller.py` change): `python3 tools/dose_sim.py` —
+**all must pass**: 9 scenarios (incl. `empty_silo`) + 3 learning tests (`convergence`,
+`bad_seed_recovery`, `tiny_dose_no_poison`).
 
 ---
 
@@ -246,6 +277,7 @@ Off-machine regression (run after any `dose_controller.py` change): `python3 too
 | `b9c786c` | **Gate hardware dispense on `dose_ack`** (rejected doses no longer overflow) + **bridge overflow guard**; enable CRC16 enforcement; ScaleReadout kg label; consolidate to single `scale_bridge`. |
 | `00fb5e3` | Upfront whole-blend hopper-fit check in `RecipeRunner`. |
 | `f7b2e01` | Show reason + don't lock the UI when a sequence is refused. |
+| `feat/amokka-console` | **Empty/blocked-silo watchdog** (10 s no-flow → `empty_or_blocked_silo` abort + `BrewMonitor` "⚠ EMPTY OR BLOCKED SILO" copy). **Adaptive-gain learner**: magnitude-based gain + 0.1 kg deadband + skip `<1 kg`/top-up doses — fixes the slow "constant offset" convergence and the tiny-dose profile poisoning (0.5 kg dose was resetting `overshoot_kg` via the `0.9·target` clamp). Live profile re-seed (Brazil 1.0 / Robusta 1.2 / Ethiopia 1.0). New control overrides (`no_flow_s`, `no_flow_min_kg`, `min_learn_kg`, `learn_deadband_kg`). Sim +`empty_silo` / `bad_seed_recovery` / `tiny_dose_no_poison`. |
 
 ---
 

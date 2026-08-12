@@ -107,6 +107,11 @@ async def run_scenario(sc: Scenario) -> dict:
         "dose_errors": [b for b in broadcasts if b.get("type") == "dose_error"],
         "last_dispensed": ctrl.last_dispensed,
     }
+    # Cancel any timers still pending on a scenario that never reached a terminal
+    # state (e.g. `spike_frame` deliberately ends mid-settling). Otherwise those
+    # leftover settle/safety timers fire during the NEXT scenario and pollute its
+    # audit capture (set_audit_fn is global). Snapshot above is already taken.
+    ctrl._cancel_timers()
     if VERBOSE:
         print(f"    audits={data['audits']}")
         print(f"    cancels={len(ble.calls)} dose_errors={len(data['dose_errors'])} "
@@ -172,6 +177,12 @@ def scenarios():
         # (2c, pending): a lone spike frame currently trips the stop.
         Scenario("spike_frame", 5.0, dict(slow),
                  lambda t: min(0.35, 0.3 * t), spikes=[(0.6, 9.9)], max_wait=6.0),
+
+        # (Part A): empty/blocked silo — scale is alive (frames keep arriving) but
+        # the weight never rises. After NO_FLOW_TIMEOUT_S (10s) the controller must
+        # abort and flag 'empty_or_blocked_silo' instead of silently completing 0 kg.
+        Scenario("empty_silo", 5.0, dict(slow),
+                 lambda t: 0.0, max_wait=13.0),
     ]
 
 
@@ -224,6 +235,15 @@ def check(name: str, d: dict):
         if not IMPLEMENTED["frame_debounce"]:
             return True, f"PENDING(2c): spike currently trips stop (stopped={stopped_on_spike})"
         return (not stopped_on_spike), f"stopped_on_spike={stopped_on_spike} state={st}"
+
+    if name == "empty_silo":
+        reason = d["terminal"] and d["terminal"].get("reason")
+        # Aborted + flagged empty, and learning did NOT run (never completed).
+        return (st == "aborted" and "pi_empty_silo" in aud
+                and reason == "empty_or_blocked_silo"
+                and "pi_profile_learned" not in aud), \
+            (f"state={st} reason={reason} empty_audit={'pi_empty_silo' in aud} "
+             f"learned={'pi_profile_learned' in aud}")
 
     return False, "no assertion defined"
 
@@ -297,6 +317,48 @@ async def test_convergence(loop):
     return passed, note
 
 
+async def test_bad_seed_recovery(loop):
+    """A badly-inflated overshoot_kg (the live 3 Brazil 2.14 / 4 Robusta case) must
+    recover to spec within ~2-3 doses — proving the adaptive gain. The old flat 0.2
+    EMA crawled for ~10 doses, which is exactly why accuracy looked 'stuck'."""
+    f_true, d_true, target = 0.5, 0.4, 2.0  # true coast = 0.2 kg
+    # Matured profile whose overshoot is ~0.6 kg too high.
+    store = {"seed": {"flow_rate_kg_per_s": 0.5, "valve_delay_s": 1.6,
+                      "overshoot_kg": 0.8, "total_doses": 30}}
+    errors = []
+    print("\n[bad_seed_recovery] seed overshoot=0.8 (true coast=0.2) target=2.0kg")
+    for n in range(5):
+        actual, vd, fr = await run_physics_dose("seed", target, store, f_true, d_true, loop)
+        err = actual - target
+        errors.append(err)
+        print(f"    dose {n+1}: actual={actual:.3f} err={err*1000:+.0f}g "
+              f"overshoot={store['seed'].get('overshoot_kg'):.3f}")
+    recovered_by_3 = abs(errors[2]) <= 0.1
+    stayed = all(abs(e) <= 0.12 for e in errors[2:])
+    passed = recovered_by_3 and stayed
+    return passed, (f"errs={[round(e*1000) for e in errors]}g "
+                    f"recovered_by_dose3={recovered_by_3} (spec +/-100g)")
+
+
+async def test_tiny_dose_no_poison(loop):
+    """A sub-min-learn dose (e.g. a 0.5 kg auto-top-up) must NOT alter the silo
+    profile. Reproduces the live bug where a 0.5 kg dose slammed 4 Robusta's
+    overshoot_kg from 1.72 -> 0.45 (its 0.9*target clamp) and caused +0.7 overshoots."""
+    f_true, d_true = 0.5, 0.4
+    store = {"tp": {"flow_rate_kg_per_s": 0.5, "valve_delay_s": 0.4,
+                    "overshoot_kg": 0.2, "total_doses": 30}}
+    before = dict(store["tp"])
+    print("\n[tiny_dose_no_poison] seed overshoot=0.2, run a 0.5kg (top-up) dose")
+    actual, vd, fr = await run_physics_dose("tp", 0.5, store, f_true, d_true, loop)
+    after = store["tp"]
+    unchanged = (abs(after["overshoot_kg"] - before["overshoot_kg"]) < 1e-9
+                 and after["total_doses"] == before["total_doses"])
+    print(f"    dose actual={actual:.3f} overshoot {before['overshoot_kg']:.3f} "
+          f"-> {after['overshoot_kg']:.3f} doses {before['total_doses']} -> {after['total_doses']}")
+    return unchanged, (f"overshoot {before['overshoot_kg']:.3f}->{after['overshoot_kg']:.3f} "
+                       f"doses {before['total_doses']}->{after['total_doses']} (must be unchanged)")
+
+
 async def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--verbose", action="store_true")
@@ -317,12 +379,21 @@ async def main() -> int:
         failures += 0 if passed else 1
         pending += 1 if is_pending else 0
 
-    if not args.only or args.only in "convergence":
-        passed, note = await test_convergence(asyncio.get_running_loop())
+    extra_tests = [
+        ("convergence", test_convergence),
+        ("bad_seed_recovery", test_bad_seed_recovery),
+        ("tiny_dose_no_poison", test_tiny_dose_no_poison),
+    ]
+    ran_extra = 0
+    for tname, tfn in extra_tests:
+        if args.only and args.only not in tname:
+            continue
+        ran_extra += 1
+        passed, note = await tfn(asyncio.get_running_loop())
         print(f"  -> {'PASS' if passed else 'FAIL'}: {note}")
         failures += 0 if passed else 1
 
-    print(f"\n=== {len(scs)} scenarios + convergence: {failures} failed, "
+    print(f"\n=== {len(scs)} scenarios + {ran_extra} learning tests: {failures} failed, "
           f"{pending} pending future phases ===")
     return 1 if failures else 0
 

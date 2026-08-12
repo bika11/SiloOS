@@ -57,11 +57,19 @@ browser only proxies via `PiDoseProxy`. Key invariants:
 - **Layered overflow protection**: server-side target reject (>`safety.max_target_kg`, 130 kg) +
   hopper-ready gate (`current_weight + target > hopper_abort_kg`) + per-dose absolute caps
   (`max_weight_kg` gross, `max_dispense_s`) + a bridge-level **overflow guard** that cancels the
-  machine any time gross weight ≥ 130 kg regardless of dose state + a scale-stale watchdog.
+  machine any time gross weight ≥ 130 kg regardless of dose state + a scale-stale watchdog +
+  an **empty/blocked-silo watchdog** (`< 0.1 kg` in 10 s → `empty_or_blocked_silo` abort, not a
+  silent 0 kg dose).
+- **Accuracy learner** (`dose_controller.py` `_learn`): per-silo `overshoot_kg` (the coast-down)
+  with **adaptive gain + 0.1 kg deadband**, and doses `< 1 kg` (top-ups) are **excluded from
+  learning** (a tiny dose's `0.9·target` clamp otherwise wrecks the calibration). Re-seed a bad
+  profile by editing `silo_profiles.json` on the Pi **while idle** (see `docs/DOSING_SAFETY.md` §6).
 - **Tune limits in `config.json` → `safety` block**: `hopper_abort_kg`, `max_target_kg`,
-  `max_dispense_s`, `enforce_scale_crc`.
+  `max_dispense_s`, `enforce_scale_crc`. Control constants (incl. `no_flow_s`, `min_learn_kg`,
+  `learn_deadband_kg`) are overridable in `config.json` → `control`.
 - **Off-machine regression suite**: `python3 tools/dose_sim.py` (must stay green after any
-  `dose_controller.py` change). `tools/scale_registers.py` = read-only Laumas register dump.
+  `dose_controller.py` change — 9 scenarios + 3 learning tests). `tools/scale_registers.py` =
+  read-only Laumas register dump.
 
 ## Agent System
 This project uses a multi-agent collaboration framework in `.agent/`.
