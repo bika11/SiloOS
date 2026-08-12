@@ -1,0 +1,6 @@
+# Shell scripts and the Python bridge are deployed to the Raspberry Pi (Linux) by
+# scp'ing the working-copy file directly. Force LF so a Windows checkout never
+# rewrites them to CRLF — bash chokes on `\r` (e.g. tools/restart_bridge_safe.sh),
+# and a CRLF shebang line silently breaks the guarded restart.
+*.sh   text eol=lf
+*.py   text eol=lf
