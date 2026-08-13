@@ -37,6 +37,16 @@ SiloOS is a BLE gateway system connecting a Scanomat TopBrewer coffee machine to
 - **Before trusting a "connection", kill any laptop-side mock.** A leftover local `ble_bridge.py` and `tools/mdns_publisher.py` can hijack `siloos.local` → the laptop and fake a bridge. `mdns_publisher.py` is a dev-only mock — never leave it running.
 - **On a flaky Pi link, don't hand-run multi-step commands** — push a script and launch it detached (`sudo systemd-run --unit=… --collect bash script.sh`), then poll its log. Diagnostic + fix scripts live in `tools/`.
 - When "not connecting", start with the `siloos-pi-recovery` skill and `.agent/RCA-2026-08-10-not-connecting.md`.
+- **⚠️ NEVER set a sub-1-min `RuntimeWatchdogSec` on the Pi.** RPi OS already ships a working 1-min
+  hardware watchdog (`/usr/lib/systemd/system.conf.d/40-rpi-enable-watchdog.conf`) — a wedged host
+  already auto-reboots. Tightening it to `20s` **reboot-loops the Pi** (bcm2711 misbehaves below the
+  vendor value). If it ever loops: `sudo rm /etc/systemd/system.conf.d/watchdog.conf && sudo systemctl
+  daemon-reexec`, retried in a loop. Check effective config with `systemd-analyze cat-config systemd/system.conf` (incl. `/usr/lib` drop-ins), not just `/etc/systemd/system.conf`.
+- **Pi is hardened for diagnosability (2026-08-13):** journald is persistent, and a 60 s
+  `pi-healthlog.timer` writes `/home/siloos/health.log` (throttle/undervoltage, temp, Wi-Fi, gateway
+  ping, service state, disk) with a disk-space self-heal guard. After any future outage, read the
+  **previous boot** logs (`journalctl -b -1`) and `health.log` first. See `docs/PI_HARDENING.md`;
+  tooling in `tools/pi_harden.sh`, `tools/pi_healthlog.sh`, `tools/install_healthlog.sh`.
 
 ## Dosing Safety Architecture (green-coffee bean dispensing)
 > **Full maintainer handover: [`docs/DOSING_SAFETY.md`](docs/DOSING_SAFETY.md)** — read that first if

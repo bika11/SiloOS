@@ -36,3 +36,40 @@ A single "not connecting" symptom hid **six** stacked problems. The debugging to
 ### Reusable assets this produced
 - Skill: `siloos-pi-recovery` (diagnostic playbook, now includes dead-route + dual-stack gotchas)
 - `tools/`: `install_bridge_service.sh`, `pi_full_fix.sh`, `pi_eth0_off.sh`, `pi_net_reset.sh`, `set_pi_static_ip.sh`, `scale_bridge.service`
+
+---
+
+## 2026-08-13 — "SiloOS seems down" (host wedge) + a self-inflicted watchdog reboot-loop
+
+The Pi recovered only after a **full power cycle**, not a service restart. Since `scale_bridge` is
+`Restart=always`, a dead *bridge* self-revives — needing a reboot means the **whole host wedged**
+(Wi-Fi/kernel-net/power). The exact trigger was **unrecoverable**: journald wasn't persisting logs,
+so the reboot wiped every pre-incident line.
+
+### Lessons
+1. **When a full power cycle is required (not a service restart), suspect the host, not the app.**
+   `Restart=always` services can't be the whole story — look at network stack, Wi-Fi driver, power.
+2. **Make logs persistent BEFORE you need them.** Default journald here was volatile
+   (`/var/log/journal` empty → all logs in `/run`, wiped on reboot). Every incident was
+   un-diagnosable after the mandatory reboot. Fix: `Storage=persistent` (+ `SystemMaxUse` cap).
+3. **⚠️ Do NOT override the Raspberry Pi vendor watchdog. Never set sub-1-min `RuntimeWatchdogSec`.**
+   RPi OS already ships `/usr/lib/systemd/system.conf.d/40-rpi-enable-watchdog.conf`
+   (`RuntimeWatchdogSec=1m`) — a wedged host already auto-reboots. My pre-check missed it because I
+   only grepped `/etc/systemd/system.conf`, not `/usr/lib/.../system.conf.d/`. Tightening it to
+   **`20s` put the Pi into a REBOOT LOOP** (6 boots in ~60 s; the bcm2711 watchdog misbehaves below
+   the vendor value). Recovery: `sudo rm /etc/systemd/system.conf.d/watchdog.conf && sudo systemctl
+   daemon-reexec` (retry in a loop — SSH windows are ~15 s during the loop). Reinforces lesson #9:
+   **verify facts live** (`systemd-analyze cat-config systemd/system.conf` shows the *effective*
+   source, incl. `/usr/lib` drop-ins).
+4. **`here-doc | tee` writes 0-byte files under `systemd-run`.** Both `/etc` drop-ins landed empty
+   until rewritten with `printf '%s\n' … | tee`. Use `printf|tee` for config writes in detached jobs.
+5. **Gate any wlan0/host-affecting change on dose-idle.** The Wi-Fi step bounces wlan0, so it runs
+   only when `restart_bridge_safe.sh --check` reports idle — same guard the bridge restart uses.
+
+### Reusable assets this produced
+- `tools/pi_harden.sh` — persistent journald + **verify-only** vendor watchdog + idle-gated Wi-Fi
+  power-save disable. Idempotent; supports `ONLY=wifi`.
+- `tools/pi_healthlog.sh` + `tools/systemd/pi-healthlog.{service,timer}` — 60 s health breadcrumb to
+  `/home/siloos/health.log` (throttle/temp/wifi/ping/services/disk) **+ a disk-space self-heal guard**.
+- `tools/systemd/siloos.logrotate` + `tools/install_healthlog.sh`.
+- Full write-up: `docs/PI_HARDENING.md`.

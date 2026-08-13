@@ -1,0 +1,10 @@
+[Unit]
+Description=SiloOS health sample (throttle/wifi/connectivity/disk breadcrumb + disk guard)
+# Don't compete for I/O at boot; the timer drives cadence.
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/env bash /home/siloos/tools/pi_healthlog.sh
+Nice=10
+IOSchedulingClass=idle

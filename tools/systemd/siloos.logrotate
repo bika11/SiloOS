@@ -1,0 +1,12 @@
+# SiloOS operational logs — routine bound (pi_healthlog's disk guard is the emergency backstop).
+# Installed to /etc/logrotate.d/siloos by install_healthlog.sh.
+/home/siloos/health.log /home/siloos/pi_harden.log {
+    daily
+    rotate 7
+    maxsize 20M
+    compress
+    delaycompress
+    missingok
+    notifempty
+    copytruncate
+}
