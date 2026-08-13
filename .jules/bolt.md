@@ -1,0 +1,3 @@
+## 2026-08-13 - High-Frequency State Updates and Expensive Derived State
+**Learning:** High-frequency state updates like progress bars during UI interactions (e.g. E-STOP hold events) trigger continuous parent re-renders, recalculating expensive array filtering and propagating re-renders to complex child components.
+**Action:** Always strictly memoize expensive derived state calculations (e.g. array filtering) using `useMemo` and wrap static child components within high-update views in `React.memo` (along with `useCallback` for their prop functions) to prevent UI thread blocking and dropped frames.
