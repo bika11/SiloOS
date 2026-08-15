@@ -118,7 +118,10 @@ export class SiloManager {
         const host = window.location.hostname;
 
         // Use environment variable if available, otherwise fallback to default
-        const authToken = (import.meta as any).env?.VITE_WS_AUTH_TOKEN || 'silo-secret';
+        const authToken = (import.meta as any).env?.VITE_WS_AUTH_TOKEN || 'CHANGE_ME';
+        if (!url && authToken === 'CHANGE_ME') {
+            throw new Error("Security Error: VITE_WS_AUTH_TOKEN must be changed from default 'CHANGE_ME'.");
+        }
 
         this.url = url || `${protocol}//${host}:8765/?auth=${authToken}`;
 
