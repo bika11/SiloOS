@@ -78,7 +78,7 @@ class Config:
             "laumas_baud": 115200,
             "ws_port": 8765,
             "topbrewer_mac": "88:6B:0F:BC:00:A1",
-            "auth_token": "silo-secret",
+            "auth_token": "CHANGE_ME",
             "tare_offset": 0.0,
             "settings": {
                 "theme": "dark",
@@ -134,8 +134,11 @@ LAUMAS_BAUD = config.laumas_baud
 WS_PORT     = config.ws_port
 TOPBREWER_MAC = config.topbrewer_mac
 # Auth token precedence: SILOOS_AUTH_TOKEN env var (preferred — inject via systemd,
-# never committed) > config.json auth_token > built-in 'silo-secret' dev default.
+# never committed) > config.json auth_token > built-in 'CHANGE_ME' dev default.
 AUTH_TOKEN  = os.environ.get("SILOOS_AUTH_TOKEN") or config.auth_token
+
+if AUTH_TOKEN == "CHANGE_ME":
+    raise ValueError("FATAL SECURITY ERROR: AUTH_TOKEN must be securely configured. Do not use 'CHANGE_ME'.")
 
 # --- SAFETY LIMITS (absolute spill/overflow backstops) ---
 _SAFETY = config.data.get("safety", {})
