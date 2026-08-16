@@ -15,7 +15,8 @@ interface RecipesPanelProps {
     menuItems: ParsedMenuItem[];
 }
 
-export const RecipesPanel: React.FC<RecipesPanelProps> = ({
+// ⚡ Bolt Optimization: Memoize component to prevent re-renders when parent state updates frequently
+export const RecipesPanel: React.FC<RecipesPanelProps> = React.memo(({
     siloManager,
     connection,
     menuItems
@@ -335,4 +336,4 @@ export const RecipesPanel: React.FC<RecipesPanelProps> = ({
             </div>
         </div>
     );
-};
+});
