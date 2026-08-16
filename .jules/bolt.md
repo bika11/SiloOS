@@ -1,0 +1,3 @@
+## 2026-08-16 - Prevent UI Blocking During High-Frequency Updates
+**Learning:** The `DashboardScreen` component triggers frequent state updates (every 50ms) during UI interactions like E-STOP hold events. Without memoization, expensive derived state calculations (e.g., array filtering for `visibleItems`) and re-renders of child components (like `DrinkMenuScreen` and `RecipesPanel`) block the UI thread, leading to dropped frames and sluggish responsiveness.
+**Action:** Always strictly memoize expensive derived state (using `useMemo`) and heavily rendered child components (using `React.memo`) within views that manage high-frequency state updates to prevent unnecessary recalculations and ensure smooth UI performance.

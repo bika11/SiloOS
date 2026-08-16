@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Card } from '../../components/ui/Card';
 import { TopBrewerConnection } from '../../bluetooth';
 import { logger } from '../../utils/logger';
@@ -108,11 +108,12 @@ export const DashboardScreen: React.FC<DashboardProps> = ({
         };
     }, [connection]);
 
-    const handleOrder = async (item: ParsedMenuItem) => {
+    // ⚡ Bolt Optimization: Memoize handler to prevent re-renders of child components
+    const handleOrder = useCallback(async (item: ParsedMenuItem) => {
         if (!connection) return;
         logger.info('Dashboard', `Selected: ${item.name} - Opening Customizer`);
         setSelectedDrink(item);
-    };
+    }, [connection]);
 
     const handleEmergencyStop = async () => {
         logger.warn('Dashboard', 'EMERGENCY STOP TRIGGERED!');
@@ -179,10 +180,13 @@ export const DashboardScreen: React.FC<DashboardProps> = ({
     }, []);
 
     // Filter out hidden recipes
-    const visibleItems = menuItems.filter(item => {
-        const isHidden = (hiddenRecipes || []).includes(item.id);
-        return !isHidden;
-    });
+    // ⚡ Bolt Optimization: Memoize derived state to prevent recalculation every 50ms during E-STOP
+    const visibleItems = useMemo(() => {
+        return menuItems.filter(item => {
+            const isHidden = (hiddenRecipes || []).includes(item.id);
+            return !isHidden;
+        });
+    }, [menuItems, hiddenRecipes]);
 
     if (menuItems.length > 0) {
         logger.debug('Dashboard', `Visible Items: ${visibleItems.length}/${menuItems.length} (Hidden IDs: ${hiddenRecipes?.join(',')})`);
