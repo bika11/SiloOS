@@ -34,7 +34,7 @@
 ### TASK-003: Externalize auth token
 - **Priority**: P0
 - **Agent**: hardware + frontend
-- **Status**: open
+- **Status**: done ✅ (2026-08-16)
 - **Description**: Move hardcoded `silo-secret` token to environment variables. Create `.env.example` for the dashboard. Update `SiloManager.ts` to read from `import.meta.env.VITE_WS_AUTH_TOKEN`. Update `config.json` docs.
 - **Acceptance Criteria**: No hardcoded tokens in source, `.env.example` exists, app still authenticates
 - **Related Issue**: ISS-003
