@@ -132,6 +132,9 @@ export const DashboardScreen: React.FC<DashboardProps> = ({
     const UPDATE_INTERVAL_MS = 50;
 
     const startHold = () => {
+        // Prevent duplicate timers
+        if (holdTimerRef.current) return;
+
         // Allow holding if the machine is active OR a gravimetric dose is live.
         const isActive = doseActive || (status !== 'Ready' && status !== 'TopBrewer Disconnected' && status !== 'Machine Error');
         if (!isActive) return;
@@ -221,6 +224,18 @@ export const DashboardScreen: React.FC<DashboardProps> = ({
                                     onTouchStart={(e: React.TouchEvent<HTMLButtonElement>) => { e.preventDefault(); startHold(); }}
                                     onTouchEnd={stopHold}
                                     onTouchCancel={stopHold}
+                                    onKeyDown={(e) => {
+                                        if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) {
+                                            e.preventDefault();
+                                            startHold();
+                                        }
+                                    }}
+                                    onKeyUp={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            stopHold();
+                                        }
+                                    }}
                                 >
                                     {/* Progress Background */}
                                     {isMachineActive && (
