@@ -4,7 +4,7 @@
   "laumas_port": "/dev/serial/by-id/usb-FTDI_USB-RS485_Cable_XXXXXXXX-if00-port0",
   "laumas_baud": 115200,
   "ws_port": 8765,
-  "auth_token": "CHANGE-ME-to-a-long-random-token",
+  "auth_token": "CHANGE_ME",
   "tare_offset": 0.0,
   "safety": {
     "hopper_abort_kg": 130.0,
