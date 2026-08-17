@@ -1,0 +1,3 @@
+## 2026-08-17 - Custom Hold-to-Action Buttons Require Explicit Keyboard Support
+**Learning:** Hold-to-repeat functionality that relies solely on `onMouseDown` and `onTouchStart` breaks keyboard accessibility for users navigating via tab.
+**Action:** Always pair pointer events with `onKeyDown` and `onKeyUp` handlers for 'Enter' and ' ' (Space) keys. To prevent native browser key-repeat from spawning duplicate timers, check `!e.repeat` during `onKeyDown` and include a safeguard in the start handler (e.g., `if (timerRef.current) return;`). Finally, always add focus-visible styles to custom UI elements.
