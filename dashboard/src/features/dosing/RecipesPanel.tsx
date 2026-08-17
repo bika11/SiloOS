@@ -15,7 +15,8 @@ interface RecipesPanelProps {
     menuItems: ParsedMenuItem[];
 }
 
-export const RecipesPanel: React.FC<RecipesPanelProps> = ({
+// ⚡ Bolt: Memoize RecipesPanel to prevent re-renders from DashboardScreen's 50ms hold interval
+export const RecipesPanel: React.FC<RecipesPanelProps> = React.memo(({
     siloManager,
     connection,
     menuItems
@@ -335,4 +336,4 @@ export const RecipesPanel: React.FC<RecipesPanelProps> = ({
             </div>
         </div>
     );
-};
+});
