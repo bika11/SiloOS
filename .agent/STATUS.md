@@ -36,7 +36,7 @@ Browser (PWA)  ──WebSocket──▶  Raspberry Pi  ──BLE──▶  TopBr
 | ISS-000 | **SFWU relay address wrong (0x03 instead of 0x02)** | **All commands rejected by machine** | protocol | ✅ FIXED |
 | ISS-001 | Duplicate SFWU parsers in `responses/` and `parsers/` | Code confusion, maintenance risk | protocol | Open |
 | ISS-002 | SSH private key committed to repo | Security vulnerability | qa | Open |
-| ISS-003 | Auth token hardcoded as `silo-secret` | Security vulnerability | hardware | Open |
+| ISS-003 | Auth token hardcoded as `silo-secret` | Security vulnerability | hardware | ✅ FIXED |
 
 ### High
 | ID | Issue | Impact | Owner |
