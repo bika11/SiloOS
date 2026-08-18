@@ -8,7 +8,8 @@ interface DrinkMenuProps {
     isLoading?: boolean;
 }
 
-export const DrinkMenuScreen: React.FC<DrinkMenuProps> = ({ items, onOrder, isLoading }) => {
+// PERFORMANCE OPTIMIZATION (Bolt): Memoize component to prevent re-renders during high-frequency parent updates
+export const DrinkMenuScreen: React.FC<DrinkMenuProps> = React.memo(({ items, onOrder, isLoading }) => {
     if (isLoading) {
         return (
             <div className="menu-loading">
@@ -41,4 +42,4 @@ export const DrinkMenuScreen: React.FC<DrinkMenuProps> = ({ items, onOrder, isLo
             })}
         </div>
     );
-};
+});
