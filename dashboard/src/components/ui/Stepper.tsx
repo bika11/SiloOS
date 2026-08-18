@@ -44,6 +44,7 @@ export const Stepper: React.FC<StepperProps> = ({
     }, [min, max, step, onChange, decimalPlaces]);
 
     const startRepeating = (direction: 'plus' | 'minus') => {
+        if (timerRef.current) return;
         updateValue(direction);
         setIsPressing(direction);
 
@@ -65,6 +66,7 @@ export const Stepper: React.FC<StepperProps> = ({
     const stopRepeating = () => {
         setIsPressing(null);
         clearTimeout(timerRef.current);
+        timerRef.current = null;
         speedRef.current = 200;
     };
 
@@ -86,23 +88,49 @@ export const Stepper: React.FC<StepperProps> = ({
 
             <div className="flex gap-2 w-full">
                 <button
-                    className={`flex-1 btn btn-secondary h-16 text-2xl ${isPressing === 'minus' ? 'bg-zinc-800 border-amber' : ''}`}
+                    type="button"
+                    aria-label={`Decrease ${label}`}
+                    className={`flex-1 btn btn-secondary h-16 text-2xl focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900 ${isPressing === 'minus' ? 'bg-zinc-800 border-amber' : ''}`}
                     onMouseDown={() => startRepeating('minus')}
                     onMouseUp={stopRepeating}
                     onMouseLeave={stopRepeating}
                     onTouchStart={(e) => { e.preventDefault(); startRepeating('minus'); }}
                     onTouchEnd={stopRepeating}
+                    onKeyDown={(e) => {
+                        if (!e.repeat && (e.key === 'Enter' || e.key === ' ')) {
+                            e.preventDefault();
+                            startRepeating('minus');
+                        }
+                    }}
+                    onKeyUp={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            stopRepeating();
+                        }
+                    }}
                     disabled={value <= min}
                 >
                     -
                 </button>
                 <button
-                    className={`flex-1 btn btn-secondary h-16 text-2xl ${isPressing === 'plus' ? 'bg-zinc-800 border-amber' : ''}`}
+                    type="button"
+                    aria-label={`Increase ${label}`}
+                    className={`flex-1 btn btn-secondary h-16 text-2xl focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900 ${isPressing === 'plus' ? 'bg-zinc-800 border-amber' : ''}`}
                     onMouseDown={() => startRepeating('plus')}
                     onMouseUp={stopRepeating}
                     onMouseLeave={stopRepeating}
                     onTouchStart={(e) => { e.preventDefault(); startRepeating('plus'); }}
                     onTouchEnd={stopRepeating}
+                    onKeyDown={(e) => {
+                        if (!e.repeat && (e.key === 'Enter' || e.key === ' ')) {
+                            e.preventDefault();
+                            startRepeating('plus');
+                        }
+                    }}
+                    onKeyUp={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            stopRepeating();
+                        }
+                    }}
                     disabled={value >= max}
                 >
                     +
