@@ -1,0 +1,3 @@
+## 2026-08-18 - High-Frequency State Updates Blocking the UI Thread
+**Learning:** The DashboardScreen component triggers updates every 50ms during E-STOP hold interactions. Because expensive derived state calculations (array filtering for visible menu items) and large child components (DrinkMenuScreen, RecipesPanel) weren't memoized, these 50ms updates were forcing the entire UI to re-evaluate, risking UI thread blocking and dropped frames during a critical safety interaction.
+**Action:** Always strictly memoize derived state (with useMemo), callbacks (with useCallback), and heavy child components (with React.memo) when they reside within a view that expects high-frequency timer-based or sensor-based state updates.
