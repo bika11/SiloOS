@@ -1,0 +1,4 @@
+## 2026-08-19 - Prevent Default Credential Usage Through Strict Runtime Enforcement
+**Vulnerability:** A hardcoded default authorization token ("silo-secret") was present in both the PWA frontend (SiloManager.ts) and the hardware bridge (ble_bridge.py) allowing potentially unauthorized connections if not rotated by operators.
+**Learning:** Hardcoded fallback secrets, even when intended purely as development placeholders or for out-of-the-box convenience, pose a significant risk if deployed to production without modification. Developers may forget to rotate them.
+**Prevention:** Rather than silently falling back to a known weak default value, systems should employ the "fail securely" principle. If environment variables or configuration files are missing, the application should throw a fatal initialization error (e.g., Error in TS, ValueError in Python) demanding an explicit and secure configuration before proceeding.

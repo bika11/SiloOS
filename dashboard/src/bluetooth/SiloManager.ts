@@ -118,7 +118,11 @@ export class SiloManager {
         const host = window.location.hostname;
 
         // Use environment variable if available, otherwise fallback to default
-        const authToken = (import.meta as any).env?.VITE_WS_AUTH_TOKEN || 'silo-secret';
+        const authToken = (import.meta as any).env?.VITE_WS_AUTH_TOKEN || 'CHANGE_ME';
+
+        if (authToken === 'CHANGE_ME' || authToken === 'silo-secret') {
+            throw new Error('Insecure configuration: VITE_WS_AUTH_TOKEN is not securely set. Please configure a random string in your .env file.');
+        }
 
         this.url = url || `${protocol}//${host}:8765/?auth=${authToken}`;
 
