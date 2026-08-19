@@ -8,7 +8,8 @@ interface DrinkMenuProps {
     isLoading?: boolean;
 }
 
-export const DrinkMenuScreen: React.FC<DrinkMenuProps> = ({ items, onOrder, isLoading }) => {
+// Performance: Memoize component to prevent re-renders when dashboard internal state updates
+export const DrinkMenuScreen: React.FC<DrinkMenuProps> = React.memo(({ items, onOrder, isLoading }) => {
     if (isLoading) {
         return (
             <div className="menu-loading">
@@ -41,4 +42,4 @@ export const DrinkMenuScreen: React.FC<DrinkMenuProps> = ({ items, onOrder, isLo
             })}
         </div>
     );
-};
+});
