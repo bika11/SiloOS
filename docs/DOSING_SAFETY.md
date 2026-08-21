@@ -261,7 +261,7 @@ Off-machine regression (run after any `dose_controller.py` change): `python3 too
   "Stability Confirmed" is now a **real** poll-until-steady gate (max-wait fallback), not a 1.5 s timer.
 - **Security:** `config.json` and `siloos_key`/`.pub` are **untracked** (git rm --cached; files stay
   on disk) and gitignored; `config.example.json` added; the bridge reads the auth token from
-  **`SILOOS_AUTH_TOKEN` env** first, then `config.json`, then the `silo-secret` dev default — so a
+  **`SILOOS_AUTH_TOKEN` env** first, then `config.json`, then the `CHANGE_ME` dev default — so a
   strong token can be injected without committing it.
 
 **Still open (manual / operational):**
@@ -270,9 +270,9 @@ Off-machine regression (run after any `dose_controller.py` change): `python3 too
   swap the local key, remove the old key from the Pi, and consider a history rewrite. Not automated
   here (CLAUDE.md forbids modifying `siloos_key`, and to avoid lockout).
 - **Rotate the auth-token VALUE** — the mechanism is in place but the running token may still be
-  `silo-secret`. To rotate: set a strong token in the Pi's `config.json` `auth_token` (or
+  `CHANGE_ME` or the old `silo-secret`. To rotate: set a strong token in the Pi's `config.json` `auth_token` (or
   `SILOOS_AUTH_TOKEN` in the `scale_bridge` unit) **and** `VITE_WS_AUTH_TOKEN=<same>` in
   `dashboard/.env`, restart both services, then **reload every tablet** (they 401 with the old token
-  until reloaded). Roll back to `silo-secret` if a client can't reconnect.
+  until reloaded).
 - **Hopper cap duplicated** in Python (`config.json`) and TS (`GRAV_MAX_KG`,
   `RecipeRunner.HOPPER_CAP_KG`); consider broadcasting it from the Pi for one source of truth.
