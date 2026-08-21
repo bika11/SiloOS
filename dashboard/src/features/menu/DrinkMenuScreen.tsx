@@ -8,7 +8,9 @@ interface DrinkMenuProps {
     isLoading?: boolean;
 }
 
-export const DrinkMenuScreen: React.FC<DrinkMenuProps> = ({ items, onOrder, isLoading }) => {
+// ⚡ Bolt Optimization: Wrap component in React.memo so it only re-renders when props change,
+// avoiding expensive list re-renders when parent DashboardScreen processes rapid state updates.
+export const DrinkMenuScreen: React.FC<DrinkMenuProps> = React.memo(({ items, onOrder, isLoading }) => {
     if (isLoading) {
         return (
             <div className="menu-loading">
@@ -41,4 +43,4 @@ export const DrinkMenuScreen: React.FC<DrinkMenuProps> = ({ items, onOrder, isLo
             })}
         </div>
     );
-};
+});

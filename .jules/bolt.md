@@ -1,0 +1,3 @@
+## 2026-08-21 - Memoizing Derived State and Child Components During High-Frequency Updates
+**Learning:** The DashboardScreen component processes high-frequency state updates (e.g., every 50ms during E-STOP hold events). Since it also recalculates derived state (like filtering arrays) and renders large child components, these unmemoized calculations and renders cause the UI thread to block and drop frames during the interaction.
+**Action:** Always strictly memoize expensive derived state calculations using `useMemo` and wrap heavy child components with `React.memo` when they are rendered inside a component subject to rapid state updates.
