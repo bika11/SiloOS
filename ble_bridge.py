@@ -78,7 +78,7 @@ class Config:
             "laumas_baud": 115200,
             "ws_port": 8765,
             "topbrewer_mac": "88:6B:0F:BC:00:A1",
-            "auth_token": "silo-secret",
+            "auth_token": "",
             "tare_offset": 0.0,
             "settings": {
                 "theme": "dark",
@@ -100,6 +100,10 @@ class Config:
         }
         self.load()
 
+    def _generate_random_token(self):
+        import secrets
+        return secrets.token_hex(16)
+
     def load(self):
         try:
             with open(self.path, "r") as f:
@@ -114,6 +118,11 @@ class Config:
             logger.info(f"Loaded configuration from {self.path}")
         except Exception as e:
             logger.warning(f"Could not load {self.path} ({e}), using defaults")
+
+        # Ensure we have a valid auth token
+        if not self.data.get("auth_token") or self.data.get("auth_token") == "silo-secret":
+            self.data["auth_token"] = self._generate_random_token()
+            self.save()
 
     def save(self):
         try:
