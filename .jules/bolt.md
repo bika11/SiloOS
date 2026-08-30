@@ -1,0 +1,3 @@
+## 2026-02-19 - Expensive Derived State During Rapid Render Loops
+**Learning:** High-frequency local state updates (like the 50ms emergency stop hold timer in DashboardScreen) will trigger rapid re-renders of the entire component. Any expensive derived state computations (like filtering large lists such as menu items) that are not memoized will block the main thread and cause UI stutter during these critical interactions.
+**Action:** Always memoize expensive derived state operations (e.g., using `useMemo`) in components that feature rapid render loops (timers, dragging, high-frequency events) to ensure the main thread remains unblocked and the UI remains responsive.
