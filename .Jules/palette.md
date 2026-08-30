@@ -1,0 +1,3 @@
+## 2024-07-09 - Icon Button Accessibility
+**Learning:** Reusable UI components like custom Steppers with icon-only actions (`+`, `-`) must dynamically compute their `aria-label` based on the component's context (e.g., passing down the label) to remain accessible in screen readers. Adding global CSS fixes should be avoided to prevent overriding existing design system conventions.
+**Action:** For reusable components like Steppers, require or default context-aware `aria-label` attributes to ensure they describe the specific action being performed, while ensuring we do not add any new custom CSS classes.
