@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Card } from '../../components/ui/Card';
 import { TopBrewerConnection } from '../../bluetooth';
 import { logger } from '../../utils/logger';
@@ -178,11 +178,12 @@ export const DashboardScreen: React.FC<DashboardProps> = ({
         };
     }, []);
 
-    // Filter out hidden recipes
-    const visibleItems = menuItems.filter(item => {
-        const isHidden = (hiddenRecipes || []).includes(item.id);
-        return !isHidden;
-    });
+    // Filter out hidden recipes (Optimized)
+    // Bolt: O(1) lookups for hidden recipes and memoized to prevent re-filtering on rapid renders (like emergency stop progress)
+    const visibleItems = useMemo(() => {
+        const hiddenSet = new Set(hiddenRecipes || []);
+        return menuItems.filter(item => !hiddenSet.has(item.id));
+    }, [menuItems, hiddenRecipes]);
 
     if (menuItems.length > 0) {
         logger.debug('Dashboard', `Visible Items: ${visibleItems.length}/${menuItems.length} (Hidden IDs: ${hiddenRecipes?.join(',')})`);
