@@ -1,0 +1,3 @@
+## 2025-07-05 - Focus States in Custom Button Classes
+**Learning:** When using custom button classes like `.btn` in this repository (which does not use Tailwind/UnoCSS), keyboard focus indicators (`:focus-visible`) are often missing by default, harming accessibility. It's crucial to explicitly define them using brand colors (like `var(--silos-amber)`) to maintain design consistency while ensuring accessibility for non-mouse users.
+**Action:** Always check custom UI components (like buttons, steppers, and toggles) for keyboard focus indicators and explicitly add `:focus-visible` styles if missing.
