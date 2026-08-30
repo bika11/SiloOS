@@ -87,22 +87,48 @@ export const Stepper: React.FC<StepperProps> = ({
             <div className="flex gap-2 w-full">
                 <button
                     className={`flex-1 btn btn-secondary h-16 text-2xl ${isPressing === 'minus' ? 'bg-zinc-800 border-amber' : ''}`}
+                    aria-label={`Decrease ${label}`}
                     onMouseDown={() => startRepeating('minus')}
                     onMouseUp={stopRepeating}
                     onMouseLeave={stopRepeating}
                     onTouchStart={(e) => { e.preventDefault(); startRepeating('minus'); }}
                     onTouchEnd={stopRepeating}
+                    onKeyDown={(e) => {
+                        if ((e.key === 'Enter' || e.key === ' ') && isPressing !== 'minus') {
+                            e.preventDefault();
+                            startRepeating('minus');
+                        }
+                    }}
+                    onKeyUp={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            stopRepeating();
+                        }
+                    }}
                     disabled={value <= min}
                 >
                     -
                 </button>
                 <button
                     className={`flex-1 btn btn-secondary h-16 text-2xl ${isPressing === 'plus' ? 'bg-zinc-800 border-amber' : ''}`}
+                    aria-label={`Increase ${label}`}
                     onMouseDown={() => startRepeating('plus')}
                     onMouseUp={stopRepeating}
                     onMouseLeave={stopRepeating}
                     onTouchStart={(e) => { e.preventDefault(); startRepeating('plus'); }}
                     onTouchEnd={stopRepeating}
+                    onKeyDown={(e) => {
+                        if ((e.key === 'Enter' || e.key === ' ') && isPressing !== 'plus') {
+                            e.preventDefault();
+                            startRepeating('plus');
+                        }
+                    }}
+                    onKeyUp={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            stopRepeating();
+                        }
+                    }}
                     disabled={value >= max}
                 >
                     +
