@@ -1,0 +1,3 @@
+## 2025-02-16 - Memoizing Expensive Derived State during High-Frequency Renders
+**Learning:** High-frequency state updates like progress bars or hold timers (e.g., 50ms intervals) trigger full component re-renders on every tick. Any derived state operations (like array filtering or mapping) placed in the render body will be unnecessarily recalculated many times per second, potentially causing CPU spikes and blocking the main thread.
+**Action:** Always wrap expensive derived state operations in `useMemo` when they are inside components that handle high-frequency local state updates, especially when the inputs to the derived state (like props) change infrequently.
