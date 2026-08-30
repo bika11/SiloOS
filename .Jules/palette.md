@@ -1,0 +1,3 @@
+## 2024-07-08 - Keyboard Focus and ARIA Labels
+**Learning:** The SiloOS design system lacked keyboard focus indicators (`:focus-visible`) globally and on custom components like the `.switch` slider, rendering keyboard navigation nearly impossible to track visually. Furthermore, icon-only buttons (like the recipe step remover and scale connect toggle) lacked ARIA labels, making them inaccessible to screen readers.
+**Action:** Always verify keyboard focus states and add `aria-label` to buttons where the visual indicator is solely an icon or when its text label changes contextually. Ensure focus styles use existing design tokens like `var(--silos-amber)`.
