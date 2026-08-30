@@ -1,0 +1,3 @@
+## 2026-08-06 - High-Frequency Render Loops Require Memoized Derived State
+**Learning:** The DashboardScreen features a 50ms interval render loop for the emergency stop hold UI. Unmemoized array filtering (`menuItems.filter`) inside this component runs every 50ms while the button is held, wasting CPU cycles and potentially blocking the main thread during critical interactions.
+**Action:** Always memoize derived state (like array filtering/mapping) in components that have known high-frequency local state updates (like timers or progress bars) using `useMemo` to prevent unnecessary re-evaluations.
