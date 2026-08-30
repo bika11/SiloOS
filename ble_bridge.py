@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import os
+import secrets
 import time
 import serial
 from logging.handlers import RotatingFileHandler
@@ -242,7 +243,8 @@ async def websocket_handler(request):
     global tare_offset, active_controller
     # Security Check: Auth Token in Query Param
     client_token = request.query.get("auth")
-    if AUTH_TOKEN and client_token != AUTH_TOKEN:
+    # Prevent timing attacks using secrets.compare_digest and ensure token is not None
+    if AUTH_TOKEN and (client_token is None or not secrets.compare_digest(client_token, AUTH_TOKEN)):
         logger.warning(f"Connection Refused: Invalid Auth Token from {request.remote}")
         return web.Response(status=401, text="Unauthorized")
 
