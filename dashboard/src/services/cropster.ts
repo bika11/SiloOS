@@ -6,8 +6,8 @@
 import { logger } from '../utils/logger';
 
 // Default keys from user input 
-const DEFAULT_CLIENT_ID = "305de0edc0f643869f15610df0f44fd6";
-const DEFAULT_CLIENT_SECRET = "b0b41510c5b31ed134614ea4995bf687a79c9c606ca910d231b075cbe6a633be";
+const DEFAULT_CLIENT_ID = import.meta.env.VITE_CROPSTER_CLIENT_ID || "";
+const DEFAULT_CLIENT_SECRET = import.meta.env.VITE_CROPSTER_CLIENT_SECRET || "";
 const GROUP = "SCANO";
 const BASE_URL = "/api/v2";
 
