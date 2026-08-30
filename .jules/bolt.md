@@ -1,0 +1,3 @@
+## 2024-07-09 - Synchronous LocalStorage Writes Blocking the Main Thread
+**Learning:** During high-frequency events (like processing many BLE packets per second), synchronous writes to `localStorage` (via `JSON.stringify` on large arrays) can completely block the React main thread, causing severe UI stutter and potentially leading to dropped packets or unresponsive interfaces.
+**Action:** Always throttle or debounce persistence mechanisms (like `localStorage` or `IndexedDB`) when logging or tracking data that updates continuously. Batching writes at 1-second intervals provides a massive performance win while still ensuring acceptable data durability.
