@@ -117,10 +117,10 @@ export class SiloManager {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const host = window.location.hostname;
 
-        // Use environment variable if available, otherwise fallback to default
-        const authToken = (import.meta as any).env?.VITE_WS_AUTH_TOKEN || 'silo-secret';
+        // Use environment variable for auth token
+        const authToken = (import.meta as any).env?.VITE_WS_AUTH_TOKEN;
 
-        this.url = url || `${protocol}//${host}:8765/?auth=${authToken}`;
+        this.url = url || (authToken ? `${protocol}//${host}:8765/?auth=${authToken}` : `${protocol}//${host}:8765/`);
 
         if (events) {
             this.events = events;
