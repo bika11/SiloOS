@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Card } from '../../components/ui/Card';
 import { TopBrewerConnection } from '../../bluetooth';
 import { logger } from '../../utils/logger';
@@ -179,14 +179,21 @@ export const DashboardScreen: React.FC<DashboardProps> = ({
     }, []);
 
     // Filter out hidden recipes
-    const visibleItems = menuItems.filter(item => {
-        const isHidden = (hiddenRecipes || []).includes(item.id);
-        return !isHidden;
-    });
+    // ⚡ Bolt: Memoize the visibleItems array to avoid O(n*m) filtering on every render
+    // Uses a Set for O(1) lookups. This is crucial because this component updates
+    // every 50ms during the "hold-to-abort" interaction.
+    const visibleItems = useMemo(() => {
+        const hiddenSet = new Set(hiddenRecipes || []);
+        return menuItems.filter(item => !hiddenSet.has(item.id));
+    }, [menuItems, hiddenRecipes]);
 
-    if (menuItems.length > 0) {
-        logger.debug('Dashboard', `Visible Items: ${visibleItems.length}/${menuItems.length} (Hidden IDs: ${hiddenRecipes?.join(',')})`);
-    }
+    // ⚡ Bolt: Move logging into an effect to prevent massive console/storage spam
+    // during 50ms UI loop re-renders
+    useEffect(() => {
+        if (menuItems.length > 0) {
+            logger.debug('Dashboard', `Visible Items: ${visibleItems.length}/${menuItems.length} (Hidden IDs: ${hiddenRecipes?.join(',')})`);
+        }
+    }, [visibleItems.length, menuItems.length, hiddenRecipes]);
 
     const isMachineActive = doseActive || (status !== 'Ready' && status !== 'TopBrewer Disconnected' && status !== 'Machine Error');
 
