@@ -288,14 +288,14 @@ export const RecipesPanel: React.FC<RecipesPanelProps> = ({
                                 <h4 className="font-bold text-amber font-mono">{recipe.name}</h4>
                                 <div className="flex gap-2">
                                     <button
-                                        className="text-zinc-500 hover:text-white transition-colors"
+                                        className="text-zinc-500 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-amber rounded focus-visible:outline-none"
                                         onClick={() => { setEditingRecipe(recipe); setIsEditing(true); }}
                                         aria-label={`Edit ${recipe.name}`}
                                     >
                                         <span className="text-[10px] uppercase font-mono">Edit</span>
                                     </button>
                                     <button
-                                        className="text-zinc-500 hover:text-red-500 transition-colors"
+                                        className="text-zinc-500 hover:text-red-500 transition-colors focus-visible:ring-2 focus-visible:ring-red-500 rounded focus-visible:outline-none"
                                         onClick={() => {
                                             if (window.confirm(`Delete "${recipe.name}"? This cannot be undone.`)) {
                                                 handleDeleteRecipe(recipe.id);

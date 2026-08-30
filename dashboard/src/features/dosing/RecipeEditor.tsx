@@ -143,11 +143,12 @@ export const RecipeEditor: React.FC<RecipeEditorProps> = ({
                         {/* Remove button */}
                         {steps.length > 1 && (
                             <button
-                                className="flex-shrink-0 text-zinc-600 hover:text-red-500 transition-colors p-1"
+                                aria-label={`Remove step ${index + 1}`}
+                                className="flex-shrink-0 text-zinc-600 hover:text-red-500 transition-colors p-1 focus-visible:ring-2 focus-visible:ring-red-500 rounded focus-visible:outline-none"
                                 onClick={() => removeStep(index)}
                                 title="Remove step"
                             >
-                                <span className="text-xs font-mono uppercase">✕</span>
+                                <span className="text-xs font-mono uppercase" aria-hidden="true">✕</span>
                             </button>
                         )}
                     </div>
