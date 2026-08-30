@@ -1,0 +1,3 @@
+## 2026-08-10 - Keyboard Accessibility in Custom Hold-to-Repeat Components
+**Learning:** Custom UI components like Steppers that use `onMouseDown` and `onTouchStart` for hold-to-repeat functionality completely break keyboard accessibility if not paired with `onKeyDown` and `onKeyUp`. Furthermore, native browser key-repeat behavior can spawn duplicate timers if `!e.repeat` isn't checked during `onKeyDown`.
+**Action:** Always pair pointer event handlers with keyboard event handlers (`Enter` and `Space`) on interactive custom elements. Ensure keyboard handlers explicitly manage state and check `!e.repeat` to prevent runaway native key-repeat behaviors from conflicting with custom timer logic.

@@ -72,6 +72,20 @@ export const Stepper: React.FC<StepperProps> = ({
         return () => clearTimeout(timerRef.current);
     }, []);
 
+    const handleKeyDown = (e: React.KeyboardEvent, direction: 'plus' | 'minus') => {
+        if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) {
+            e.preventDefault();
+            startRepeating(direction);
+        }
+    };
+
+    const handleKeyUp = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            stopRepeating();
+        }
+    };
+
     return (
         <div className="stepper-container flex flex-col gap-2 p-3 glass rounded-xl border border-zinc-800/50 w-full">
             <div className="flex justify-between items-baseline mb-1">
@@ -92,7 +106,11 @@ export const Stepper: React.FC<StepperProps> = ({
                     onMouseLeave={stopRepeating}
                     onTouchStart={(e) => { e.preventDefault(); startRepeating('minus'); }}
                     onTouchEnd={stopRepeating}
+                    onKeyDown={(e) => handleKeyDown(e, 'minus')}
+                    onKeyUp={handleKeyUp}
+                    onBlur={stopRepeating}
                     disabled={value <= min}
+                    aria-label={`Decrease ${label}`}
                 >
                     -
                 </button>
@@ -103,7 +121,11 @@ export const Stepper: React.FC<StepperProps> = ({
                     onMouseLeave={stopRepeating}
                     onTouchStart={(e) => { e.preventDefault(); startRepeating('plus'); }}
                     onTouchEnd={stopRepeating}
+                    onKeyDown={(e) => handleKeyDown(e, 'plus')}
+                    onKeyUp={handleKeyUp}
+                    onBlur={stopRepeating}
                     disabled={value >= max}
+                    aria-label={`Increase ${label}`}
                 >
                     +
                 </button>
