@@ -221,6 +221,18 @@ export const DashboardScreen: React.FC<DashboardProps> = ({
                                     onTouchStart={(e: React.TouchEvent<HTMLButtonElement>) => { e.preventDefault(); startHold(); }}
                                     onTouchEnd={stopHold}
                                     onTouchCancel={stopHold}
+                                    onKeyDown={(e: React.KeyboardEvent<HTMLButtonElement>) => {
+                                        if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) {
+                                            e.preventDefault();
+                                            startHold();
+                                        }
+                                    }}
+                                    onKeyUp={(e: React.KeyboardEvent<HTMLButtonElement>) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            stopHold();
+                                        }
+                                    }}
                                 >
                                     {/* Progress Background */}
                                     {isMachineActive && (
