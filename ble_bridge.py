@@ -30,6 +30,7 @@ import binascii
 import subprocess # For hard resets
 import shutil # For cross-platform executable lookup (bluetoothctl)
 import uuid
+import secrets
 from dose_controller import PiDoseController, set_audit_fn, send_cancel_to_topbrewer
 
 # --- LOGGING SETUP ---
@@ -240,9 +241,9 @@ async def read_stable_weight(samples=5, tolerance=0.05, interval=0.08, timeout=2
 
 async def websocket_handler(request):
     global tare_offset, active_controller
-    # Security Check: Auth Token in Query Param
+    # Security Check: Auth Token in Query Param (Timing attack protected)
     client_token = request.query.get("auth")
-    if AUTH_TOKEN and client_token != AUTH_TOKEN:
+    if AUTH_TOKEN and (client_token is None or not secrets.compare_digest(client_token, AUTH_TOKEN)):
         logger.warning(f"Connection Refused: Invalid Auth Token from {request.remote}")
         return web.Response(status=401, text="Unauthorized")
 

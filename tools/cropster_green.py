@@ -1,8 +1,9 @@
 """Pull green lots from Cropster."""
-import urllib.request, json, base64
+import urllib.request, json, base64, os
 
-CLIENT_ID = "305de0edc0f643869f15610df0f44fd6"
-CLIENT_SECRET = "b0b41510c5b31ed134614ea4995bf687a79c9c606ca910d231b075cbe6a633be"
+# Security Fix: Remove hardcoded credentials. Use environment variables.
+CLIENT_ID = os.environ.get("CROPSTER_CLIENT_ID", "")
+CLIENT_SECRET = os.environ.get("CROPSTER_CLIENT_SECRET", "")
 CREDS = base64.b64encode(f"{CLIENT_ID}:{CLIENT_SECRET}".encode()).decode()
 HEADERS = {"User-Agent": "SiloOS/1.0", "Accept": "application/json", "Authorization": f"Basic {CREDS}"}
 
