@@ -310,6 +310,12 @@ h2 {
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
 }
 
+/* Global Accessibility */
+:focus-visible {
+  outline: 2px solid var(--silos-amber);
+  outline-offset: 2px;
+}
+
 /* App Containers */
 #root {
   display: flex;

@@ -86,6 +86,7 @@ export const Stepper: React.FC<StepperProps> = ({
 
             <div className="flex gap-2 w-full">
                 <button
+                    aria-label={`Decrease ${label}`}
                     className={`flex-1 btn btn-secondary h-16 text-2xl ${isPressing === 'minus' ? 'bg-zinc-800 border-amber' : ''}`}
                     onMouseDown={() => startRepeating('minus')}
                     onMouseUp={stopRepeating}
@@ -97,6 +98,7 @@ export const Stepper: React.FC<StepperProps> = ({
                     -
                 </button>
                 <button
+                    aria-label={`Increase ${label}`}
                     className={`flex-1 btn btn-secondary h-16 text-2xl ${isPressing === 'plus' ? 'bg-zinc-800 border-amber' : ''}`}
                     onMouseDown={() => startRepeating('plus')}
                     onMouseUp={stopRepeating}
