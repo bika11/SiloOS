@@ -147,13 +147,15 @@ export const SettingsScreen: React.FC<SettingsProps> = ({ siloManager, menuItems
                     <button
                         className="dosing-toggle"
                         onClick={() => setDosingOpen(!dosingOpen)}
+                        aria-expanded={dosingOpen}
+                        aria-controls="dosing-calibration-content"
                     >
                         <h3 style={{ margin: 0 }}>Dosing Calibration</h3>
-                        <span className={`dosing-chevron ${dosingOpen ? 'open' : ''}`}>▶</span>
+                        <span className={`dosing-chevron ${dosingOpen ? 'open' : ''}`} aria-hidden="true">▶</span>
                     </button>
 
                     {dosingOpen && (
-                        <div className="dosing-calibration-content">
+                        <div id="dosing-calibration-content" className="dosing-calibration-content">
                             <div className="dosing-help-text">
                                 <p><strong>When to use:</strong> After running a few gravimetric doses, check the overshoot chips below. If they're consistently red, adjust these values.</p>
                                 <p><strong>Valve Delay</strong> — How long product keeps flowing after the valve closes. Increase if doses consistently overshoot.</p>
