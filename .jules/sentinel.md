@@ -1,0 +1,4 @@
+## 2026-08-03 - Prevent Timing Attacks in Token Comparison
+**Vulnerability:** Comparing authentication tokens using standard string equality (`!=`) allows an attacker to deduce the correct token via timing side-channels, as string comparison returns early on the first mismatched character. Furthermore, not handling `None` tokens when using `secrets.compare_digest` results in `TypeError`.
+**Learning:** In Python, any cryptographic or sensitive string comparisons (like auth tokens) must use `secrets.compare_digest` to ensure constant-time comparison regardless of matching prefixes. We must also explicitly check for `None` before passing to `compare_digest` if the parameter can be missing.
+**Prevention:** Always use `secrets.compare_digest` for secret token comparisons and explicitly handle `None` checks for query parameters.
