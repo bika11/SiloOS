@@ -1,0 +1,3 @@
+## 2023-10-27 - Unnecessary Menu Re-renders during Brewing
+**Learning:** In the Dashboard, status updates from the brewing state machine or emergency stop hold timer (updating every 50ms) cause the entire dashboard component to re-render. Because child components like the drink menu received un-memoized props, they were being forced to unnecessarily reconcile on every single tick, wasting CPU cycles and potentially causing stutter during critical brewing operations.
+**Action:** Always inspect frequent state updates (like progress bars or real-time hardware status) in parent components and aggressively memoize (`React.memo`, `useMemo`, `useCallback`) the props passed to pure or complex child components to prevent cascading re-renders.
