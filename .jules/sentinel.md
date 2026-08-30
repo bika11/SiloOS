@@ -1,0 +1,4 @@
+## 2026-07-21 - Timing Attack Vulnerability in WebSocket Authentication
+**Vulnerability:** The WebSocket handler compared the client-provided authentication token against the expected token using the standard equality operator (`!=`). This exposed the application to a timing attack where an attacker could theoretically guess the token character by character based on the time it takes the comparison to fail.
+**Learning:** Using simple string comparison for secrets is insecure due to short-circuit evaluation. Python's standard equality operator stops comparing as soon as it finds a mismatch, leaking the length of the matched prefix.
+**Prevention:** Always use a constant-time comparison function, such as `secrets.compare_digest`, when comparing cryptographic secrets or authentication tokens. Ensure that the input token is explicitly checked for `None` before passing it to `compare_digest` to prevent a `TypeError`.
