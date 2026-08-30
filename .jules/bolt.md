@@ -1,0 +1,3 @@
+## 2025-02-16 - Prevent expensive array filtering during frequent UI re-renders
+**Learning:** Frequent state updates (like `holdProgress` updating every 50ms during an emergency stop action) can cause expensive operations like array filtering to become problematic if they are done directly in the render path without memoization.
+**Action:** Use `useMemo` to memoize expensive computations like filtering arrays, especially when the component frequently re-renders due to unrelated state changes. Use `useEffect` to avoid spamming the logs during these frequent re-renders.
