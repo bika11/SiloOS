@@ -1,5 +1,6 @@
 import asyncio
 import json
+import secrets
 import logging
 import os
 import time
@@ -242,9 +243,10 @@ async def websocket_handler(request):
     global tare_offset, active_controller
     # Security Check: Auth Token in Query Param
     client_token = request.query.get("auth")
-    if AUTH_TOKEN and client_token != AUTH_TOKEN:
-        logger.warning(f"Connection Refused: Invalid Auth Token from {request.remote}")
-        return web.Response(status=401, text="Unauthorized")
+    if AUTH_TOKEN:
+        if client_token is None or not secrets.compare_digest(client_token, AUTH_TOKEN):
+            logger.warning(f"Connection Refused: Invalid Auth Token from {request.remote}")
+            return web.Response(status=401, text="Unauthorized")
 
     ws = web.WebSocketResponse()
     await ws.prepare(request)
