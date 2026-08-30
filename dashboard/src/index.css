@@ -428,3 +428,7 @@ h2 {
     animation: none;
   }
 }
+:focus-visible {
+  outline: 2px solid var(--silos-amber);
+  outline-offset: 2px;
+}
